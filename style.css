@@ -1,0 +1,61 @@
+body {
+    background-color: #E0E0E0; /* พื้นหลังเทาอ่อนตามรูป */
+    font-family: Arial, sans-serif;
+    padding: 20px;
+}
+
+.dashboard-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.module-box {
+    border: 2px solid #FF0000;
+    padding: 15px;
+    position: relative;
+    background-color: #F5F5F5;
+    min-height: 250px;
+}
+
+.full-width {
+    grid-column: span 2;
+}
+
+.title-red {
+    color: #FF0000;
+    margin-top: -25px;
+    background: #F5F5F5;
+    display: inline-block;
+    padding: 0 10px;
+    font-size: 14px;
+}
+
+/* ปุ่มและรูปทรงต่างๆ */
+.btn {
+    display: block;
+    text-decoration: none;
+    color: black;
+    padding: 10px;
+    margin: 5px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 12px;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    border: 1px solid #777;
+}
+
+.flex-row { display: flex; align-items: center; gap: 10px; }
+.flex-col { display: flex; flex-direction: column; justify-content: center; }
+
+/* สีตาม Diagram */
+.bg-red-large { background-color: red; color: white; width: 80px; height: 180px; display: flex; align-items: center; justify-content: center; text-align: center; }
+.btn-blue { background-color: #CCFFFF; border: 2px dashed #333; }
+.btn-cyan { background-color: #00FFFF; }
+.btn-teal { background-color: #008080; color: white; }
+.bg-purple { background-color: #8080FF; color: white; width: 80px; height: 150px; display: flex; align-items: center; justify-content: center; text-align: center; }
+.bg-green-dark { background-color: #006400; color: white; }
+.rect-orange { background-color: #FF8C00; padding: 20px; margin: 5px; border: 1px solid black; }
+.rect-orange-large { background-color: #FF8C00; width: 100px; height: 150px; display: flex; align-items: center; justify-content: center; border: 1px solid black; }
+
+.connector { font-weight: bold; color: #333; }

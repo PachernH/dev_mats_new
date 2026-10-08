@@ -1,0 +1,6 @@
+UPDATE tb_bill AS a
+LEFT JOIN tb_debtor AS b
+ON a.IDBill = b.IDBill
+SET b.StatusBill =0,b.usedata=1
+WHERE a.StatusBill=0 and a.usedata=1
+

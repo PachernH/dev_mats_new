@@ -1,0 +1,83 @@
+.rack {
+    text-align: center;
+    border: 1px solid black;
+    padding: 4px;
+    font-size: 9px;
+}
+
+.rack-full {
+    background-color: #5cb85c;
+    color: #fff;
+    cursor: pointer;
+}
+
+.rack-empty {
+    background-color: #d9534f;
+    color: #fff;
+    cursor: pointer;
+}
+
+.rack-partial {
+    background-color: #f7dc6f ;
+    color: #000;
+    cursor: pointer;
+}
+
+@keyframes blink {
+    from {background-color: #5dade2; color: #fff;}
+    to {background-color: white; color: #000;}
+}
+
+.rack-ppu {
+    cursor: pointer;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-iteration-count: infinite;
+}
+.rack-disabled {
+    background-color: #DDDDDD;
+    color: #fff;
+}
+
+.watermark-top {
+    margin-left: auto;
+    margin-right: auto;
+    position: absolute;
+    color: black;
+    opacity: 0.25;
+    font-size: 10em;
+    top: 25%;
+    width :9%;
+    text-align: center;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.watermark-top-i {
+    margin-left: auto;
+    margin-right: auto;
+    position: absolute;
+    color: black;
+    opacity: 0.25;
+    font-size: 10em;
+    top: 25%;
+    width :5%;
+    text-align: center;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.watermark-bottom {
+    margin-left: auto;
+    margin-right: auto;
+    position: absolute;
+    color: black;
+    opacity: 0.25;
+    font-size: 5em;
+    width: 40%;
+    top: 81%;  
+    width :35%;  
+    text-align: center;
+    z-index: 0;
+    pointer-events: none;
+}

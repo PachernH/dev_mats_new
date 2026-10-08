@@ -1,0 +1,146 @@
+<?php
+header('Content-Type: application/json; charset=utf-8');
+session_start();
+
+$response = array('status' => 'error', 'message' => false);
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $response['error'] = 'Invalid Request Method';
+    echo json_encode($response, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if (!file_exists('../dbcon_mats-new.php')) {
+    $response['error'] = 'ไม่พบไฟล์เชื่อมต่อฐานข้อมูล (dbcon_mats-new.php)';
+    echo json_encode($response, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+include('../dbcon_mats-new.php');
+
+try {
+    // 1. รับค่า Header Keys
+    $alloy              = isset($_POST['alloy']) ? trim($_POST['alloy']) : '';
+    $rset_no            = isset($_POST['rset_no']) ? trim($_POST['rset_no']) : '';
+    $width              = isset($_POST['width']) && $_POST['width'] !== '' ? (float)$_POST['width'] : 0;
+    $thickness_original = isset($_POST['thickness_original']) && $_POST['thickness_original'] !== '' ? (float)$_POST['thickness_original'] : 0;
+    $thickness_final    = isset($_POST['thickness_final']) && $_POST['thickness_final'] !== '' ? (float)$_POST['thickness_final'] : 0;
+
+    // คำนวณ Recipe No
+    $recipe_no = isset($_POST['recipe_no']) ? trim($_POST['recipe_no']) : '';
+    if ($recipe_no === '' && $alloy !== '' && $width > 0) {
+        $recipe_no = $alloy . ":" . $width . "-" . sprintf("%.3f", $thickness_original) . ">" . sprintf("%.3f", $thickness_final);
+    }
+
+    if (empty($recipe_no) || empty($alloy) || empty($rset_no) || $width <= 0) {
+        $response['error'] = 'กรุณากรอกข้อมูล Header และเลือก Roll Set ให้ครบถ้วน';
+        echo json_encode($response, JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // 2. ตรวจสอบว่า RECIPE_NO นี้ซ้ำในระบบหรือไม่
+    $checkSql = "SELECT COUNT(*) FROM CMRCMSTR1 WHERE LTRIM(RTRIM(RECIPE_NO)) = LTRIM(RTRIM(:rno))";
+    $checkStmt = $conn->prepare($checkSql);
+    $checkStmt->execute([':rno' => $recipe_no]);
+    if ($checkStmt->fetchColumn() > 0) {
+        $response['error'] = "รหัส Recipe No. ($recipe_no) นี้มีอยู่ในระบบแล้ว ไม่สามารถเพิ่มซ้ำได้";
+        echo json_encode($response, JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // 3. ดึงข้อมูล Roll Details จากตาราง RDMTMSTR3 (เฉพาะข้อมูลที่มี RSET_STATUS = 'OP')
+    $rollSql = "SELECT WRL_RADIUS, TWR_CAMBER, BWR_CAMBER, BRL_RADIUS 
+                FROM RDMTMSTR3 
+                WHERE LTRIM(RTRIM(RSET_NO)) = LTRIM(RTRIM(:rset_no))";
+    $rollStmt = $conn->prepare($rollSql);
+    $rollStmt->execute([':rset_no' => $rset_no]);
+    $rollData = $rollStmt->fetch(PDO::FETCH_ASSOC);
+
+    // กำหนดค่า Roll Parameters (ถ้าไม่พบข้อมูลให้ default เป็น 0)
+    $stp_wrl_rdn = $rollData ? (float)$rollData['WRL_RADIUS'] : 0;
+    $stp_twr_cmb = $rollData ? (float)$rollData['TWR_CAMBER'] : 0;
+    $stp_bwr_cmb = $rollData ? (float)$rollData['BWR_CAMBER'] : 0;
+    $stp_brl_rdn = $rollData ? (float)$rollData['BRL_RADIUS'] : 0;
+
+    // 4. รับค่ารายการลูก (Arrays)
+    $recipe_items          = $_POST['recipe_item'] ?? [];
+    $temper_finishes       = $_POST['temper_finish'] ?? [];
+    $thickness_entries     = $_POST['thickness_entry'] ?? [];
+    $thickness_exits       = $_POST['thickness_exit'] ?? [];
+    $thickness_telorances  = $_POST['thickness_telorance'] ?? [];
+    $work_hardening1s      = $_POST['work_hardening1'] ?? [];
+    $work_hardening2s      = $_POST['work_hardening2'] ?? [];
+    $coefficient_frictions = $_POST['coefficient_friction'] ?? [];
+    $yield_stresses        = $_POST['yield_stress'] ?? [];
+    $empirical_value1s     = $_POST['empirical_value1'] ?? [];
+
+    if (count($recipe_items) === 0) {
+        $response['error'] = 'กรุณาระบุรายการ Recipe Item อย่างน้อย 1 รายการ';
+        echo json_encode($response, JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $conn->beginTransaction();
+
+    // 5. บันทึกข้อมูลลงตาราง CMRCMSTR1 (รวม Roll Parameters เข้าไปด้วย)
+    $insSql = "INSERT INTO CMRCMSTR1 (
+                    RECIPE_NO, RECIPE_ITEM, ALLOY, WIDTH, THICKNESS_ORIGINAL, THICKNESS_FINAL,
+                    COOLANT_RECIPE, SPOOL, TEMPER_FINISH, THICKNESS_ENTRY, THICKNESS_EXIT, 
+                    THICKNESS_TELORANCE, TOTAL_PASS, WORK_HARDENING1, WORK_HARDENING2, 
+                    COEFFICIENT_FRICTION, YIELD_STRESS, EMPIRICAL_VALUE1,
+                    RSET_NO, STP_WRL_RDN, STP_TWR_CMB, STP_BWR_CMB, STP_BRL_RDN
+                ) VALUES (
+                    :rno, :item, :al, :wi, :thor, :thfn,
+                    :coolant, :spool, :temper, :thent, :thext, 
+                    :thtol, :totpass, :wh1, :wh2, 
+                    :coeff, :yield, :emp1,
+                    :rset_no, :stp_wrl_rdn, :stp_twr_cmb, :stp_bwr_cmb, :stp_brl_rdn
+                )";
+
+    $insStmt = $conn->prepare($insSql);
+
+    for ($i = 0; $i < count($recipe_items); $i++) {
+        $item = trim($recipe_items[$i]);
+        if ($item === '') continue;
+
+        $insStmt->execute([
+            ':rno'         => $recipe_no,
+            ':item'        => (int)$item,
+            ':al'          => $alloy,
+            ':wi'          => $width,
+            ':thor'        => $thickness_original,
+            ':thfn'        => $thickness_final,
+            ':coolant'     => '7.00-CENTER_EDGEWAVE',
+            ':spool'       => 0,
+            ':temper'      => isset($temper_finishes[$i]) ? trim($temper_finishes[$i]) : '',
+            ':thent'       => isset($thickness_entries[$i]) && $thickness_entries[$i] !== '' ? (float)$thickness_entries[$i] : 0,
+            ':thext'       => isset($thickness_exits[$i]) && $thickness_exits[$i] !== '' ? (float)$thickness_exits[$i] : 0,
+            ':thtol'       => isset($thickness_telorances[$i]) && $thickness_telorances[$i] !== '' ? (int)$thickness_telorances[$i] : 0,
+            ':totpass'     => 0,
+            ':wh1'         => isset($work_hardening1s[$i]) && $work_hardening1s[$i] !== '' ? (float)$work_hardening1s[$i] : 0,
+            ':wh2'         => isset($work_hardening2s[$i]) && $work_hardening2s[$i] !== '' ? (float)$work_hardening2s[$i] : 0,
+            ':coeff'       => isset($coefficient_frictions[$i]) && $coefficient_frictions[$i] !== '' ? (float)$coefficient_frictions[$i] : 0,
+            ':yield'       => isset($yield_stresses[$i]) && $yield_stresses[$i] !== '' ? (float)$yield_stresses[$i] : 0,
+            ':emp1'        => isset($empirical_value1s[$i]) && $empirical_value1s[$i] !== '' ? (float)$empirical_value1s[$i] : 0,
+            ':rset_no'     => $rset_no,
+            ':stp_wrl_rdn' => $stp_wrl_rdn,
+            ':stp_twr_cmb' => $stp_twr_cmb,
+            ':stp_bwr_cmb' => $stp_bwr_cmb,
+            ':stp_brl_rdn' => $stp_brl_rdn
+        ]);
+    }
+
+    $conn->commit();
+
+    $response['status']  = 'success';
+    $response['message'] = true;
+
+} catch (PDOException $e) {
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
+    $response['error'] = 'Database Error: ' . $e->getMessage();
+}
+
+echo json_encode($response, JSON_UNESCAPED_UNICODE);
+exit;
