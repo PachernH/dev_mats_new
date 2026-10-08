@@ -31,7 +31,10 @@
             if (targetLineGroup) {
                 targetLineGroup.style.display = 'block';
                 var select = targetLineGroup.querySelector('select');
-                if (select) select.required = true;
+                if (select) {
+                    select.required = true;
+                    select.disabled = false;
+                }
             }
         }
     }
@@ -44,9 +47,14 @@
             if (select) {
                 select.required = false;
                 select.value = '';
+                select.disabled = true;
             }
         });
     }
+
+    window.onload = function() {
+        resetLineDropdowns();
+    };
     </script>
 </head>
 <body>

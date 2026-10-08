@@ -7,7 +7,8 @@ if (!isset($_SESSION['ID'])) {
     exit();
 }
 
-
+// 1. ดึงไฟล์เชื่อมต่อฐานข้อมูลเพื่อดึงค่าตัวแปร $databaseName
+include 'dbcon_mats-new.php';
 include 'function_mats.php';
 
 // ดึงค่าและตรวจสอบข้อมูลนำเข้า (Sanitize & Validate)
@@ -15,10 +16,27 @@ $d = !isset($_GET['d']) ? date('Y-m-d') : htmlspecialchars($_GET['d'], ENT_QUOTE
 $bno = !isset($_GET['bno']) ? '' : htmlspecialchars(trim($_GET['bno']), ENT_QUOTES, 'UTF-8');
 
 // ป้องกันกรณีไม่มี Session เพื่อไม่ให้เกิด Undefined array key Warning
-$iduser_func = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
-$folder_func = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
-$line_func = isset($_SESSION['LINE']) ? htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8') : '';
-$group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$iduser_func  = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
+$folder_func  = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
+$line_func    = isset($_SESSION['LINE']) ? htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8') : '';
+$group_func   = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$process_func = isset($_SESSION['PROCESS_GROUP']) ? htmlspecialchars($_SESSION['PROCESS_GROUP'], ENT_QUOTES, 'UTF-8') : '';
+
+// 2. แปลงค่า Function/Department เป็นชื่อแสดงผล
+$func_names = [
+    'pd'   => 'Production (PD)',
+    'qac'  => 'Quality Assurance (QA&QC)',
+    'wh'   => 'Warehouse (WH&FG)',
+    'st'   => 'Store (STORE)',
+    'bi'   => 'Business Intelligence (BI)',
+    'sale' => 'Sales (Sale)',
+    'root' => 'Administrator (Admin)'
+];
+$display_func_name = isset($func_names[$folder_func]) ? $func_names[$folder_func] : strtoupper($folder_func);
+
+// 3. ตรวจสอบสถานะ Database ตามตัวแปร $databaseName
+$current_db = isset($databaseName) ? trim($databaseName) : 'MATS';
+$is_operation = (strtoupper($current_db) === 'MATS');
 
 $all_buffer = RT_BufferCoil();
 $all_working = RT_CoilWorking();
@@ -30,12 +48,11 @@ $all_working = RT_CoilWorking();
     <?php include 'include/header.php';?>
     
     <link href="assets-graph/styles.css" rel="stylesheet" />
-    
     <script src="assets/js/tailwindcss.js"></script>
 
-<style type="text/tailwindcss">
+    <style type="text/tailwindcss">
         /* บังคับไม่ให้ตัว Dashboard ทะลุขอบ และปรับ Font ให้เข้ากับ Template */
-        body {  font-family: 'Segoe UI', 'Tahoma', 'Sarabun', sans-serif;}
+        body { font-family: 'Segoe UI', 'Tahoma', 'Sarabun', sans-serif; }
         .flow-card { @apply transition-all duration-200 hover:shadow-md hover:-translate-y-1; cursor: pointer; }
         /* ปรับแต่ง Scrollbar สำหรับส่วน Production ที่อาจจะยาวข้ามจอ */
         .custom-scrollbar::-webkit-scrollbar { height: 6px; }
@@ -59,39 +76,107 @@ $all_working = RT_CoilWorking();
 ?>
 
 <div class="main-panel">
-        <nav class="navbar navbar-default navbar-fixed">
-            <div class="container-fluid">
-                <div class="navbar-header">
-                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navigation-example-2">
-                        <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <?php if ($folder_func=='pd') { ?>
-                    <a class="navbar-brand" href="#">USER : <?php echo($iduser_func) ?> (<?php echo($line_func) ?>)</a>
-                    <?php }else{ ?>
-                    <a class="navbar-brand" href="#">USER : <?php echo($iduser_func) ?> </a>
-                    <?php }?>
+<!-- Navbar ส่วนหัวระบบ -->
+<nav class="navbar navbar-default navbar-fixed" style="min-height: 70px;">
+    <div class="container-fluid py-1">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navigation-example-2">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            
+            <!-- ส่วนแสดงสถานะ DB และข้อมูลผู้ใช้งาน -->
+            <div class="flex flex-wrap items-center gap-3 py-2 px-2">
+                
+                <!-- 1. Badge สถานะ Database -->
+                <?php if ($is_operation): ?>
+                    <span class="inline-flex items-center gap-3 px-6 py-2.5 rounded-full text-xl font-extrabold bg-emerald-100 text-emerald-900 border-2 border-emerald-400 shadow-sm uppercase tracking-wider" title="ระบบงานจริง (Database: MATS)">
+                        <span class="w-4 h-4 rounded-full bg-emerald-500"></span>
+                        MATS:OPERATION
+                    </span>
+                <?php else: ?>
+                    <span class="inline-flex items-center gap-3 px-6 py-2.5 rounded-full text-xl font-extrabold bg-amber-100 text-amber-900 border-2 border-amber-400 shadow-sm uppercase tracking-wider" title="พัฒนา / ทดสอบระบบ (Database: <?php echo htmlspecialchars($current_db); ?>)">
+                        <span class="w-4 h-4 rounded-full bg-amber-500 animate-pulse"></span>
+                        MATS:DEV (<?php echo htmlspecialchars($current_db); ?>)
+                    </span>
+                <?php endif; ?>
+
+                <!-- 2. กล่องแสดงข้อมูลผู้ใช้ -->
+                <div class="flex items-center gap-3 text-xl font-bold text-slate-800 bg-slate-100/90 px-6 py-2.5 rounded-2xl border-2 border-slate-300 shadow-sm">
+                    <!-- ไอคอนคน -->
+                    <svg class="w-7 h-7 text-slate-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    
+                    <!-- USER NAME -->
+                    <span class="whitespace-nowrap">USER : <strong class="text-blue-900 font-black text-2xl"><?php echo $iduser_func; ?></strong></span>
+                    
+                    <!-- USER GROUP -->
+                    <?php if (!empty($group_func)): ?>
+                        <span class="bg-indigo-600 text-white text-base px-4 py-1.5 rounded-lg font-black uppercase tracking-wider shadow-xs">
+                            GROUP: <?php echo $group_func; ?>
+                        </span>
+                    <?php endif; ?>
+
+                    <span class="text-slate-300 text-2xl font-light px-0.5">|</span>
+                    
+                    <!-- FUNCTION -->
+                    <span class="bg-blue-600 text-white text-base px-4 py-1.5 rounded-lg font-black uppercase tracking-wider shadow-xs">
+                        <?php echo $display_func_name; ?>
+                    </span>
+
+                    <!-- แสดงเพิ่มเติมเฉพาะเมื่อเป็นแผนก PRODUCTION (PD) -->
+                    <?php if (strtolower($folder_func) == 'pd'): ?>
+                        
+                        <!-- GROUP MC -->
+                        <?php if (!empty($process_func)): ?>
+                            <span class="bg-teal-600 text-white text-base px-4 py-1.5 rounded-lg font-black uppercase tracking-wider shadow-xs">
+                                GROUP MC : <?php echo $process_func; ?>
+                            </span>
+                        <?php endif; ?>
+
+                        <!-- LINE -->
+                        <?php if (!empty($line_func)): ?>
+                            <span class="bg-purple-600 text-white text-base px-4 py-1.5 rounded-lg font-black uppercase tracking-wider shadow-xs">
+                                LINE: <?php echo $line_func; ?>
+                            </span>
+                        <?php endif; ?>
+
+                    <?php endif; ?>
                 </div>
-                    <ul class="nav navbar-nav navbar-right">
-                      <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                  <p>
-                                      Account
-                                      <b class="caret"></b>
-                                  </p>
-                            </a>
-                            <ul class="dropdown-menu">
-                              <li><a href="change_password_mats.php" id="cp-btn">Change Password</a></li>
-                              <li class="divider"></li>
-                              <li><a href="logout.php">Log out</a></li>
-                            </ul>
-                      </li>
-                      <li class="separator hidden-lg"></li>
-                  </ul>
+
             </div>
-        </nav>
+        </div>
+
+        <!-- 3. เมนู ACCOUNT ฝั่งขวา -->
+        <ul class="nav navbar-nav navbar-right flex items-center h-full pt-1">
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    <p class="text-xl font-extrabold text-slate-800">
+                        Account
+                        <b class="caret" style="border-top-width: 6px; border-right-width: 5px; border-left-width: 5px;"></b>
+                    </p>
+                </a>
+                <ul class="dropdown-menu border-2 shadow-lg p-2 min-w-[220px]">
+                    <li>
+                        <a href="change_password_mats.php" id="cp-btn" class="text-2xl font-bold py-3 px-4 rounded-lg hover:bg-slate-100 block transition-colors">
+                            Change Password
+                        </a>
+                    </li>
+                    <li class="divider my-2"></li>
+                    <li>
+                        <a href="logout.php" class="text-2xl font-bold py-3 px-4 rounded-lg text-red-600 hover:bg-red-50 block transition-colors">
+                            Log out
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="separator hidden-lg"></li>
+        </ul>
+    </div>
+</nav>
 
         <div class="content">    
             <div class="w-full mx-auto">
