@@ -21,6 +21,31 @@ function fmt4($val) {
     return number_format((float)$val, 4);
 }
 
+function generateProductNo()
+{
+    $prefix = "P" . date("ymd") . "-P-"; // รูปแบบ P261008-P-
+        
+    // ค้นหาเลข Running สูงสุดของวันนี้
+    $sql = "SELECT MAX(PRODUCT_NO) AS max_no 
+             FROM CRSHPROD1 
+             WHERE PRODUCT_NO LIKE :prefix";
+        
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute([':prefix' => $prefix . '%']);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+      if ($row && !empty($row['max_no'])) {
+          // ดึงตัวเลข 2 หลักสุดท้ายมา +1
+          $lastSeq = (int)substr($row['max_no'], -2);
+          $newSeq = $lastSeq + 1;
+      } else {
+          // เริ่มต้นที่ 01
+          $newSeq = 1;
+      }
+
+    return $prefix . str_pad($newSeq, 2, '0', STR_PAD_LEFT);
+}
+
 function getParentCoil($targetCoil, $fetchRootOnly = false) 
 {
     global $conn; // เรียกใช้งานตัวแปร $conn จากภายนอกฟังก์ชัน

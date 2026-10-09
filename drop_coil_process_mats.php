@@ -307,7 +307,7 @@ $current_now_datetime = date('Y-m-d\TH:i');
                 </div>
 
                 <!-- FORM: Drop Process Entry Form -->
-                <form id="frmDropCoil" name="frmDropCoil" method="POST" action="drop_coil_save_mats.php">
+                <form id="frmDropCoil" name="frmDropCoil" method="POST" action="model/drop_coil_save_mats.php">
                     <input type="hidden" id="coil_no" name="coil_no" value="<?php echo htmlspecialchars($coil_no); ?>" />
                     <input type="hidden" id="txtCOILThickness" name="txtCOILThickness" value="<?php echo $coil_thickness; ?>" />
                     <input type="hidden" id="dblAreaSize" name="dblAreaSize" value="0" />
@@ -346,60 +346,55 @@ $current_now_datetime = date('Y-m-d\TH:i');
                                 <input type="text" class="form-control-custom" id="txtProductModel" name="txtProductModel" readonly placeholder="Auto Generated" />
                             </div>
 
-                            <!-- 2. Width & Length (อยู่บรรทัดเดียวกันตามรูปภาพ) -->
+                            <!-- 2. Width & Length -->
                             <div class="col-md-6 col-sm-6">
                                 <label class="info-label" for="txtWidth">Width (mm)</label>
-                                <input type="text" class="form-control-custom" id="txtWidth" name="txtWidth" value="0.000" onblur="onWidthBlur()" />
+                                <input type="number" step="any" class="form-control-custom" id="txtWidth" name="txtWidth" value="0.000" onblur="onWidthBlur()" />
                             </div>
 
                             <div class="col-md-6 col-sm-6">
                                 <label class="info-label" for="txtLength">Length (mm)</label>
-                                <input type="text" class="form-control-custom" id="txtLength" name="txtLength" value="0.000" onblur="onLengthBlur()" />
+                                <input type="number" step="any" class="form-control-custom" id="txtLength" name="txtLength" value="0.000" onblur="onLengthBlur()" />
                             </div>
 
                             <!-- 3. Weight per Piece -->
                             <div class="col-md-12 col-sm-12">
                                 <label class="info-label" for="txtWeightPiece">Weight per Piece (Kg)</label>
-                                <input type="text" class="form-control-custom" id="txtWeightPiece" name="txtWeightPiece" readonly value="0.0000" />
+                                <input type="number" step="any" class="form-control-custom" id="txtWeightPiece" name="txtWeightPiece" readonly value="0.0000" />
                             </div>
 
-                            <!-- 4. Cut Sheet Width & Cut Sheet Length (อยู่บรรทัดเดียวกันตามรูปภาพ) -->
+                            <!-- 4. Cut Sheet Width & Cut Sheet Length -->
                             <div class="col-md-6 col-sm-6">
                                 <label class="info-label" for="txtCutWidth">Cut Sheet Width (mm)</label>
-                                <input type="text" class="form-control-custom" id="txtCutWidth" name="txtCutWidth" value="0.000" onblur="onCutWidthBlur()" />
+                                <input type="number" step="any" class="form-control-custom" id="txtCutWidth" name="txtCutWidth" value="0.000" onblur="onCutWidthBlur()" />
                             </div>
 
                             <div class="col-md-6 col-sm-6">
                                 <label class="info-label" for="txtCutLength">Cut Sheet Length (mm)</label>
-                                <input type="text" class="form-control-custom" id="txtCutLength" name="txtCutLength" value="0.000" onblur="onCutLengthBlur()" />
+                                <input type="number" step="any" class="form-control-custom" id="txtCutLength" name="txtCutLength" value="0.000" onblur="onCutLengthBlur()" />
                             </div>
 
                             <!-- 5. Cut Sheet Weight per Piece -->
                             <div class="col-md-12 col-sm-12">
                                 <label class="info-label" for="txtCutWeightPiece">Cut Sheet Weight per Piece (Kg)</label>
-                                <input type="text" class="form-control-custom" id="txtCutWeightPiece" name="txtCutWeightPiece" readonly value="0.0000" />
+                                <input type="number" step="any" class="form-control-custom" id="txtCutWeightPiece" name="txtCutWeightPiece" readonly value="0.0000" />
                             </div>
 
-                            <!-- 6. Produce Piece (Pc.) & Product Weight (Kg.) (อยู่บรรทัดเดียวกันตามรูปภาพ) -->
+                            <!-- 6. Produce Piece (Pc.) & Product Weight (Kg.) -->
                             <div class="col-md-6 col-sm-6">
                                 <label class="info-label" for="txtProducePiece">Produce Piece (Pc.)</label>
-                                <input type="text" class="form-control-custom" id="txtProducePiece" name="txtProducePiece" value="0" onblur="onProducePieceBlur()" />
+                                <input type="number" step="any" class="form-control-custom" id="txtProducePiece" name="txtProducePiece" value="0" onblur="onProducePieceBlur()" />
                             </div>
 
                             <div class="col-md-6 col-sm-6">
                                 <label class="info-label" for="txtProduceWeight">Product Weight (Kg.)</label>
-                                <input type="text" class="form-control-custom" id="txtProduceWeight" name="txtProduceWeight" readonly value="0" />
+                                <input type="number" step="any" class="form-control-custom" id="txtProduceWeight" name="txtProduceWeight" readonly value="0" />
                             </div>
 
                             <!-- 7. Pallet Weight & Reference No -->
                             <div class="col-md-6 col-sm-6">
                                 <label class="info-label" for="txtBottomWeight">Pallet Weight (Kg.)</label>
-                                <input type="text" class="form-control-custom" id="txtBottomWeight" name="txtBottomWeight" value="<?php echo number_format($coil_bottom_weight, 0); ?>" onblur="onBottomWeightBlur()" />
-                            </div>
-
-                            <div class="col-md-6 col-sm-6">
-                                <label class="info-label" for="txtReferenceNo">Reference No</label>
-                                <input type="text" class="form-control-custom" id="txtReferenceNo" name="txtReferenceNo" placeholder="Optional Reference No" />
+                                <input type="number" step="any" class="form-control-custom" id="txtBottomWeight" name="txtBottomWeight" value="<?php echo number_format($coil_bottom_weight, 0); ?>" onblur="onBottomWeightBlur()" />
                             </div>
 
                             <hr style="width: 100%; border-top: 1px dashed #cbd5e1; margin: 10px 15px 20px 15px;" />
@@ -466,6 +461,32 @@ $current_now_datetime = date('Y-m-d\TH:i');
 <?php include 'include/footer.php';?>
 
 <script>
+// AJAX Form Submission Handle สำหรับแสดง Alert
+$('#frmDropCoil').on('submit', function(e) {
+    e.preventDefault(); // ป้องกันการReload หน้าปกติ
+
+    $.ajax({
+        url: $(this).attr('action'),
+        type: 'POST',
+        data: $(this).serialize(),
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                // แสดงการแจ้งเตือนเมื่อสำเร็จ
+                alert("✅ " + response.message + "\nProduct No: " + response.product_no);
+                
+                // ย้ายไปยังหน้า drop_product_result_mats.php ตาม URL ที่ส่งมาจากหลังบ้าน
+                window.location.href = response.redirect;
+            } else {
+                alert("❌ เกิดข้อผิดพลาด: " + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลหรือเกิดข้อผิดพลาดจากระบบ: " + error);
+        }
+    });
+});
+
 function back_home_coil(){   
     var data_fun = document.getElementById("func").value;
     window.location.assign('drop_product_mats.php?func='+encodeURIComponent(data_fun)); 
@@ -648,7 +669,10 @@ function onCutWidthBlur() {
             }
         }
     }
+    // 1. คำนวณน้ำหนัก Cut Sheet ล่าสุด
     recalculateCutWeights();
+    // 2. เรียกการตรวจสอบและคำนวณของ Cut Sheet Length ต่อทันที
+    onCutLengthBlur();
 }
 
 // Cut Length Blur Logic
@@ -724,7 +748,6 @@ function recalculateProduceWeights() {
     var txtCutWeightPiece = parseFloat(document.getElementById("txtCutWeightPiece").value) || 0;
     var txtProducePiece = parseFloat(document.getElementById("txtProducePiece").value) || 0;
     var txtProduceWeightElem = document.getElementById("txtProduceWeight");
-    var txtReferenceNo = document.getElementById("txtReferenceNo").value.trim();
 
     var dblProduceWeight = parseFloat(document.getElementById("dblProduceWeight").value) || 0;
     var dblCOILActualWeight = parseFloat(document.getElementById("dblCOILActualWeight").value) || 0;
@@ -738,26 +761,22 @@ function recalculateProduceWeights() {
     if (txtCutWeightPiece === 0) {
         txtProduceWeightElem.value = "0";
     } else {
+        // คำนวณน้ำหนักผลผลิตรวมของแผ่น Drop
         var calculatedProdWeight = Math.round(txtProducePiece * txtCutWeightPiece);
         txtProduceWeightElem.value = calculatedProdWeight.toFixed(0);
 
         var dblVarProduceWeight = calculatedProdWeight - dblProduceWeight;
 
-        if (txtReferenceNo === "") {
-            if (dblCOILActualWeight - (dblVarProduceWeight + dblCOILProduceWeight + txtCOILScrapWeight + txtCOILAdjustWeight) < 0) {
-                txtProduceWeightElem.value = dblProduceWeight.toFixed(0);
-                txtCOILProduceWeightElem.value = dblCOILProduceWeight.toFixed(0);
-            } else {
-                txtCOILProduceWeightElem.value = (dblCOILProduceWeight + dblVarProduceWeight).toFixed(0);
-            }
-            var currentProdW = parseFloat(txtCOILProduceWeightElem.value) || 0;
-            txtCOILBalanceWeightElem.value = (dblCOILActualWeight - (currentProdW + txtCOILScrapWeight + txtCOILAdjustWeight)).toFixed(0);
+        // คำนวณน้ำหนัก Coil Produce Weight และ Balance Weight
+        if (dblCOILActualWeight - (dblVarProduceWeight + dblCOILProduceWeight + txtCOILScrapWeight + txtCOILAdjustWeight) < 0) {
+            txtProduceWeightElem.value = dblProduceWeight.toFixed(0);
+            txtCOILProduceWeightElem.value = dblCOILProduceWeight.toFixed(0);
         } else {
-            var dblCRSHActualWeight = parseFloat(document.getElementById("dblCRSHActualWeight").value) || 0;
-            if (dblVarProduceWeight > dblCRSHActualWeight) {
-                txtProduceWeightElem.value = dblProduceWeight.toFixed(0);
-            }
+            txtCOILProduceWeightElem.value = (dblCOILProduceWeight + dblVarProduceWeight).toFixed(0);
         }
+
+        var currentProdW = parseFloat(txtCOILProduceWeightElem.value) || 0;
+        txtCOILBalanceWeightElem.value = (dblCOILActualWeight - (currentProdW + txtCOILScrapWeight + txtCOILAdjustWeight)).toFixed(0);
     }
 }
 

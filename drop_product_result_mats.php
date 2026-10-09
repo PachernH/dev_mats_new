@@ -23,7 +23,7 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
 <!doctype html>
 <html lang="en">
 <head>
-    <title>Meyer Aluminium Thailand Co.,LTD.</title>
+    <title>Meyer Aluminium Thailand Co.,LTD. - Product Drop Result</title>
     <?php include 'include/header.php';?>
     
     <link href="assets-graph/styles.css" rel="stylesheet" />
@@ -164,8 +164,9 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
             transform: translateY(-1px);
         }
 
-        .btn-action-coil {
-            background-color: #2563eb;
+        /* ปุ่ม Update สีฟ้า */
+        .btn-action-update {
+            background-color: #0284c7;
             color: #ffffff !important;
             border: none;
             border-radius: 6px;
@@ -177,19 +178,20 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
             display: inline-block;
             text-decoration: none !important;
         }
-        .btn-action-coil:hover {
-            background-color: #1d4ed8;
+        .btn-action-update:hover {
+            background-color: #0369a1;
             color: #ffffff !important;
             transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);
         }
 
-        /* ปุ่ม Drop สีแดง */
-        .btn-action-drop {
-            background-color: #ef4444;
+        /* ปุ่ม Print Label สีส้ม */
+        .btn-action-print {
+            background-color: #f59e0b;
             color: #ffffff !important;
             border: none;
             border-radius: 6px;
-            padding: 6px 14px;
+            padding: 6px 12px;
             font-weight: 700;
             font-size: 13px;
             transition: all 0.2s;
@@ -197,11 +199,11 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
             display: inline-block;
             text-decoration: none !important;
         }
-        .btn-action-drop:hover {
-            background-color: #dc2626;
+        .btn-action-print:hover {
+            background-color: #d97706;
             color: #ffffff !important;
             transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
         }
 
         /* Modern Table Styles */
@@ -244,12 +246,12 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
         }
 
         .status-badge {
-            color: #059669;
+            color: #0284c7;
             font-weight: 700;
-            background-color: #ecfdf5;
+            background-color: #e0f2fe;
             padding: 4px 8px;
             border-radius: 6px;
-            border: 1px solid #a7f3d0;
+            border: 1px solid #bae6fd;
             display: inline-block;
         }
 
@@ -303,14 +305,14 @@ include 'include/'.$folder_func.'/navigation.php';
         <div class="container-fluid" style="padding-top: 20px;">
 
             <div class="tab-menu-wrapper">
-                <button onclick="drop_product()" class="btn-tab-item active">Drop Product</button>
-                <button onclick="product_drop_product()" class="btn-tab-item">Product Drop Product(Result)</button>
+                <button onclick="drop_product()" class="btn-tab-item">Drop Product</button>
+                <button onclick="product_drop_product()" class="btn-tab-item active">Product Drop Product(Result)</button>
             </div>
 
             <div class="filter-wrapper">
                 <div class="filter-item" style="flex: 1; min-width: 240px;">
-                    <label for="search_no">Coil No</label>
-                    <input class="form-control-minimal" name="search_no" id="search_no" type="text" placeholder="Enter Coil No. to search..." value="<?php echo htmlspecialchars($sno, ENT_QUOTES, 'UTF-8'); ?>" oninput="this.value = this.value.toUpperCase()" onchange="search_batch_no()"/>
+                    <label for="search_no">Product No / Coil No</label>
+                    <input class="form-control-minimal" name="search_no" id="search_no" type="text" placeholder="Enter Product No. or Coil No. to search..." value="<?php echo htmlspecialchars($sno, ENT_QUOTES, 'UTF-8'); ?>" oninput="this.value = this.value.toUpperCase()" onchange="search_batch_no()"/>
                 </div>
                 <div class="filter-item" style="width: 190px;">
                     <label for="pick_date">Select Data Date</label>
@@ -328,7 +330,7 @@ include 'include/'.$folder_func.'/navigation.php';
                     <div class="dashboard-card">
                         
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Active Coil Records with Balance Weight (Max 500 Records)</h4>
+                            <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Drop Product Result Records (Max 500 Records)</h4>
                         </div>
                         
                         <div class="table-responsive table-full-width">
@@ -336,17 +338,18 @@ include 'include/'.$folder_func.'/navigation.php';
                                 <thead>
                                     <tr>
                                         <th style="text-align: center;">#</th>
-                                        <th style="text-align: center;">Start Time</th>
-                                        <th style="text-align: center;">Coil No</th>
-                                        <th style="text-align: center;">Batch No</th>
-                                        <th style="text-align: center;">Job Process</th>
+                                        <th style="text-align: center;">Product No</th>
+                                        <th style="text-align: center;">Start Date</th>
                                         <th style="text-align: center;">Alloy</th>
                                         <th style="text-align: center;">Temper</th>
                                         <th style="text-align: center;">Thickness</th>
                                         <th style="text-align: center;">Width</th>
-                                        <th style="text-align: center;">Balance Weight</th>
+                                        <th style="text-align: center;">Length</th>
+                                        <th style="text-align: center;">Actual Weight</th>
+                                        <th style="text-align: center;">Actual Piece</th>
                                         <th style="text-align: center;">Status</th>
                                         <th style="text-align: center;">Action</th>
+                                        <th style="text-align: center;">Label</th>
                                     </tr>
                                 </thead>
                                 
@@ -356,36 +359,36 @@ include 'include/'.$folder_func.'/navigation.php';
                                     include("dbcon_mats-new.php");
                                     ini_set('max_execution_time', 300);
 
-                                    // 1. กำหนดเงื่อนไขหลักบังคับ: COIL_STATUS = 'AC' AND COIL_BALANCEWEIGHT > 0
+                                    // 1. เงื่อนไขบังคับ: LINE_PROCESS = 'P' AND CRSH_STATUS = 'OP'
                                     $params = [];
                                     $where_conditions = [
-                                        "COIL_STATUS = 'AC'",
-                                        "COIL_BALANCEWEIGHT > 0"
+                                        "c.LINE_PROCESS = 'P'",
+                                        "c.CRSH_STATUS = 'OP'"
                                     ];
 
-                                    // 2. ตรวจสอบว่ามีการพิมพ์ค้นหา Job Process, Coil No. หรือ Batch No. หรือไม่
+                                    // 2. เงื่อนไขเพิ่มเติมจากการค้นหา
                                     if (!empty($sno)) {
-                                        $where_conditions[] = "(JOB_PROCESS = :jno OR COIL_NO = :jno OR BATCH_NO = :jno)";
-                                        $params[':jno'] = $sno;
+                                        $where_conditions[] = "(c.PRODUCT_NO = :sno OR c.COIL_NO = :sno)";
+                                        $params[':sno'] = $sno;
                                     } else {
-                                        // หากไม่ได้พิมพ์ค้นหา ให้ใช้การกรองตามวันที่ (ถ้าเลือกวันที่ที่ไม่ใช่วันนี้)
                                         if ($d != date('Y-m-d')) {
-                                            $where_conditions[] = "COIL_STARTTIME BETWEEN :date_st AND :date_end";
+                                            $where_conditions[] = "c.CRSH_STARTDATE BETWEEN :date_st AND :date_end";
                                             $params[':date_st'] = $d . " 00:00:00";
                                             $params[':date_end'] = $d . " 23:59:59";
                                         }
                                     }
 
-                                    // 3. รวมเงื่อนไข WHERE เข้าด้วยกัน
+                                    // 3. รวมเงื่อนไข SQL
                                     $where_sql = "WHERE " . implode(" AND ", $where_conditions);
 
-                                    // 4. Query ดึงข้อมูล 500 รายการ
+                                    // 4. SQL Query
                                     $sql = "SELECT TOP 500 
-                                                COIL_STARTTIME, COIL_ENDTIME, COIL_NO, BATCH_NO, JOB_PROCESS, 
-                                                ALLOY, TEMPER, THICKNESS, WIDTH, COIL_BALANCEWEIGHT, COIL_STATUS
-                                            FROM COILPROD1
+                                                   c.PRODUCT_NO, c.CRSH_STARTDATE, c.ALLOY, c.TEMPER, 
+                                                   c.THICKNESS, c.WIDTH, c.LENGTH, c.CRSH_ACTUALWEIGHT, 
+                                                   c.CRSH_ACTUALPIECE, c.CRSH_STATUS, c.WEIGHT_PIECE, c.CRSH_BOTTOMWEIGHT
+                                            FROM CRSHPROD1 AS c 
                                             {$where_sql}
-                                            ORDER BY COIL_STARTTIME DESC";
+                                            ORDER BY c.CRSH_STARTDATE DESC";
 
                                     $stmt = $conn->prepare($sql);
                                     $stmt->execute($params);
@@ -394,69 +397,60 @@ include 'include/'.$folder_func.'/navigation.php';
                                 ?>
 
                                 <?php foreach ($coils_list as $index => $coil): 
-                                    $job_process = htmlspecialchars($coil['JOB_PROCESS'] ?? '-', ENT_QUOTES, 'UTF-8');
-                                    $safe_coil   = htmlspecialchars($coil['COIL_NO'] ?? '-', ENT_QUOTES, 'UTF-8');
-                                    $batch_no    = htmlspecialchars($coil['BATCH_NO'] ?? '-', ENT_QUOTES, 'UTF-8');
-                                    $status      = trim($coil['COIL_STATUS'] ?? '');
+                                    $prod_no = htmlspecialchars($coil['PRODUCT_NO'] ?? '-', ENT_QUOTES, 'UTF-8');
+                                    $status  = trim($coil['CRSH_STATUS'] ?? '');
+
+                                    $start_date_formatted = !empty($coil['CRSH_STARTDATE']) ? date('Y-m-d', strtotime($coil['CRSH_STARTDATE'])) : '-';
                                 ?>
                                     <tr>
                                         <!-- 1. # -->
                                         <td align="center"><?php echo $index + 1; ?></td>
 
-                                        <!-- 2. Start Time -->
-                                        <td align="center"><?php echo htmlspecialchars($coil['COIL_STARTTIME'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></td>
-
-                                        <!-- 3. Coil No -->
+                                        <!-- 2. Product No -->
                                         <td align="center">
-                                            <button type="button" class="btn-action-coil" onclick="show_detail_coil('<?php echo addslashes($coil['COIL_NO']); ?>')">
-                                                📦 <?php echo $safe_coil; ?>
+                                            <button type="button" class="btn-action-view" onclick="show_detail_product('<?php echo addslashes($coil['PRODUCT_NO']); ?>')">
+                                                🔍 <?php echo $prod_no; ?>
                                             </button>
                                         </td>
 
-                                        <!-- 4. Batch No -->
-                                        <td align="center">
-                                            <?php if (!empty($batch_no) && $batch_no !== '-'): ?>
-                                                <button type="button" class="btn-action-coil" onclick="show_detail_batch('<?php echo addslashes($batch_no); ?>')">
-                                                    📦 <?php echo $batch_no; ?>
-                                                </button>
-                                            <?php else: ?>
-                                                -
-                                            <?php endif; ?>
-                                        </td> 
+                                        <!-- 3. Start Date -->
+                                        <td align="center"><?php echo htmlspecialchars($start_date_formatted, ENT_QUOTES, 'UTF-8'); ?></td>
 
-                                        <!-- 5. Job Process -->
-                                        <td align="center">
-                                            <?php if (!empty($job_process) && $job_process !== '-'): ?>
-                                                <button type="button" class="btn-action-view" onclick="show_detail_job('<?php echo addslashes($job_process); ?>')">
-                                                    🔍 <?php echo $job_process; ?>
-                                                </button>
-                                            <?php else: ?>
-                                                -
-                                            <?php endif; ?>
-                                        </td>
-
-                                        <!-- 6. Alloy -->
+                                        <!-- 4. Alloy -->
                                         <td align="center"><?php echo htmlspecialchars($coil['ALLOY'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></td>
 
-                                        <!-- 7. Temper -->
+                                        <!-- 5. Temper -->
                                         <td align="center"><?php echo htmlspecialchars($coil['TEMPER'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></td>
 
-                                        <!-- 8. Thickness -->
+                                        <!-- 6. Thickness -->
                                         <td align="center"><?php echo function_exists('fmt3') ? fmt3($coil['THICKNESS']) : number_format((float)($coil['THICKNESS'] ?? 0), 3); ?></td>
 
-                                        <!-- 9. Width -->
+                                        <!-- 7. Width -->
                                         <td align="center"><?php echo function_exists('fmt2') ? fmt2($coil['WIDTH']) : number_format((float)($coil['WIDTH'] ?? 0), 2); ?></td>
 
-                                        <!-- 10. Balance Weight -->
-                                        <td align="center" style="font-weight: 700; color: #2563eb;"><?php echo function_exists('fmt2') ? fmt2($coil['COIL_BALANCEWEIGHT']) : number_format((float)($coil['COIL_BALANCEWEIGHT'] ?? 0), 2); ?> kg.</td>
+                                        <!-- 8. Length -->
+                                        <td align="center"><?php echo function_exists('fmt2') ? fmt2($coil['LENGTH']) : number_format((float)($coil['LENGTH'] ?? 0), 2); ?></td>
+
+                                        <!-- 9. Actual Weight -->
+                                        <td align="center"><?php echo function_exists('fmt2') ? fmt2($coil['CRSH_ACTUALWEIGHT']) : number_format((float)($coil['CRSH_ACTUALWEIGHT'] ?? 0), 2); ?></td>
+
+                                        <!-- 10. Actual Piece -->
+                                        <td align="center"><?php echo function_exists('fmt0') ? fmt0($coil['CRSH_ACTUALPIECE']) : number_format((float)($coil['CRSH_ACTUALPIECE'] ?? 0)); ?></td>
 
                                         <!-- 11. Status -->
                                         <td align="center"><span class="status-badge"><?php echo htmlspecialchars($status !== '' ? $status : '-', ENT_QUOTES, 'UTF-8'); ?></span></td>
 
-                                        <!-- 12. Drop Action Button -->
+                                        <!-- 12. Action Column (Update) -->
                                         <td align="center">
-                                            <button type="button" class="btn-action-drop" onclick="drop_coil('<?php echo addslashes($coil['COIL_NO']); ?>')">
-                                                🗑️ DROP
+                                            <button type="button" class="btn-action-update" onclick="update_product_drop('<?php echo addslashes($coil['PRODUCT_NO']); ?>')">
+                                                ✏️ Update
+                                            </button>
+                                        </td>
+
+                                        <!-- 13. Label Column (Print Label) -->
+                                        <td align="center">
+                                            <button type="button" class="btn-action-print" onclick="print_label('<?php echo addslashes($coil['PRODUCT_NO']); ?>')">
+                                                🖨️ Print Label
                                             </button>
                                         </td>
                                     </tr>
@@ -496,29 +490,22 @@ $("#user_table").DataTable({
 function search_batch_no(){   
     var data_fun = document.getElementById("func").value;
     var data_cno = document.getElementById("search_no").value; 
-    window.location.assign('drop_product_mats.php?func='+encodeURIComponent(data_fun)+'&search_no='+encodeURIComponent(data_cno)); 
+    window.location.assign('drop_product_result_mats.php?func='+encodeURIComponent(data_fun)+'&search_no='+encodeURIComponent(data_cno)); 
 }    
 
-function show_detail_job(do_no) {
+function show_detail_product(prod_no) {
     var data_fun = document.getElementById("func").value;
-    window.location.assign('drop_job_detail_mats.php?func=' + encodeURIComponent(data_fun) + '&search_no=' + encodeURIComponent(do_no));
+    window.location.assign('drop_crsh_detail_mats.php?func=' + encodeURIComponent(data_fun) + '&PRODUCT_NO=' + encodeURIComponent(prod_no));
 }
 
-function show_detail_coil(coil_no) {
+function update_product_drop(prod_no) {
     var data_fun = document.getElementById("func").value;
-    window.location.assign('drop_coil_detail_mats.php?func=' + encodeURIComponent(data_fun) + '&COIL=' + encodeURIComponent(coil_no));
+    window.location.assign('drop_product_update_mats.php?func=' + encodeURIComponent(data_fun) + '&PRODUCT_NO=' + encodeURIComponent(prod_no));
 }
 
-function show_detail_batch(do_no) {
-    var data_fun = document.getElementById("func").value;
-    window.location.assign('drop_batch_detail_mats.php?func=' + encodeURIComponent(data_fun) + '&search_no=' + encodeURIComponent(do_no));
-}
-
-function drop_coil(coil_no) {
-    var data_fun = document.getElementById("func").value;
-    if (confirm("คุณต้องการที่จะ Drop คอยล์หมายเลข " + coil_no + " ใช่หรือไม่?")) {
-        window.location.assign('drop_coil_process_mats.php?func=' + encodeURIComponent(data_fun) + '&COIL=' + encodeURIComponent(coil_no));
-    }
+function print_label(prod_no) {
+    var url = 'print_circle_sheet_product_label_mats.php?productno=' + encodeURIComponent(prod_no);
+    window.open(url, '_blank');
 }
 
 function drop_product(){   
