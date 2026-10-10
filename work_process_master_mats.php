@@ -167,7 +167,8 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="#">Work Process Data Management</a>
+                    
+<a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="group_data4_mats.php?func=<?php echo $folder_func ?>">Master Data Management</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -177,11 +178,11 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
             <div class="container-fluid">
                 
                 <div class="tab-menu-wrapper">
-                    <button onclick="work_process_no()" class="btn-tab-item active">Work Process</button>  
-                    <button onclick="location_no()" class="btn-tab-item">Location Master</button>  
-                    <button onclick="material_no()" class="btn-tab-item">Material Package</button>
-                    <button onclick="material_priority_no()" class="btn-tab-item">Material Package Priority</button>  
-                    <button onclick="scrap_no()" class="btn-tab-item">SCRAP Master</button> 
+                    <button onclick="work_process_no()" class="btn-tab-item active">Work Process Master Data</button>  
+                    <button onclick="location_no()" class="btn-tab-item">Location Master Data</button>  
+                    <button onclick="material_no()" class="btn-tab-item">Material Package Master Data</button>
+                    <button onclick="material_priority_no()" class="btn-tab-item">Material Package Use Priority Master Data</button>  
+                    <button onclick="scrap_no()" class="btn-tab-item">SCRAP Master Data</button> 
                 </div>
 
                 <div class="row">

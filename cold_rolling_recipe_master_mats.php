@@ -89,7 +89,7 @@ $s_th_fn = isset($_GET['s_th_fn']) ? trim($_GET['s_th_fn']) : '';
     <div class="main-panel">
         <nav class="navbar navbar-default navbar-fixed">
             <div class="container-fluid">
-                <div class="navbar-header"><a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="#">Cold Rolling Recipe Data Management</a></div>
+                <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="group_data3_mats.php?func=<?php echo $folder_func ?>">Master Data Management</a>
                 <?php include 'include/navbar.php';?>
             </div>
         </nav>
@@ -99,8 +99,8 @@ $s_th_fn = isset($_GET['s_th_fn']) ? trim($_GET['s_th_fn']) : '';
                 
                 <div class="tab-menu-wrapper">
                     <button onclick="homo_no()" class="btn-tab-item">Homogenize Process</button>  
-                    <button onclick="recipe_no()" class="btn-tab-item active">Recipe Master</button> 
-                    <button onclick="working_roll_no()" class="btn-tab-item">Work Set Cold Mill</button>  
+                    <button onclick="recipe_no()" class="btn-tab-item active">Cold Rolling Mill Recipe Master Data</button> 
+                    <button onclick="working_roll_no()" class="btn-tab-item">Working Roll set at Cold Mill Master Data</button>  
                 </div>
 
                 <!-- ตัวกรองค้นหา 4 คอลัมน์หลัก -->

@@ -91,7 +91,7 @@ $s_th_fn = isset($_GET['s_th_fn']) ? trim($_GET['s_th_fn']) : '';
     <div class="main-panel">
         <nav class="navbar navbar-default navbar-fixed">
             <div class="container-fluid">
-                <div class="navbar-header"><a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="#">Working Roll Set Data Management</a></div>
+                <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="group_data3_mats.php?func=<?php echo $folder_func ?>">Master Data Management</a>
                 <?php include 'include/navbar.php';?>
             </div>
         </nav>
@@ -101,13 +101,17 @@ $s_th_fn = isset($_GET['s_th_fn']) ? trim($_GET['s_th_fn']) : '';
                 
                 <div class="tab-menu-wrapper">
                     <button onclick="homo_no()" class="btn-tab-item">Homogenize Process</button>  
-                    <button onclick="recipe_no()" class="btn-tab-item">Recipe Master</button> 
-                    <button onclick="working_roll_no()" class="btn-tab-item active">Work Set Cold Mill</button>  
+                    <button onclick="recipe_no()" class="btn-tab-item">Cold Rolling Mill Recipe Master Data</button> 
+                    <button onclick="working_roll_no()" class="btn-tab-item active">Working Roll set at Cold Mill Master Data</button>  
                 </div>
 
                 <div class="row">
                     <div class="col-md-12">
                         <div class="dashboard-card">
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap;">
+                                <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Working Roll set at Cold Mill Master Data</h4>
+                            </div>                        
                             
                             <div class="table-responsive table-full-width">
                                 <table id="user_table" class="table">

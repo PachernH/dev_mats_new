@@ -394,7 +394,7 @@ include 'include/'.$folder_func.'/navigation.php';
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="#">Product Specification Standard Master Data</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="group_data2_mats.php?func=<?php echo $folder_func ?>">Master Data Management</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -403,11 +403,11 @@ include 'include/'.$folder_func.'/navigation.php';
         <div class="container-fluid" style="padding-top: 20px;">
             
             <div class="tab-menu-wrapper">
-                    <button onclick="pro_std()" class="btn-tab-item active">Product Specification Standard</button>
-                    <button onclick="cust_std()" class="btn-tab-item">Customer Specification Standard</button>
-                    <button onclick="spec_std()" class="btn-tab-item">Specification Mechanical Properties</button>
+                    <button onclick="pro_std()" class="btn-tab-item active">Product Specification Standard Master Data</button>
+                    <button onclick="cust_std()" class="btn-tab-item">Customer Specification Standard Master Data</button>
+                    <button onclick="spec_std()" class="btn-tab-item">Specification Mechanical Properties </button>
                     <button onclick="prac_std()" class="btn-tab-item">Technical Practice Batch Annealing</button>
-                    <button onclick="defect_caster_std()" class="btn-tab-item">Defect Caster Coil</button>
+                    <button onclick="defect_caster_std()" class="btn-tab-item">Defect Caster Master Data </button>
             </div>
 
         

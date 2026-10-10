@@ -92,7 +92,7 @@ $s_lt     = isset($_GET['s_lt'])    ? trim($_GET['s_lt'])    : '';
     <div class="main-panel">
         <nav class="navbar navbar-default navbar-fixed">
             <div class="container-fluid">
-                <div class="navbar-header"><a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="#">Material Package Data Management</a></div>
+                <div class="navbar-header"><a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="group_data4_mats.php?func=<?php echo $folder_func ?>">Master Data Management</a></div>
                 <?php include 'include/navbar.php';?>
             </div>
         </nav>
@@ -101,11 +101,11 @@ $s_lt     = isset($_GET['s_lt'])    ? trim($_GET['s_lt'])    : '';
             <div class="container-fluid">
                 
                 <div class="tab-menu-wrapper">
-                    <button onclick="work_process_no()" class="btn-tab-item">Work Process</button>  
-                    <button onclick="location_no()" class="btn-tab-item">Location Master</button> 
-                    <button onclick="material_no()" class="btn-tab-item">Material Package</button>  
-                    <button onclick="material_priority_no()" class="btn-tab-item active">Material Package Priority</button>  
-                    <button onclick="scrap_no()" class="btn-tab-item">SCRAP Master</button> 
+                    <button onclick="work_process_no()" class="btn-tab-item">Work Process Master Data</button>  
+                    <button onclick="location_no()" class="btn-tab-item">Location Master Data</button>  
+                    <button onclick="material_no()" class="btn-tab-item">Material Package Master Data</button>
+                    <button onclick="material_priority_no()" class="btn-tab-item active">Material Package Use Priority Master Data</button>  
+                    <button onclick="scrap_no()" class="btn-tab-item">SCRAP Master Data</button> 
                 </div>
 
                 <!-- ตัวกรองค้นหา 6 คอลัมน์หลัก -->
@@ -144,7 +144,7 @@ $s_lt     = isset($_GET['s_lt'])    ? trim($_GET['s_lt'])    : '';
                         <div class="dashboard-card">
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap;">
-                                <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Material Package Master Data</h4>
+                                <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Material Package Use Priority Master Data</h4>
                                 <button class="btn btn-create-alloy" onclick="window.location.assign('material_package_priority_new_master_mats.php?func=<?php echo urlencode($folder_func); ?>')">
                                     New Material Package (CREATE +)
                                 </button>

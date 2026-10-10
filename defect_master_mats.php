@@ -268,8 +268,7 @@ include 'include/'.$folder_func.'/navigation.php';
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="#">Master Data Management</a>
+                    </button><a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="group_data2_mats.php?func=<?php echo $folder_func ?>">Master Data Management</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -278,21 +277,21 @@ include 'include/'.$folder_func.'/navigation.php';
         <div class="content">
             <div class="container-fluid">
                 
-                <div class="tab-menu-wrapper">
-                    <button onclick="open_composition()" class="btn-tab-item">COMPOSITION</button>
-                    <button onclick="open_temper_no()" class="btn-tab-item">TEMPER</button>
-                    <button onclick="open_grade_no()" class="btn-tab-item">GRADE</button>
-                    <button onclick="open_surface_no()" class="btn-tab-item">SURFACE</button>
-                    <button onclick="open_defect_no()" class="btn-tab-item active">DEFECT</button>
-                     <button onclick="open_mg_grade_no()" class="btn-tab-item">MG Grade</button>
-                </div>
+            <div class="tab-menu-wrapper">
+                    <button onclick="open_composition()" class="btn-tab-item">Composition Master Data</button>
+                    <button onclick="open_temper_no()" class="btn-tab-item">Temper Master Data</button>
+                    <button onclick="open_grade_no()" class="btn-tab-item">Grade Master Data</button>
+                    <button onclick="open_surface_no()" class="btn-tab-item">Surface Grade Master Data</button>
+                    <button onclick="open_defect_no()" class="btn-tab-item active">Defect Cold Mill Master Data</button>
+                    <button onclick="open_mg_grade_no()" class="btn-tab-item">Metallurgical Grade Master Data</button>
+            </div>
 
                 <div class="row">
                     <div class="col-md-12">
                         <div class="dashboard-card">
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                                <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Defect Master Data Records</h4>
+                                <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Defect Cold Mill Master Data</h4>
                                 <button class="btn btn-create-alloy" onclick="open_alloy_no()">
                                     New DEFECT (CREATE +)
                                 </button>

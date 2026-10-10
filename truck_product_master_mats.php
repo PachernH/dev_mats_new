@@ -268,7 +268,7 @@ include 'include/'.$folder_func.'/navigation.php';
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="#">Master Data Management</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="group_data6_mats.php?func=<?php echo $folder_func ?>">Master Data Management</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -287,7 +287,7 @@ include 'include/'.$folder_func.'/navigation.php';
                         <div class="dashboard-card">
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                                <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Product Master Data Records</h4>
+                                <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Product (Truck Scale) Master Data</h4>
                                 <button class="btn btn-create-alloy" onclick="open_bank_no()">
                                     New Product (CREATE +)
                                 </button>

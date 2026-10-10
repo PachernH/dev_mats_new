@@ -258,7 +258,7 @@ include 'include/'.$folder_func.'/navigation.php';
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="#">Master Data Management</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="group_data1_mats.php?func=<?php echo $folder_func ?>">Master Data Management</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -268,12 +268,12 @@ include 'include/'.$folder_func.'/navigation.php';
             <div class="container-fluid">
                 
                 <div class="tab-menu-wrapper">
-                    <button onclick="cust_sup_no()" class="btn-tab-item active">Customer Supplier</button>
-                    <button onclick="company_no()" class="btn-tab-item">Company Master</button>
-                    <button onclick="bank_no()" class="btn-tab-item">Bank Master</button>
-                    <button onclick="payment_no()" class="btn-tab-item">Payment term Master</button>
-                    <button onclick="current_no()" class="btn-tab-item">Current Master</button>  
-                    <button onclick="shipment_no()" class="btn-tab-item">Shipment Master</button>                    
+                    <button onclick="cust_sup_no()" class="btn-tab-item active">Customer and Supplier Master Data</button>
+                    <button onclick="company_no()" class="btn-tab-item">Company Master Data</button>
+                    <button onclick="bank_no()" class="btn-tab-item">Bank Master Data</button>
+                    <button onclick="payment_no()" class="btn-tab-item">Payment Term Master Data</button>
+                    <button onclick="current_no()" class="btn-tab-item">Currency Master Data</button>  
+                    <button onclick="shipment_no()" class="btn-tab-item">Shipment Term Master Data</button>                    
                 </div>
 
                 <div class="row">
@@ -281,7 +281,7 @@ include 'include/'.$folder_func.'/navigation.php';
                         <div class="dashboard-card">
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                                <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Customer Supplier Master Data</h4>
+                                <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Customer and Supplier Master Data</h4>
                                 <button class="btn btn-create-alloy" onclick="window.location.assign('customer_supplier_new_master_mats.php?func=<?php echo urlencode($folder_func); ?>')">
                                     New Customer Supplier (CREATE +)
                                 </button>

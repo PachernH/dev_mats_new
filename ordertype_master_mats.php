@@ -230,22 +230,30 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
 include 'include/'.$folder_func.'/navigation.php';
 ?>
 
-    <div class="modal fade" id="data_port_detail" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <form id="form_port">
+    <div class="modal fade" id="data_ordertype_detail" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <form id="form_ordertype">
             <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h4 class="modal-title" id="exampleModalLabel">⚙️ PORT MASTER DATA</h4>
+                        <h4 class="modal-title" id="exampleModalLabel">⚙️ ORDER TYPE MASTER DATA</h4>
                     </div>
                     <div class="modal-body" style="padding: 24px;">
+
                         <div style="margin-bottom: 16px;">
-                            <label style="display:block; font-size:13px; font-weight:700; color:#64748b; margin-bottom:8px;">PORT ID <span style="color:#ef4444;">*</span></label>
-                            <input type="text" class="form-control" style="width:100%; text-transform: uppercase;" id="data_port" name="data_port" placeholder="ID" onkeyup="this.value = this.value.toUpperCase()"/>
+                            <label style="display:block; font-size:13px; font-weight:700; color:#64748b; margin-bottom:8px;">ORDER CATEGORY <span style="color:#ef4444;">*</span></label>
+                            <input type="text" class="form-control" style="width:100%;" id="data_order_category" name="data_order_category" oninput="this.value = this.value.toUpperCase()" placeholder="Order Category"/>
                         </div>
-                        <div>
+
+                        <div style="margin-bottom: 16px;">
+                            <label style="display:block; font-size:13px; font-weight:700; color:#64748b; margin-bottom:8px;">GROUP TYPE</label>
+                            <textarea class="form-control" style="width:100%; height:auto;" id="data_group_type" name="data_group_type" rows="3" oninput="this.value = this.value.toUpperCase()" placeholder="GROUP TYPE"></textarea>
+                        </div>
+
+                        
+                        <div style="margin-bottom: 16px;">
                             <label style="display:block; font-size:13px; font-weight:700; color:#64748b; margin-bottom:8px;">DESCRIPTION</label>
-                            <textarea class="form-control" style="width:100%; height:auto;" id="data_desc" name="data_desc" rows="3" placeholder="รายละเอียดของ PORT"></textarea>
-                        </div>
+                            <textarea class="form-control" style="width:100%; height:auto;" id="data_desc" name="data_desc" rows="3" oninput="this.value = this.value.toUpperCase()" placeholder="DESCRIPTION"></textarea>
+                        </div>                                           
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-default" data-dismiss="modal" style="border-radius:6px; font-size:14px;">Close</button>
@@ -278,12 +286,7 @@ include 'include/'.$folder_func.'/navigation.php';
             <div class="container-fluid">
                 
                 <div class="tab-menu-wrapper">
-                    <button onclick="port_no()" class="btn-tab-item active">Port Master Data</button>  
-                    <button onclick="place_no()" class="btn-tab-item">Place Master Data</button>  
-                    <button onclick="freight_no()" class="btn-tab-item">Freight Master Data</button>        
-                    <button onclick="uom_no()" class="btn-tab-item">Unit of Measure Master Data</button>    
-                    <button onclick="lme_no()" class="btn-tab-item">LME Price Master Data</button> 
-                    <button onclick="supplier_no()" class="btn-tab-item">Supplier Master Data</button>                     
+                    <button onclick="order_type_no()" class="btn-tab-item active">Order Type Master Data</button>   
                 </div>
 
                 <div class="row">
@@ -291,9 +294,9 @@ include 'include/'.$folder_func.'/navigation.php';
                         <div class="dashboard-card">
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                                <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Port Master Data</h4>
+                                <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Order Type Master Data</h4>
                                 <button class="btn btn-create-alloy" onclick="open_bank_no()">
-                                    New PORT (CREATE +)
+                                    New Order Type (CREATE +)
                                 </button>
                             </div>
 
@@ -302,8 +305,9 @@ include 'include/'.$folder_func.'/navigation.php';
                                     <thead>
                                         <tr>
                                             <th style="width: 80px; text-align: center;">ID</th>
-                                            <th style="width: 220px; text-align: center;">PORT ID</th>
-                                            <th>DESCRIPTION</th>
+                                            <th style="width: 220px; text-align: center;">ORDER_CATEGORY</th>
+                                            <th style="width: 220px; text-align: center;">GROUP_TYPE</th>
+                                            <th style="width: 220px; text-align: left;">DESCRIPTION</th>
                                             <th style="width: 150px; text-align: center;">Process</th>
                                         </tr>
                                     </thead>
@@ -316,18 +320,19 @@ include 'include/'.$folder_func.'/navigation.php';
                                         $params = [];
                                         $i = 0;
                                         
-                                        $sql = "SELECT PORT_ID,DESCRIPTION FROM PORTMSTR1 ORDER BY PORT_ID ASC";                                               
+                                        $sql = "SELECT ORDER_CATEGORY,DESCRIPTION,GROUP_TYPE FROM ODCTMSTR1 ORDER BY ORDER_CATEGORY ASC";                                               
                                         $stmt = $conn->prepare($sql);
                                         $stmt->execute($params);
 
                                         while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                                             $i++;
-                                            $refdata = $row['PORT_ID']."*".$row['DESCRIPTION'];
+                                            $refdata = $row['ORDER_CATEGORY']."*".$row['DESCRIPTION'];
                                             ?>
                                             <tr>
                                                 <td align="center" style="color:#64748b;"><?php echo number_format($i,0); ?></td>
-                                                <td style="font-weight:600; color:#1e293b; text-align: center;"><?php echo htmlspecialchars($row['PORT_ID'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?php echo htmlspecialchars($row['DESCRIPTION'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                <td style="font-weight:600; color:#1e293b; text-align: center;"><?php echo htmlspecialchars($row['ORDER_CATEGORY'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                <td style="text-align: center;"><?php echo htmlspecialchars($row['GROUP_TYPE'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                <td style="text-align: left;"><?php echo htmlspecialchars($row['DESCRIPTION'], ENT_QUOTES, 'UTF-8'); ?></td>
                                                 <td align="center">
                                                     <button type="button" class="btn-action-del" onclick="delete_Data('<?php echo addslashes($refdata); ?>')">
                                                         Delete
@@ -368,8 +373,29 @@ include 'include/'.$folder_func.'/navigation.php';
         buttons: []
     });
 
+    $(document).ready(function() {
+        // ทำงานเมื่อมีการเปลี่ยนค่าในประเภท Unit Measure
+        $('#data_uom_type').change(function() {
+                var selectedType = $(this).val();
+                
+                if (selectedType === 'P') {
+                    // ถ้าเลือกเป็น Piece (P) -> ปิดช่องกรอก และรีเซ็ตค่าเป็น 0
+                    $('#data_uom_rate').prop('disabled', true).val(0);
+                } else {
+                    // ถ้าเลือกแบบอื่น -> เปิดให้กรอกปกติ
+                    $('#data_uom_rate').prop('disabled', false);
+                }
+            });
+
+            // ดักไว้ตอนเปิด Modal ขึ้นมาครั้งแรก ให้เคลียร์สถานะกลับมาเป็นปกติ
+            // เปลี่ยน '#data_current_detail' ให้เป็น ID ของ Modal ในหน้านี้ของคุณ (เช่น #data_ordertype_detail เป็นต้น)
+            $('.modal').on('show.bs.modal', function () {
+                $('#data_uom_rate').prop('disabled', false);
+            });
+    });
+
     function open_bank_no(){
-        $("#data_port_detail").modal('show');
+        $("#data_ordertype_detail").modal('show');
     } 
    
     function port_no(){   
@@ -380,37 +406,36 @@ include 'include/'.$folder_func.'/navigation.php';
     function place_no(){   
         var data_fun = document.getElementById("func").value;
         window.location.assign('place_master_mats.php?func='+encodeURIComponent(data_fun)); 
-    }    
-    
+    }     
+
     function freight_no(){   
         var data_fun = document.getElementById("func").value;
         window.location.assign('freight_master_mats.php?func='+encodeURIComponent(data_fun)); 
-    }     
-
-    function uom_no(){   
-        var data_fun = document.getElementById("func").value;
-        window.location.assign('unit_measure_master_mats.php?func='+encodeURIComponent(data_fun)); 
     } 
 
+    function order_type_no(){   
+        var data_fun = document.getElementById("func").value;
+        window.location.assign('ordertype_master_mats.php?func='+encodeURIComponent(data_fun)); 
+    }    
+    
     function lme_no(){   
         var data_fun = document.getElementById("func").value;
         window.location.assign('lme_price_master_mats.php?func='+encodeURIComponent(data_fun)); 
-    }
+    }     
 
     function supplier_no(){   
         var data_fun = document.getElementById("func").value;
         window.location.assign('supplier_master_mats.php?func='+encodeURIComponent(data_fun)); 
-    } 
-    
+    }    
     function delete_Data(ref){
         var d = ref.split("*");
-        var c = confirm('Do you want to delete the data Port: ' + d[0] + ' Yes or No ?');
+        var c = confirm('Do you want to delete the data UOM: ' + d[0] + ' Yes or No ?');
         
         if(c){
             var data_fun = document.getElementById("func").value;
             
             $.ajax({
-                url: "model/del_port_master_mats.php",
+                url: "model/del_ordertype_master_mats.php",
                 type: "POST",
                 data: {
                     data_tag: ref
@@ -419,41 +444,45 @@ include 'include/'.$folder_func.'/navigation.php';
                 success: function(response) {
                     console.log("Response:", response);
                     if(response.message){
-                        window.location.assign('port_master_mats.php?func=' + encodeURIComponent(data_fun));
+                        window.location.assign('ordertype_master_mats.php?func=' + encodeURIComponent(data_fun));
                     } else {
-                        var errorMsg = response.error || "The data cannot be deleted.";
+                        var errorMsg = response.error || "Failed to delete data";
                         alert("An error occurred: " + errorMsg);
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error("AJAX Error:", status, error);
-                    alert("An error occurred while deleting the data: " + error);
+                    alert("An error occurred while deleting the data.: " + error);
                 }
             });
         }
     }
 
     function submitData() {
-        var portObj = document.getElementById('data_port');
-        portObj.value = portObj.value.trim().toUpperCase();
+        var categoryObj = document.getElementById('data_order_category');
+        var grouptypeObj = document.getElementById('data_group_type');
+
+
         
-        var port = portObj.value;
+        var order_category = categoryObj.value;
+        var type = grouptypeObj.value;
+
         var data_fun = document.getElementById('func').value;
 
-        if (port === "") {
-            alert("Please fill in all the required Portfolio information.");
+        if (order_category === "" || type == "") {
+            alert("Please fill in the ORDER CATEGORY and GROUP TYPE data completely");
             return;
         }
 
-        var formData = $("#form_port").serialize();
+        var formData = $("#form_ordertype").serialize();
 
-        $.post("model/save_port_master_mats.php", formData, function(resp) {
+        $.post("model/save_ordertype_master_mats.php", formData, function(resp) {
             if (resp.message === true) {
-                alert("Master data has been successfully recorded.");
-                $("#data_port_detail").modal('hide');
-                window.location.assign('port_master_mats.php?func=' + encodeURIComponent(data_fun));
+                alert("Data has been successfully 💾 Saved.");
+                $("#data_ordertype_detail").modal('hide');
+                window.location.assign('ordertype_master_mats.php?func=' + encodeURIComponent(data_fun));
             } else {
-                alert("An error occurred: " + (resp.error || "Please double-check the information."));
+                alert("An error occurred: " + (resp.error || "Please check the data again"));
             }
         }, "json")
         .fail(function(xhr, status, error) {

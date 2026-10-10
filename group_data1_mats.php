@@ -119,7 +119,7 @@ include 'include/'.$folder_func.'/navigation.php';
                                         </a>                                   
 
                                         <a href="bank_master_mats.php?func=<?php echo $folder_func; ?>&type=sheet" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
-                                            <div class="text-orange-600 text-bg font-bold mb-2 uppercase">Bank Master Dat</div>
+                                            <div class="text-orange-600 text-bg font-bold mb-2 uppercase">Bank Master Data</div>
                                             <div class="flex justify-center">
                                                 <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
                                             </div>
@@ -194,9 +194,26 @@ include 'include/'.$folder_func.'/navigation.php';
                                         </a>                                       
                                 </div>
 
+                                <div class="space-y-3 text-center">
+                                     <h4 class="text-[14px] font-bold text-slate-400 uppercase">&nbsp;</h4>
+
+                                        <a href="ordertype_master_mats.php?func=<?php echo $folder_func; ?>" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
+                                            <div class="text-orange-600 text-bg font-bold mb-2 uppercase">Order Type Master Data</div>
+                                            <div class="flex justify-center">
+                                                <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
+                                            </div>
+                                        </a>                                     
+
+
+                                     
+                                   
+                                </div>
+
                             </div>
 
-                            <div class="flex justify-center text-slate-300 py-1">                                   
+                            <div class="flex justify-center text-slate-300 py-1">                   
+
+               
                             </div>
 
                         </div>

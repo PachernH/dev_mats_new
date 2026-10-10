@@ -237,7 +237,7 @@ include 'include/'.$folder_func.'/navigation.php';
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="#">Master Data Management</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="group_data1_mats.php?func=<?php echo $folder_func ?>">Master Data Management</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -247,14 +247,13 @@ include 'include/'.$folder_func.'/navigation.php';
             <div class="container-fluid">
                 
                 <div class="tab-menu-wrapper">
-                    <button onclick="port_no()" class="btn-tab-item">Post Master</button>  
-                    <button onclick="place_no()" class="btn-tab-item">Place Master</button>  
-                    <button onclick="freight_no()" class="btn-tab-item">Freight Master</button>        
-                    <button onclick="uom_no()" class="btn-tab-item">Unit Measure Master</button>   
-                    <button onclick="lme_no()" class="btn-tab-item">LME Price Master</button> 
-                    <button onclick="supplier_no()" class="btn-tab-item active">Supplier Master</button> 
+                    <button onclick="port_no()" class="btn-tab-item">Port Master Data</button>  
+                    <button onclick="place_no()" class="btn-tab-item">Place Master Data</button>  
+                    <button onclick="freight_no()" class="btn-tab-item">Freight Master Data</button>        
+                    <button onclick="uom_no()" class="btn-tab-item">Unit of Measure Master Data</button>    
+                    <button onclick="lme_no()" class="btn-tab-item">LME Price Master Data</button> 
+                    <button onclick="supplier_no()" class="btn-tab-item active">Supplier Master Data</button>                     
                 </div>
-
                 <!--ส่วนค้นหาแบบกำหนดเอง-->
                 <div class="filter-wrapper">
                     <div class="filter-item" style="flex: 1; min-width: 280px;">

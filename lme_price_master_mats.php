@@ -268,7 +268,7 @@ include 'include/'.$folder_func.'/navigation.php';
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="#">Master Data Management</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="group_data1_mats.php?func=<?php echo $folder_func ?>">Master Data Management</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -278,12 +278,12 @@ include 'include/'.$folder_func.'/navigation.php';
             <div class="container-fluid">
                 
                 <div class="tab-menu-wrapper">
-                    <button onclick="port_no()" class="btn-tab-item">Post Master</button>  
-                    <button onclick="place_no()" class="btn-tab-item">Place Master</button>  
-                    <button onclick="freight_no()" class="btn-tab-item">Freight Master</button>        
-                    <button onclick="uom_no()" class="btn-tab-item">Unit Measure Master</button>   
-                    <button onclick="lme_no()" class="btn-tab-item active">LME Price Master</button> 
-                    <button onclick="supplier_no()" class="btn-tab-item">Supplier Master</button> 
+                    <button onclick="port_no()" class="btn-tab-item">Port Master Data</button>  
+                    <button onclick="place_no()" class="btn-tab-item">Place Master Data</button>  
+                    <button onclick="freight_no()" class="btn-tab-item">Freight Master Data</button>        
+                    <button onclick="uom_no()" class="btn-tab-item">Unit of Measure Master Data</button>    
+                    <button onclick="lme_no()" class="btn-tab-item active">LME Price Master Data</button> 
+                    <button onclick="supplier_no()" class="btn-tab-item">Supplier Master Data</button>                     
                 </div>
 
                 <div class="row">
@@ -291,7 +291,7 @@ include 'include/'.$folder_func.'/navigation.php';
                         <div class="dashboard-card">
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                                <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Lme Price Master Data Records</h4>
+                                <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 LME Price Master Data</h4>
                                 <button class="btn btn-create-alloy" onclick="open_bank_no()">
                                     New LME PRICE (CREATE +)
                                 </button>

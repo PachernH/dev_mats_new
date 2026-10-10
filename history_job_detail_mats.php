@@ -2,8 +2,8 @@
 // เริ่ม session ก่อน ANY output
 session_start();
 
-// ดึงค่า JOB_ORDER จาก URL (รองรับทั้ง job_order และ job_process)
-$job_order = isset($_GET['search_no']) ? htmlspecialchars(trim($_GET['search_no']), ENT_QUOTES, 'UTF-8') : (isset($_GET['search_no']) ? htmlspecialchars(trim($_GET['search_no']), ENT_QUOTES, 'UTF-8') : '');
+// ดึงค่า JOB_ORDER จาก URL
+$job_order = isset($_GET['search_no']) ? htmlspecialchars(trim($_GET['search_no']), ENT_QUOTES, 'UTF-8') : (isset($_GET['JOB_ORDER']) ? htmlspecialchars(trim($_GET['JOB_ORDER']), ENT_QUOTES, 'UTF-8') : '');
 
 // ป้องกันกรณีไม่มี Session
 $iduser_func = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
@@ -14,18 +14,28 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
 include("dbcon_mats-new.php");
 include 'function_mats.php';
 
-$job_data = null;
-$coils_list = [];
+$job_data          = null;
+$coils_list        = [];
+$total_coil_count  = 0;
+$total_cm_weight   = 0;
 
 if (!empty($job_order)) {
-    // 1. Query ดึงข้อมูล Group 1: JOB Detail จาก JOBORDER1
-    $sql_job = "SELECT JOB_ORDER, JOBORDER_DATE, ALLOY, SURFACE_GRADE, METALLURGICAL_GRADE, TEMPER, PRODUCE_TEMPER1, PRODUCE_TEMPER2,
-                       GRADE, PRODUCE_GRADE1, PRODUCE_GRADE2, THICKNESS, WIDTH, JOB_UOMDIMENSION, WEIGHT_PIECE, 
-                       T5_TEMPERATURE, CUST_MAXTOLERANCE, CUST_MINTOLERANCE, JOB_MAXTOLERANCE,JOB_PACKWEIGHT,JOB_PACKPIECE,JOB_STOCKWEIGHT,JOB_STOCKPIECE,
-                       JOB_WORKPROCESS, USE_FORPROCESS, JOB_RELEASEWEIGHT, JOB_UOMWEIGHT, JOB_RELEASEPIECE, JOB_SELECTCOLDMILLWEIGHT, JOB_SELECTCOLDMILLPIECE,
-                       JOB_BATCHANNEALWEIGHT, JOB_BATCHANNEALPIECE, JOB_SELECTBATCHANNEALWEIGHT, JOB_SELECTBATCHANNEALPIECE,
-                       JOB_COLDMILLWEIGHT, JOB_COLDMILLPIECE, JOB_REMARK, JOB_STATUS, JOB_OPERATOR
-                FROM JOBORDER1
+    // 1. Query ดึงข้อมูล JOB Detail & History Job Product Process จาก JOBORDER1
+    $sql_job = "SELECT 
+                    JOB_ORDER, JOBORDER_DATE, ALLOY, SURFACE_GRADE, METALLURGICAL_GRADE, TEMPER, PRODUCE_TEMPER1, PRODUCE_TEMPER2,
+                    GRADE, PRODUCE_GRADE1, PRODUCE_GRADE2, THICKNESS, WIDTH, JOB_UOMDIMENSION, WEIGHT_PIECE, 
+                    T5_TEMPERATURE, CUST_MAXTOLERANCE, CUST_MINTOLERANCE, JOB_MAXTOLERANCE, JOB_WORKPROCESS, USE_FORPROCESS,
+                    JOB_REMARK, JOB_STATUS, JOB_OPERATOR, JOB_UOMWEIGHT,
+                    /*** History Job Product Process ***/
+                    JOB_RELEASEWEIGHT, JOB_RELEASEPIECE, JOB_ACTUALWEIGHT, JOB_ACTUALPIECE,
+                    JOB_COLDMILLWEIGHT, JOB_COLDMILLPIECE, JOB_PRODUCEWEIGHT, JOB_PRODUCEPIECE,
+                    JOB_STRETCHERWEIGHT, JOB_STRETCHERPIECE, JOB_CUTSHEETWEIGHT, JOB_CUTSHEETPIECE,
+                    JOB_SHEARWEIGHT, JOB_SHEARPIECE, JOB_PUNCHWEIGHT, JOB_PUNCHPIECE,
+                    JOB_BATCHANNEALWEIGHT, JOB_BATCHANNEALPIECE, JOB_TRANSFERWEIGHT, JOB_TRANSFERPIECE,
+                    JOB_ANNEALWEIGHT, JOB_ANNEALPIECE, JOB_SORTWEIGHT, JOB_SORTPIECE,
+                    JOB_TAKEOUTWEIGHT, JOB_TAKEOUTPIECE, JOB_PACKWEIGHT, JOB_PACKPIECE,
+                    JOB_STOCKWEIGHT, JOB_STOCKPIECE
+                FROM [MATS-NEW].dbo.JOBORDER1
                 WHERE JOB_ORDER = :job_order
                 ORDER BY JOBORDER_DATE DESC";
             
@@ -46,6 +56,37 @@ if (!empty($job_order)) {
     $stmt_coils->execute();
     $coils_list = $stmt_coils->fetchAll(PDO::FETCH_ASSOC);
 
+    // คำนวณหาผลรวมจำนวน และ น้ำหนักรวม Cold Mill Weight
+    if (!empty($coils_list)) {
+        $total_coil_count = count($coils_list);
+        foreach ($coils_list as $c_row) {
+            $total_cm_weight += (float)($c_row['COIL_COLDMILLWEIGHT'] ?? 0);
+        }
+    }
+}
+
+// ฟังก์ชันช่วยจัดรูปแบบจำนวนชิ้น (Pcs)
+function format_pcs($value) {
+    if (function_exists('fmt0')) {
+        return fmt0($value);
+    }
+    return number_format((float)($value ?? 0), 0);
+}
+
+// ฟังก์ชันช่วยจัดรูปแบบน้ำหนัก (Weight 2 ทศนิยม)
+function format_wt($value) {
+    if (function_exists('fmt2')) {
+        return fmt2($value);
+    }
+    return number_format((float)($value ?? 0), 2);
+}
+
+// ฟังก์ชันช่วยจัดรูปแบบขนาด (Thickness 3 ทศนิยม)
+function format_dim($value) {
+    if (function_exists('fmt3')) {
+        return fmt3($value);
+    }
+    return number_format((float)($value ?? 0), 3);
 }
 ?>
 <!doctype html>
@@ -116,7 +157,6 @@ if (!empty($job_order)) {
             align-items: center;
         }
 
-        /* ตารางสไตล์ Clean และ Scannable สำหรับรายการคอยล์ */
         .coil-table-container {
             overflow-x: auto;
         }
@@ -141,6 +181,14 @@ if (!empty($job_order)) {
         }
         .coil-table tbody tr:hover {
             background-color: #f1f5f9;
+        }
+        .coil-table tfoot td {
+            background-color: #f8fafc;
+            font-weight: 700;
+            color: #0f172a;
+            padding: 12px 10px;
+            border-top: 2px solid #cbd5e1;
+            white-space: nowrap;
         }
 
         .btn-back {
@@ -205,24 +253,17 @@ if (!empty($job_order)) {
                 </div>
             <?php else: ?>
 
-                <!-- GROUP 1: JOB Detail (Re-structured Layout) -->
+                <!-- GROUP 1: JOB Order Details -->
                 <div class="dashboard-card">
                     <h4 class="card-title-g1">📌 Job Order Details</h4>
 
-                    <!-- 1. General & Primary Info -->
-                    <div style="font-weight: 700; color: #475569; margin-bottom: 12px; font-size: 13px;"></div>
-                    <div class="row">
+                    <!-- General & Primary Info -->
+                    <div class="row" style="display: flex; flex-wrap: wrap;">
                         <div class="col-md-3 col-sm-6"><div class="info-label">JOB ORDER</div><div class="info-value" style="color:#2563eb; font-weight:700; background-color:#eff6ff; border-color:#bfdbfe;"><?php echo htmlspecialchars($job_data['JOB_ORDER'] ?? '-'); ?></div></div>
                         <div class="col-md-3 col-sm-6"><div class="info-label">JOB ORDER DATE</div><div class="info-value"><?php echo htmlspecialchars($job_data['JOBORDER_DATE'] ?? '-'); ?></div></div>
                         <div class="col-md-3 col-sm-6"><div class="info-label">JOB STATUS</div><div class="info-value" style="color:#059669; font-weight:700; background-color:#ecfdf5; border-color:#a7f3d0;"><?php echo htmlspecialchars($job_data['JOB_STATUS'] ?? '-'); ?></div></div>
                         <div class="col-md-3 col-sm-6"><div class="info-label">OPERATOR</div><div class="info-value"><?php echo htmlspecialchars($job_data['JOB_OPERATOR'] ?? '-'); ?></div></div>
-                    </div>
 
-                    <hr style="border-top: 1px dashed #e2e8f0; margin: 10px 0 20px 0;">
-
-                    <!-- 2. Product & Material Specifications -->
-                    <div style="font-weight: 700; color: #475569; margin-bottom: 12px; font-size: 13px;"></div>
-                    <div class="row">
                         <div class="col-md-3 col-sm-6"><div class="info-label">ALLOY</div><div class="info-value"><?php echo htmlspecialchars($job_data['ALLOY'] ?? '-'); ?></div></div>
                         <div class="col-md-3 col-sm-6"><div class="info-label">TEMPER</div><div class="info-value"><?php echo htmlspecialchars($job_data['TEMPER'] ?? '-'); ?></div></div>
                         <div class="col-md-3 col-sm-6"><div class="info-label">PRODUCE TEMPER 1</div><div class="info-value"><?php echo htmlspecialchars($job_data['PRODUCE_TEMPER1'] ?? '-'); ?></div></div>
@@ -234,72 +275,51 @@ if (!empty($job_order)) {
                         <div class="col-md-3 col-sm-6"><div class="info-label">SURFACE GRADE</div><div class="info-value"><?php echo htmlspecialchars($job_data['SURFACE_GRADE'] ?? '-'); ?></div></div>
 
                         <div class="col-md-3 col-sm-6"><div class="info-label">METALLURGICAL GRADE</div><div class="info-value"><?php echo htmlspecialchars($job_data['METALLURGICAL_GRADE'] ?? '-'); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">THICKNESS</div><div class="info-value"><?php echo fmt3($job_data['THICKNESS']); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">WIDTH</div><div class="info-value"><?php echo fmt3($job_data['WIDTH']); ?></div></div>
+                        <div class="col-md-3 col-sm-6"><div class="info-label">THICKNESS</div><div class="info-value"><?php echo format_dim($job_data['THICKNESS']); ?></div></div>
+                        <div class="col-md-3 col-sm-6"><div class="info-label">WIDTH</div><div class="info-value"><?php echo format_dim($job_data['WIDTH']); ?></div></div>
                         <div class="col-md-3 col-sm-6"><div class="info-label">DIMENSION UOM</div><div class="info-value"><?php echo htmlspecialchars($job_data['JOB_UOMDIMENSION'] ?? '-'); ?></div></div>
+
                         <div class="col-md-3 col-sm-6"><div class="info-label">T5 TEMPERATURE</div><div class="info-value"><?php echo htmlspecialchars($job_data['T5_TEMPERATURE'] ?? '-'); ?></div></div>
-                    </div>
-
-                    <hr style="border-top: 1px dashed #e2e8f0; margin: 10px 0 20px 0;">
-
-                    <!-- 3. Process & Customer Tolerances -->
-                    <div style="font-weight: 700; color: #475569; margin-bottom: 12px; font-size: 13px;"></div>
-                    <div class="row">
                         <div class="col-md-3 col-sm-6"><div class="info-label">WORK PROCESS</div><div class="info-value"><?php echo htmlspecialchars($job_data['JOB_WORKPROCESS'] ?? '-'); ?></div></div>
                         <div class="col-md-3 col-sm-6"><div class="info-label">USE FOR PROCESS</div><div class="info-value"><?php echo htmlspecialchars($job_data['USE_FORPROCESS'] ?? '-'); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">CUST MIN TOLERANCE</div><div class="info-value"><?php echo fmt3($job_data['CUST_MINTOLERANCE']); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">CUST MAX TOLERANCE</div><div class="info-value"><?php echo fmt3($job_data['CUST_MAXTOLERANCE']); ?></div></div>
-                    </div>
+                        <div class="col-md-3 col-sm-6"><div class="info-label">CUST MIN / MAX TOLERANCE</div><div class="info-value"><?php echo format_dim($job_data['CUST_MINTOLERANCE']); ?> / <?php echo format_dim($job_data['CUST_MAXTOLERANCE']); ?></div></div>
 
-                    <hr style="border-top: 1px dashed #e2e8f0; margin: 10px 0 20px 0;">
-
-                    <!-- 4. Weight & Quantities -->
-                    <div style="font-weight: 700; color: #475569; margin-bottom: 12px; font-size: 13px;"></div>
-                    <div class="row">
                         <?php
                             $MAXReleaseWeight = ($job_data['JOB_RELEASEWEIGHT']) + ((($job_data['JOB_RELEASEWEIGHT']) * $job_data['JOB_MAXTOLERANCE']) / 100);
-                            $MAXReleasePiece = number_format(($MAXReleaseWeight / $job_data['WEIGHT_PIECE']), 0);
+                            $MAXReleasePiece = ($job_data['WEIGHT_PIECE'] > 0) ? number_format(($MAXReleaseWeight / $job_data['WEIGHT_PIECE']), 0) : 0;
                         ?>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">MAX RELEASE WEIGHT</div><div class="info-value"><?php echo fmt2($MAXReleaseWeight); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">WEIGHT UOM</div><div class="info-value"><?php echo htmlspecialchars($job_data['JOB_UOMWEIGHT'] ?? '-'); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">MAX RELEASE PIECE</div><div class="info-value"><?php echo htmlspecialchars($MAXReleasePiece); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">UOM</div><div class="info-value">Pcs</div></div>
+                        <div class="col-md-3 col-sm-6"><div class="info-label">MAX RELEASE WT. / PCS.</div><div class="info-value"><?php echo format_wt($MAXReleaseWeight); ?> kg. / <?php echo htmlspecialchars($MAXReleasePiece); ?> pcs.</div></div>
 
-                        <div class="col-md-3 col-sm-6"><div class="info-label">RELEASE WEIGHT</div><div class="info-value"><?php echo fmt2($job_data['JOB_RELEASEWEIGHT']); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">WEIGHT UOM</div><div class="info-value"><?php echo htmlspecialchars($job_data['JOB_UOMWEIGHT'] ?? '-'); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">RELEASE PIECE</div><div class="info-value"><?php echo htmlspecialchars($job_data['JOB_RELEASEPIECE'] ?? '-'); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">UOM</div><div class="info-value">Pcs</div></div>
-                        
-                        <div class="col-md-3 col-sm-6"><div class="info-label">COLD MILL WEIGHT</div><div class="info-value"><?php echo fmt2($job_data['JOB_SELECTCOLDMILLWEIGHT']); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">WEIGHT UOM</div><div class="info-value"><?php echo htmlspecialchars($job_data['JOB_UOMWEIGHT'] ?? '-'); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">COLD MILL PIECE</div><div class="info-value"><?php echo htmlspecialchars($job_data['JOB_SELECTCOLDMILLPIECE'] ?? '-'); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">UOM</div><div class="info-value">Pcs</div></div>
-
-                        <div class="col-md-3 col-sm-6"><div class="info-label">BATCH ANNEAL WEIGHT</div><div class="info-value"><?php echo fmt2($job_data['JOB_SELECTBATCHANNEALWEIGHT']); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">WEIGHT UOM</div><div class="info-value"><?php echo htmlspecialchars($job_data['JOB_UOMWEIGHT'] ?? '-'); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">BATCH ANNEAL PIECE</div><div class="info-value"><?php echo htmlspecialchars($job_data['JOB_SELECTBATCHANNEALPIECE'] ?? '-'); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">UOM</div><div class="info-value">Pcs</div></div>
-
-                        <div class="col-md-3 col-sm-6"><div class="info-label">PACK WEIGHT</div><div class="info-value"><?php echo fmt2($job_data['JOB_PACKWEIGHT']); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">WEIGHT UOM</div><div class="info-value"><?php echo htmlspecialchars($job_data['JOB_UOMWEIGHT'] ?? '-'); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">PACK PIECE</div><div class="info-value"><?php echo htmlspecialchars($job_data['JOB_PACKPIECE'] ?? '-'); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">UOM</div><div class="info-value">Pcs</div></div>
-
-                        <div class="col-md-3 col-sm-6"><div class="info-label">STOCK WEIGHT</div><div class="info-value"><?php echo fmt2($job_data['JOB_STOCKWEIGHT']); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">WEIGHT UOM</div><div class="info-value"><?php echo htmlspecialchars($job_data['JOB_UOMWEIGHT'] ?? '-'); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">STOCK PIECE</div><div class="info-value"><?php echo htmlspecialchars($job_data['JOB_STOCKPIECE'] ?? '-'); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">UOM</div><div class="info-value">Pcs</div></div>
-                     </div>
-
-                    <hr style="border-top: 1px dashed #e2e8f0; margin: 10px 0 20px 0;">
-
-                    <!-- 5. Remarks -->
-                    <div class="row">
-                        <div class="col-md-12"><div class="info-label">JOB REMARK</div><div class="info-value" style="min-height:48px; background-color:#fff8f1; border-color:#ffedd5; color:#9a3412;"><?php echo htmlspecialchars($job_data['JOB_REMARK'] ?? '-'); ?></div></div>
+                        <div class="col-md-9 col-sm-12"><div class="info-label">JOB REMARK</div><div class="info-value" style="min-height:38px; background-color:#fff8f1; border-color:#ffedd5; color:#9a3412;"><?php echo htmlspecialchars($job_data['JOB_REMARK'] ?? '-'); ?></div></div>
                     </div>
                 </div>
 
-                <!-- GROUP 2: Coil Cold Mill Detail List -->
+                <!-- GROUP 2: History Job Product Process -->
+                <div class="dashboard-card">
+                    <h4 class="card-title-g2">⚙️ History Job Product Process</h4>
+                    <div class="row" style="display: flex; flex-wrap: wrap;">
+                        <div class="col-md-3 col-sm-6"><div class="info-label">RELEASE QTY WT. / PCS.</div><div class="info-value"><?php echo format_wt($job_data['JOB_RELEASEWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_RELEASEPIECE']); ?> pcs.</div></div>
+                        <div class="col-md-3 col-sm-6"><div class="info-label">ACTUAL QTY WT. / PCS.</div><div class="info-value" style="color:#0284c7; font-weight:700;"><?php echo format_wt($job_data['JOB_ACTUALWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_ACTUALPIECE']); ?> pcs.</div></div>
+                        <div class="col-md-3 col-sm-6"><div class="info-label">COLD MILL QTY WT. / PCS.</div><div class="info-value"><?php echo format_wt($job_data['JOB_COLDMILLWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_COLDMILLPIECE']); ?> pcs.</div></div>
+                        <div class="col-md-3 col-sm-6"><div class="info-label">PRODUCE QTY WT. / PCS.</div><div class="info-value"><?php echo format_wt($job_data['JOB_PRODUCEWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_PRODUCEPIECE']); ?> pcs.</div></div>
+
+                        <div class="col-md-3 col-sm-6"><div class="info-label">STRETCHER QTY WT. / PCS.</div><div class="info-value"><?php echo format_wt($job_data['JOB_STRETCHERWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_STRETCHERPIECE']); ?> pcs.</div></div>
+                        <div class="col-md-3 col-sm-6"><div class="info-label">CUT SHEET QTY WT. / PCS.</div><div class="info-value"><?php echo format_wt($job_data['JOB_CUTSHEETWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_CUTSHEETPIECE']); ?> pcs.</div></div>
+                        <div class="col-md-3 col-sm-6"><div class="info-label">SHEARING QTY WT. / PCS.</div><div class="info-value"><?php echo format_wt($job_data['JOB_SHEARWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_SHEARPIECE']); ?> pcs.</div></div>
+                        <div class="col-md-3 col-sm-6"><div class="info-label">PUNCH HOLE QTY WT. / PCS.</div><div class="info-value"><?php echo format_wt($job_data['JOB_PUNCHWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_PUNCHPIECE']); ?> pcs.</div></div>
+
+                        <div class="col-md-3 col-sm-6"><div class="info-label">BATCH ANNEAL QTY WT. / PCS.</div><div class="info-value"><?php echo format_wt($job_data['JOB_BATCHANNEALWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_BATCHANNEALPIECE']); ?> pcs.</div></div>
+                        <div class="col-md-3 col-sm-6"><div class="info-label">TRANSFER PALLET QTY WT. / PCS.</div><div class="info-value"><?php echo format_wt($job_data['JOB_TRANSFERWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_TRANSFERPIECE']); ?> pcs.</div></div>
+                        <div class="col-md-3 col-sm-6"><div class="info-label">ANNEALING QTY WT. / PCS.</div><div class="info-value"><?php echo format_wt($job_data['JOB_ANNEALWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_ANNEALPIECE']); ?> pcs.</div></div>
+                        <div class="col-md-3 col-sm-6"><div class="info-label">SORTING QTY WT. / PCS.</div><div class="info-value"><?php echo format_wt($job_data['JOB_SORTWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_SORTPIECE']); ?> pcs.</div></div>
+
+                        <div class="col-md-3 col-sm-6"><div class="info-label">TAKEOUT QTY WT. / PCS.</div><div class="info-value"><?php echo format_wt($job_data['JOB_TAKEOUTWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_TAKEOUTPIECE']); ?> pcs.</div></div>
+                        <div class="col-md-3 col-sm-6"><div class="info-label">PACKING QTY WT. / PCS.</div><div class="info-value"><?php echo format_wt($job_data['JOB_PACKWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_PACKPIECE']); ?> pcs.</div></div>
+                        <div class="col-md-3 col-sm-6"><div class="info-label">STOCK QTY WT. / PCS.</div><div class="info-value" style="color:#059669; font-weight:700;"><?php echo format_wt($job_data['JOB_STOCKWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_STOCKPIECE']); ?> pcs.</div></div>
+                    </div>
+                </div>
+
+                <!-- GROUP 3: Coil Cold Mill Detail List -->
                 <div class="dashboard-card">
                     <h4 class="card-title-g2">🌀 Coil Cold Mill List (Job Process: <?php echo htmlspecialchars($job_order); ?>)</h4>
                     
@@ -323,7 +343,7 @@ if (!empty($job_order)) {
                                         <th>Work Process</th>
                                         <th>Next Process</th>
                                         <th>Recipe No</th>
-                                        <th>Cold Mill Weight</th>
+                                        <th style="text-align: right;">Cold Mill Weight</th>
                                         <th>Operate Date</th>
                                         <th>Status</th>
                                     </tr>
@@ -339,17 +359,30 @@ if (!empty($job_order)) {
                                             <td><?php echo htmlspecialchars($coil['GRADE'] ?? '-'); ?></td>
                                             <td><?php echo htmlspecialchars($coil['SURFACE_GRADE'] ?? '-'); ?></td>
                                             <td><?php echo htmlspecialchars($coil['METALLURGICAL_GRADE'] ?? '-'); ?></td>
-                                            <td><?php echo fmt3($coil['THICKNESS']); ?></td>
-                                            <td><?php echo fmt3($coil['WIDTH']); ?></td>
+                                            <td><?php echo format_dim($coil['THICKNESS']); ?></td>
+                                            <td><?php echo format_dim($coil['WIDTH']); ?></td>
                                             <td><?php echo htmlspecialchars($coil['COIL_WORKPROCESS'] ?? '-'); ?></td>
                                             <td><?php echo htmlspecialchars($coil['COIL_NEXTPROCESS'] ?? '-'); ?></td>
                                             <td><?php echo htmlspecialchars($coil['RECIPE_NO'] ?? '-'); ?></td>
-                                            <td><?php echo fmt2($coil['COIL_COLDMILLWEIGHT']); ?></td>
+                                            <td align="right" style="font-weight: 600; color: #0369a1;"><?php echo format_wt($coil['COIL_COLDMILLWEIGHT']); ?> kg.</td>
                                             <td><?php echo htmlspecialchars($coil['COIL_OPERATEDATE'] ?? '-'); ?></td>
                                             <td><span style="color:#059669; font-weight:700;"><?php echo htmlspecialchars($coil['COIL_STATUS'] ?? '-'); ?></span></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="13" align="right" style="font-weight: 700; font-size: 14px;">
+                                            Total Items / Total Cold Mill Weight:
+                                        </td>
+                                        <td align="right" style="font-weight: 700; font-size: 15px; color: #0284c7;">
+                                            <?php echo format_wt($total_cm_weight); ?> kg.
+                                        </td>
+                                        <td colspan="2" align="left" style="font-weight: 700; font-size: 14px; color: #059669;">
+                                            (<?php echo number_format($total_coil_count); ?> Rolls)
+                                        </td>
+                                    </tr>
+                                </tfoot>
                             </table>
                         </div>
                     <?php endif; ?>
