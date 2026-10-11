@@ -62,17 +62,21 @@ try {
 }
 
 /**
- * ฟังก์ชัน Recalculate ยอดรวมสะสมของ JOBORDER1 (ถอดแบบจาก ReCalJobOrder ใน VB)
+ * ฟังก์ชัน Recalculate ยอดรวมสะสมของ JOBORDER1 (รวม PACKPROD1)
  */
 function reCalJobOrder($conn, $jobNo) {
     if (empty($jobNo)) return;
 
-    // ดึง Sale Order ที่ผูกอยู่กับ Job Order เพื่อเตรียม ReCalSaleOrder ต่อไป
-    $stmtJob = $conn->prepare("SELECT SALEORDER_NO, SALEORDER_ITEM FROM JOBORDER1 WHERE JOB_ORDER = :job_no");
+    // 1. ดึงข้อมูล Sale Order และ WEIGHT_PIECE จาก JOBORDER1
+    $stmtJob = $conn->prepare("SELECT SALEORDER_NO, SALEORDER_ITEM, ISNULL(WEIGHT_PIECE, 0) AS WEIGHT_PIECE FROM JOBORDER1 WHERE JOB_ORDER = :job_no");
     $stmtJob->execute([':job_no' => $jobNo]);
     $jobInfo = $stmtJob->fetch(PDO::FETCH_ASSOC);
 
-    // SUM ยอดรวมทุกกระบวนการผลิตจาก CRSHPROD1 ที่เหลืออยู่จริง
+    if (!$jobInfo) return;
+
+    $weightPiece = (float)($jobInfo['WEIGHT_PIECE'] ?? 0);
+
+    // 2. SUM ยอดรวมทุกกระบวนการผลิตจาก CRSHPROD1 ที่เหลืออยู่จริง
     $sqlSum = "SELECT 
                 SUM(ISNULL(CRSH_ACTUALWEIGHT,0) - ISNULL(CRSH_COMBINEWEIGHT,0)) AS ACTUALWEIGHT,
                 SUM(ISNULL(CRSH_ACTUALPIECE,0) - ISNULL(CRSH_COMBINEPIECE,0)) AS ACTUALPIECE,
@@ -93,7 +97,34 @@ function reCalJobOrder($conn, $jobNo) {
     $stmtSum->execute([':job_no' => $jobNo]);
     $sums = $stmtSum->fetch(PDO::FETCH_ASSOC);
 
-    // อัปเดตยอดสรุปผลรวมใหม่เข้าตาราง JOBORDER1
+    // 3. คำนวณยอดสต็อกคงเหลือจาก PACKPROD1
+    $stockWeight = 0;
+    $stockPiece  = 0;
+
+    $sqlPack = "SELECT PACK_NETWEIGHT, PACK_NETPIECE 
+                FROM PACKPROD1 
+                WHERE JOB_ORDER = :job_no 
+                  AND (PACK_STATUS = 'SH' OR PACK_STATUS = 'IN' OR PACK_STATUS = 'ST' OR PACK_STATUS = 'DS')";
+    $stmtPack = $conn->prepare($sqlPack);
+    $stmtPack->execute([':job_no' => $jobNo]);
+    $packList = $stmtPack->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($packList as $pack) {
+        $netWeight = (float)($pack['PACK_NETWEIGHT'] ?? 0);
+        $netPiece  = (float)($pack['PACK_NETPIECE'] ?? 0);
+
+        $stockWeight += round($netWeight);
+
+        if ($netPiece <= 0) {
+            if ($weightPiece != 0) {
+                $stockPiece += round($netWeight / $weightPiece);
+            }
+        } else {
+            $stockPiece += $netPiece;
+        }
+    }
+
+    // 4. อัปเดตยอดสรุปผลรวมใหม่เข้าตาราง JOBORDER1 (รวม JOB_STOCKWEIGHT / JOB_STOCKPIECE)
     $sqlUpdateJob = "UPDATE JOBORDER1 SET 
                         JOB_ACTUALWEIGHT = :act_wt, JOB_ACTUALPIECE = :act_pc,
                         JOB_PRODUCEWEIGHT = :prod_wt, JOB_PRODUCEPIECE = :prod_pc,
@@ -106,7 +137,8 @@ function reCalJobOrder($conn, $jobNo) {
                         JOB_ANNEALWEIGHT = :ann_wt, JOB_ANNEALPIECE = :ann_pc,
                         JOB_SORTWEIGHT = :sort_wt, JOB_SORTPIECE = :sort_pc,
                         JOB_TAKEOUTWEIGHT = :take_wt, JOB_TAKEOUTPIECE = :take_pc,
-                        JOB_PACKWEIGHT = :pck_wt, JOB_PACKPIECE = :pck_pc
+                        JOB_PACKWEIGHT = :pck_wt, JOB_PACKPIECE = :pck_pc,
+                        JOB_STOCKWEIGHT = :stk_wt, JOB_STOCKPIECE = :stk_pc
                      WHERE JOB_ORDER = :job_no";
                      
     $stmtUpdateJob = $conn->prepare($sqlUpdateJob);
@@ -123,21 +155,30 @@ function reCalJobOrder($conn, $jobNo) {
         ':sort_wt' => round($sums['SORTWEIGHT'] ?? 0),    ':sort_pc' => round($sums['SORTPIECE'] ?? 0),
         ':take_wt' => round($sums['TAKEOUTWEIGHT'] ?? 0), ':take_pc' => round($sums['TAKEOUTPIECE'] ?? 0),
         ':pck_wt'  => round($sums['PACKWEIGHT'] ?? 0),    ':pck_pc'  => round($sums['PACKPIECE'] ?? 0),
+        ':stk_wt'  => round($stockWeight),               ':stk_pc'  => round($stockPiece),
         ':job_no'  => $jobNo
     ]);
 
     // Recalculate ยอด Sale Order ต่อเนื่องหากมีผูกอยู่
-    if ($jobInfo && !empty($jobInfo['SALEORDER_NO'])) {
+    if (!empty($jobInfo['SALEORDER_NO'])) {
         reCalSaleOrder($conn, $jobInfo['SALEORDER_NO'], $jobInfo['SALEORDER_ITEM']);
     }
 }
 
 /**
- * ฟังก์ชัน Recalculate ยอดรวมสะสมของ CSTMORDR2 (ถอดแบบจาก ReCalSaleOrder ใน VB)
+ * ฟังก์ชัน Recalculate ยอดรวมสะสมของ CSTMORDR2 (รวม PACKPROD1 และ INVCPRCS3)
  */
 function reCalSaleOrder($conn, $soNo, $soItem) {
     if (empty($soNo)) return;
 
+    // 1. ดึง WEIGHT_PIECE จาก CSTMORDR2
+    $stmtSO = $conn->prepare("SELECT ISNULL(WEIGHT_PIECE, 0) AS WEIGHT_PIECE FROM CSTMORDR2 WHERE SALEORDER_NO = :so_no AND SALEORDER_ITEM = :so_item");
+    $stmtSO->execute([':so_no' => $soNo, ':so_item' => $soItem]);
+    $soInfo = $stmtSO->fetch(PDO::FETCH_ASSOC);
+
+    $weightPiece = (float)($soInfo['WEIGHT_PIECE'] ?? 0);
+
+    // 2. SUM ยอดรวมทุกกระบวนการจาก CRSHPROD1
     $sqlSumSO = "SELECT 
                     SUM(ISNULL(CRSH_ACTUALWEIGHT,0) - ISNULL(CRSH_COMBINEWEIGHT,0)) AS ACTUALWEIGHT,
                     SUM(ISNULL(CRSH_ACTUALPIECE,0) - ISNULL(CRSH_COMBINEPIECE,0)) AS ACTUALPIECE,
@@ -159,6 +200,63 @@ function reCalSaleOrder($conn, $soNo, $soItem) {
     $stmtSumSO->execute([':so_no' => $soNo, ':so_item' => $soItem]);
     $sumsSO = $stmtSumSO->fetch(PDO::FETCH_ASSOC);
 
+    // 3. คำนวณยอดสต็อกคงเหลือจาก PACKPROD1
+    $ctmStockWeight = 0;
+    $ctmStockPiece  = 0;
+
+    $sqlPackSO = "SELECT PACK_NETWEIGHT, PACK_NETPIECE 
+                  FROM PACKPROD1 
+                  WHERE SALEORDER_NO = :so_no AND SALEORDER_ITEM = :so_item
+                    AND (PACK_STATUS = 'SH' OR PACK_STATUS = 'IN' OR PACK_STATUS = 'ST' OR PACK_STATUS = 'DS')";
+    $stmtPackSO = $conn->prepare($sqlPackSO);
+    $stmtPackSO->execute([':so_no' => $soNo, ':so_item' => $soItem]);
+    $packSOList = $stmtPackSO->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($packSOList as $pack) {
+        $netWeight = (float)($pack['PACK_NETWEIGHT'] ?? 0);
+        $netPiece  = (float)($pack['PACK_NETPIECE'] ?? 0);
+
+        $ctmStockWeight += round($netWeight);
+
+        if ($netPiece <= 0) {
+            if ($weightPiece != 0) {
+                $ctmStockPiece += round($netWeight / $weightPiece);
+            }
+        } else {
+            $ctmStockPiece += round($netPiece);
+        }
+    }
+
+    // 4. คำนวณยอดอินวอยซ์/การจัดส่งจาก INVCPRCS3
+    $ctmInvoiceBundle = 0;
+    $ctmInvoiceWeight = 0;
+    $ctmInvoicePiece  = 0;
+
+    $sqlInv = "SELECT INV3_NETWEIGHT, INV3_NETPIECE, INV3_PACKAGE 
+               FROM INVCPRCS3 
+               WHERE SALEORDER_NO = :so_no AND SALEORDER_ITEM = :so_item";
+    $stmtInv = $conn->prepare($sqlInv);
+    $stmtInv->execute([':so_no' => $soNo, ':so_item' => $soItem]);
+    $invList = $stmtInv->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($invList as $inv) {
+        $invPkg = (float)($inv['INV3_PACKAGE'] ?? 0);
+        $invWt  = (float)($inv['INV3_NETWEIGHT'] ?? 0);
+        $invPc  = (float)($inv['INV3_NETPIECE'] ?? 0);
+
+        $ctmInvoiceBundle += round($invPkg);
+        $ctmInvoiceWeight += round($invWt);
+
+        if ($invPc <= 0) {
+            if ($weightPiece != 0) {
+                $ctmInvoicePiece += round($invWt / $weightPiece);
+            }
+        } else {
+            $ctmInvoicePiece += round($invPc);
+        }
+    }
+
+    // 5. อัปเดตยอดสรุปทั้งหมดเข้า CSTMORDR2 (รวม CTM2_STOCK... และ CTM2_INVOICE...)
     $sqlUpdateSO = "UPDATE CSTMORDR2 SET 
                         CTM2_ACTUALWEIGHT = :act_wt, CTM2_ACTUALPIECE = :act_pc,
                         CTM2_PRODUCEWEIGHT = :prod_wt, CTM2_PRODUCEPIECE = :prod_pc,
@@ -171,7 +269,9 @@ function reCalSaleOrder($conn, $soNo, $soItem) {
                         CTM2_ANNEALWEIGHT = :ann_wt, CTM2_ANNEALPIECE = :ann_pc,
                         CTM2_SORTWEIGHT = :sort_wt, CTM2_SORTPIECE = :sort_pc,
                         CTM2_TAKEOUTWEIGHT = :take_wt, CTM2_TAKEOUTPIECE = :take_pc,
-                        CTM2_PACKWEIGHT = :pck_wt, CTM2_PACKPIECE = :pck_pc
+                        CTM2_PACKWEIGHT = :pck_wt, CTM2_PACKPIECE = :pck_pc,
+                        CTM2_STOCKWEIGHT = :stk_wt, CTM2_STOCKPIECE = :stk_pc,
+                        CTM2_INVOICEBUNDLE = :inv_bd, CTM2_INVOICEPIECE = :inv_pc, CTM2_INVOICEWEIGHT = :inv_wt
                     WHERE SALEORDER_NO = :so_no AND SALEORDER_ITEM = :so_item";
                     
     $stmtUpdateSO = $conn->prepare($sqlUpdateSO);
@@ -188,6 +288,8 @@ function reCalSaleOrder($conn, $soNo, $soItem) {
         ':sort_wt' => round($sumsSO['SORTWEIGHT'] ?? 0),    ':sort_pc' => round($sumsSO['SORTPIECE'] ?? 0),
         ':take_wt' => round($sumsSO['TAKEOUTWEIGHT'] ?? 0), ':take_pc' => round($sumsSO['TAKEOUTPIECE'] ?? 0),
         ':pck_wt'  => round($sumsSO['PACKWEIGHT'] ?? 0),    ':pck_pc'  => round($sumsSO['PACKPIECE'] ?? 0),
+        ':stk_wt'  => round($ctmStockWeight),            ':stk_pc'  => round($ctmStockPiece),
+        ':inv_bd'  => round($ctmInvoiceBundle),          ':inv_pc'  => round($ctmInvoicePiece), ':inv_wt' => round($ctmInvoiceWeight),
         ':so_no'   => $soNo,
         ':so_item' => $soItem
     ]);

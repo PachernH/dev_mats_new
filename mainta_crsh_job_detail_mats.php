@@ -1,6 +1,12 @@
 <?php
 // เริ่ม session ก่อน ANY output
 session_start();
+// ถ้าไม่มี Session หรือไม่ได้ Login ให้กลับไปหน้า index.php
+if (!isset($_SESSION['ID'])) {
+    header("Location: index.php");
+    exit();
+}
+
 
 // ดึงค่า JOB_ORDER จาก URL (รองรับทั้ง search_no และ JOB_ORDER)
 $job_order = isset($_GET['search_no']) ? htmlspecialchars(trim($_GET['search_no']), ENT_QUOTES, 'UTF-8') : (isset($_GET['JOB_ORDER']) ? htmlspecialchars(trim($_GET['JOB_ORDER']), ENT_QUOTES, 'UTF-8') : '');
@@ -34,11 +40,11 @@ if (!empty($job_order)) {
     $stmt_job->execute();
     $job_data = $stmt_job->fetch(PDO::FETCH_ASSOC);
 
-    // 2. Query ดึงข้อมูล JOB Order Item List จาก [MATS-NEW].dbo.CRSHPROD1
+    // 2. Query ดึงข้อมูล JOB Order Item List จาก CRSHPROD1
     $sql_item = "SELECT 
                     PRODUCT_NO, SALEORDER_NO, PRODUCT_ID, ALLOY, TEMPER, GRADE, SURFACE_GRADE, METALLURGICAL_GRADE,
                     THICKNESS, WIDTH, LENGTH, CRSH_PRODUCEWEIGHT, CRSH_PRODUCEPIECE, CRSH_STATUS
-                 FROM [MATS-NEW].dbo.CRSHPROD1 
+                 FROM CRSHPROD1 
                  WHERE JOB_ORDER = :job_order
                  ORDER BY CRSH_STARTDATE DESC";
 
@@ -47,7 +53,7 @@ if (!empty($job_order)) {
     $stmt_item->execute();
     $job_items = $stmt_item->fetchAll(PDO::FETCH_ASSOC);
 
-    // 3. Query ดึงข้อมูล History Job Product Process จาก [MATS-NEW].dbo.CRSHPROD1
+    // 3. Query ดึงข้อมูล History Job Product Process จาก CRSHPROD1
     $sql_crsh = "SELECT 
                     sum(CRSH_ACTUALWEIGHT) as totalAct, sum(CRSH_ACTUALPIECE) as totalActP,
                     sum(CRSH_PRODUCEWEIGHT) as totalPro, sum(CRSH_PRODUCEPIECE) as totalProP,
@@ -62,7 +68,7 @@ if (!empty($job_order)) {
                     sum(CRSH_SORTWEIGHT) as TotalSort, sum(CRSH_SORTPIECE) as TotalSortP,
                     sum(CRSH_TAKEOUTWEIGHT) as totalTake, sum(CRSH_TAKEOUTPIECE) as totalTakeP,
                     sum(CRSH_PACKWEIGHT) as totalPack, sum(CRSH_PACKPIECE) as totalPackP
-                FROM [MATS-NEW].dbo.CRSHPROD1 
+                FROM CRSHPROD1 
                 WHERE JOB_ORDER = :job_order";
 
     $stmt_crsh = $conn->prepare($sql_crsh);

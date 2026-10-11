@@ -1,6 +1,11 @@
 <?php
-// เริ่ม session ก่อน ANY output เพื่อความเสถียรของระบบ
+// เริ่ม session ก่อน ANY output
 session_start();
+// ถ้าไม่มี Session หรือไม่ได้ Login ให้กลับไปหน้า index.php
+if (!isset($_SESSION['ID'])) {
+    header("Location: index.php");
+    exit();
+}
 
 // ดึงค่าและตรวจสอบข้อมูลนำเข้าเพื่อความปลอดภัย (Sanitize Input)
 $d = !isset($_GET['d']) ? date('Y-m-d') : htmlspecialchars(trim($_GET['d']), ENT_QUOTES, 'UTF-8');

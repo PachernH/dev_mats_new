@@ -1,6 +1,12 @@
 <?php
 // เริ่ม session ก่อน ANY output
 session_start();
+// ถ้าไม่มี Session หรือไม่ได้ Login ให้กลับไปหน้า index.php
+if (!isset($_SESSION['ID'])) {
+    header("Location: index.php");
+    exit();
+}
+
 
 // ดึงค่า BATCH_NO จาก URL (ใช้พารามิเตอร์ search_no)
 $batch_no = isset($_GET['search_no']) ? htmlspecialchars(trim($_GET['search_no']), ENT_QUOTES, 'UTF-8') : '';

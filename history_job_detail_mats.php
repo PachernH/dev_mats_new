@@ -1,6 +1,12 @@
 <?php
 // เริ่ม session ก่อน ANY output
 session_start();
+// ถ้าไม่มี Session หรือไม่ได้ Login ให้กลับไปหน้า index.php
+if (!isset($_SESSION['ID'])) {
+    header("Location: index.php");
+    exit();
+}
+
 
 // ดึงค่า JOB_ORDER จาก URL
 $job_order = isset($_GET['search_no']) ? htmlspecialchars(trim($_GET['search_no']), ENT_QUOTES, 'UTF-8') : (isset($_GET['JOB_ORDER']) ? htmlspecialchars(trim($_GET['JOB_ORDER']), ENT_QUOTES, 'UTF-8') : '');
@@ -35,7 +41,7 @@ if (!empty($job_order)) {
                     JOB_ANNEALWEIGHT, JOB_ANNEALPIECE, JOB_SORTWEIGHT, JOB_SORTPIECE,
                     JOB_TAKEOUTWEIGHT, JOB_TAKEOUTPIECE, JOB_PACKWEIGHT, JOB_PACKPIECE,
                     JOB_STOCKWEIGHT, JOB_STOCKPIECE
-                FROM [MATS-NEW].dbo.JOBORDER1
+                FROM JOBORDER1
                 WHERE JOB_ORDER = :job_order
                 ORDER BY JOBORDER_DATE DESC";
             

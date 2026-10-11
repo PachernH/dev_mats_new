@@ -1,6 +1,11 @@
 <?php
 // เริ่ม session ก่อน ANY output
 session_start();
+// ถ้าไม่มี Session หรือไม่ได้ Login ให้กลับไปหน้า index.php
+if (!isset($_SESSION['ID'])) {
+    header("Location: index.php");
+    exit();
+}
 
 // แก้ไข Logic Error: รับค่า cno และกำหนดตัวแปรให้ตรงกัน
 $cno = !isset($_GET['cno']) ? '' : htmlspecialchars(trim($_GET['cno']), ENT_QUOTES, 'UTF-8');

@@ -19,7 +19,7 @@ if (empty($product_no) || empty($job_order)) {
 
 try {
     // 0. ตรวจสอบก่อนว่า Job Order มีตัวตนอยู่ในตาราง JOBORDER1 หรือไม่
-    $stmtCheckJob = $conn->prepare("SELECT SALEORDER_NO, SALEORDER_ITEM FROM [MATS-NEW].dbo.JOBORDER1 WHERE JOB_ORDER = :job_no");
+    $stmtCheckJob = $conn->prepare("SELECT SALEORDER_NO, SALEORDER_ITEM FROM JOBORDER1 WHERE JOB_ORDER = :job_no");
     $stmtCheckJob->execute([':job_no' => $job_order]);
     $jobInfo = $stmtCheckJob->fetch(PDO::FETCH_ASSOC);
 
@@ -45,13 +45,13 @@ try {
     ";
 
     // 1. ดึงยอดปัจจุบันเดิมของ Job Order (Before)
-    $sqlBefore = "SELECT {$sqlSelectFields} FROM [MATS-NEW].dbo.CRSHPROD1 WHERE JOB_ORDER = :job_order";
+    $sqlBefore = "SELECT {$sqlSelectFields} FROM CRSHPROD1 WHERE JOB_ORDER = :job_order";
     $stmtBefore = $conn->prepare($sqlBefore);
     $stmtBefore->execute([':job_order' => $job_order]);
     $beforeData = $stmtBefore->fetch(PDO::FETCH_ASSOC);
 
     // 2. ดึงยอดของ Product No ที่จะนำมาบวกผูกเพิ่ม (Add)
-    $sqlAdd = "SELECT {$sqlSelectFields} FROM [MATS-NEW].dbo.CRSHPROD1 WHERE PRODUCT_NO = :product_no";
+    $sqlAdd = "SELECT {$sqlSelectFields} FROM CRSHPROD1 WHERE PRODUCT_NO = :product_no";
     $stmtAdd = $conn->prepare($sqlAdd);
     $stmtAdd->execute([':product_no' => $product_no]);
     $addData = $stmtAdd->fetch(PDO::FETCH_ASSOC);

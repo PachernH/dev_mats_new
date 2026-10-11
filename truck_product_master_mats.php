@@ -1,6 +1,11 @@
 <?php
-// เริ่ม session ก่อน ANY output เพื่อความเสถียรของระบบ
+// เริ่ม session ก่อน ANY output
 session_start();
+// ถ้าไม่มี Session หรือไม่ได้ Login ให้กลับไปหน้า index.php
+if (!isset($_SESSION['ID'])) {
+    header("Location: index.php");
+    exit();
+}
 
 // ป้องกันกรณีไม่มี Session เพื่อไม่ให้เกิด Undefined array key Warning
 $iduser_func = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';

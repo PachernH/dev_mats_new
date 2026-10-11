@@ -1,6 +1,12 @@
 <?php
 // เริ่ม session ก่อน ANY output
 session_start();
+// ถ้าไม่มี Session หรือไม่ได้ Login ให้กลับไปหน้า index.php
+if (!isset($_SESSION['ID'])) {
+    header("Location: index.php");
+    exit();
+}
+
 
 // ดึงค่า SALEORDER_NO และ JOB_ORDER จาก URL
 $saleorder_no = isset($_GET['search_no']) ? htmlspecialchars(trim($_GET['search_no']), ENT_QUOTES, 'UTF-8') : (isset($_GET['SALEORDER_NO']) ? htmlspecialchars(trim($_GET['SALEORDER_NO']), ENT_QUOTES, 'UTF-8') : '');
@@ -63,7 +69,7 @@ if (!empty($saleorder_no)) {
     $sql_item = "SELECT 
                     SALEORDER_NO, PRODUCT_ID, ALLOY, TEMPER, SURFACE_GRADE, METALLURGICAL_GRADE,
                     THICKNESS, WIDTH, LENGTH, CTM2_ORDERWEIGHT, CTM2_STATUS
-                 FROM [MATS-NEW].dbo.CSTMORDR2 
+                 FROM CSTMORDR2 
                  WHERE SALEORDER_NO = :saleorder_no";
 
     $stmt_item = $conn->prepare($sql_item);
@@ -75,7 +81,7 @@ if (!empty($saleorder_no)) {
     $sql_coil_proc = "SELECT 
                         COIL_NO, PRODUCT_ID, SALEORDER_NO, JOB_ORDER, JOB_PROCESS, ALLOY, TEMPER, SURFACE_GRADE, METALLURGICAL_GRADE,
                         THICKNESS, WIDTH, COIL_BALANCEWEIGHT, COIL_STATUS 
-                      FROM [MATS-NEW].dbo.COILPROD1 
+                      FROM COILPROD1 
                       WHERE SALEORDER_NO = :saleorder_no";
 
     $stmt_coil_proc = $conn->prepare($sql_coil_proc);
