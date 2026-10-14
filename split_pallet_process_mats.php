@@ -508,7 +508,6 @@ include 'include/'.$folder_func.'/navigation.php';
                                         <th>Product Ref</th>
                                         <th>Start Date</th>
                                         <th>Sale Order No</th>
-                                        <th>Sale Order Item</th>
                                         <th>Job Order</th>
                                         <th>Alloy</th>
                                         <th>Temper</th>
@@ -588,7 +587,6 @@ include 'include/'.$folder_func.'/navigation.php';
                                         <td><?php echo htmlspecialchars($prod_ref !== '' ? $prod_ref : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td align="center"><?php echo htmlspecialchars($start_date_formatted, ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?php echo htmlspecialchars($coil['SALEORDER_NO'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></td>
-                                        <td align="center"><?php echo htmlspecialchars($coil['SALEORDER_ITEM'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td align="center"><?php echo htmlspecialchars($coil['JOB_ORDER'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td align="center"><?php echo htmlspecialchars($coil['ALLOY'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td align="center"><?php echo htmlspecialchars($coil['TEMPER'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></td>

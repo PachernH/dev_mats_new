@@ -299,70 +299,102 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                         <li class="<?php echo ($menu == "A8") ? "active" : "" ?>"><a href="engineer_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Engineer Module</p></a></li>
                         <li class="<?php echo ($menu == "A9") ? "active" : "" ?>"><a href="hr_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>HR Module</p></a></li>
                     </ul>    
-                </li>                
-<!---
+                </li>     
+
                 <li>
-                    <?php $prod_menus = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12', 'T13', 'T14', 'T15', 'T16']; ?>
-                    <div class="box <?php echo in_array($menu, $prod_menus) ? 'check-box' : '' ?>">
-                        <div class="menu-link-content">
-                            <span class="menu-icon-wrapper">
-                                <img src="assets/menu/pd_small.png">
-                            </span>
-                            <small>PRODUCTION</small>
-                        </div>
-                        <svg class="arrow-icon" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
-                    </div>
-                    <ul class="nested <?php echo in_array($menu, $prod_menus) ? 'active' : '' ?>">
-                        <li class="<?php echo ($menu == "T1") ? "active" : "" ?>"><a href="issue_material_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Issue Material</p></a></li>
-                        <li class="<?php echo ($menu == "T2") ? "active" : "" ?>"><a href="melt_furnace_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Melt Furnace</p></a></li>
-                        <li class="<?php echo ($menu == "T3") ? "active" : "" ?>"><a href="casting_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Casting</p></a></li>
-                        <li class="<?php echo ($menu == "T4") ? "active" : "" ?>"><a href="cold_rolling_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Cold Rolling</p></a></li>
-                        <li class="<?php echo ($menu == "T5") ? "active" : "" ?>"><a href="annealing_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Annealing</p></a></li>
-                        <li class="<?php echo ($menu == "T6") ? "active" : "" ?>"><a href="batch_annealing_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Batch Annealing</p></a></li>
-                        <li class="<?php echo ($menu == "T7") ? "active" : "" ?>"><a href="blanking_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Blanking</p></a></li>
-                        <li class="<?php echo ($menu == "T8") ? "active" : "" ?>"><a href="circle_shear_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Circle Shear</p></a></li>
-                        <li class="<?php echo ($menu == "T9") ? "active" : "" ?>"><a href="xy-5_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>XY-5</p></a></li>
-                        <li class="<?php echo ($menu == "T10") ? "active" : "" ?>"><a href="cut_to_length_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Cut to Length</p></a></li>
-                        <li class="<?php echo ($menu == "T11") ? "active" : "" ?>"><a href="stretcher_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Stretcher</p></a></li>
-                        <li class="<?php echo ($menu == "T12") ? "active" : "" ?>"><a href="a_press_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>A Press</p></a></li>
-                        <li class="<?php echo ($menu == "T13") ? "active" : "" ?>"><a href="k_press_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>K Press</p></a></li>
-                        <li class="<?php echo ($menu == "T14") ? "active" : "" ?>"><a href="swiss_slitter_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Swiss slitter</p></a></li>
-                        <li class="<?php echo ($menu == "T15") ? "active" : "" ?>"><a href="inspection_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Inspection</p></a></li>
-                        <li class="<?php echo ($menu == "T16") ? "active" : "" ?>"><a href="packing_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Packing</p></a></li>
-                    </ul>    
-                </li>
---->
-                <li>
-                    <div class="box <?php echo in_array($menu, ['r_re', 'r_who']) ? 'check-box' : '' ?>">
+                    <div class="box <?php echo in_array($menu, ['r_sm', 'r_pp', 'r_tc', 'r_pd', 'r_wh', 'r_sp', 'r_af', 'r_em', 'r_ha']) ? 'check-box' : '' ?>">
                         <div class="menu-link-content">
                             <span class="menu-icon-wrapper">
                                 <img src="assets/menu/report_small.png">
                             </span>
-                            <small>REPORT & FORM</small>
+                            <small>REPORT</small>
                         </div>
                         <svg class="arrow-icon" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
                     </div>
-                    <ul class="nested <?php echo in_array($menu, ['r_re', 'r_who']) ? 'active' : '' ?>">
-                        <li class="<?php echo ($menu == "r_re") ? "active" : "" ?>">
+                    <ul class="nested <?php echo in_array($menu, ['r_sm', 'r_pp', 'r_tc', 'r_pd', 'r_wh', 'r_sp', 'r_af', 'r_em', 'r_ha']) ? 'active' : '' ?>">
+                        <li class="<?php echo ($menu == "r_sm") ? "active" : "" ?>">
+                            <a href="sale_report_mats.php">
+                                <svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg>
+                                <p>Sale</p>
+                            </a>
+                        </li>
+                        <li class="<?php echo ($menu == "r_pp") ? "active" : "" ?>">
+                            <a href="planning_report_mats.php">
+                                <svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg>
+                                <p>Planning</p>
+                            </a>
+                        </li>
+                        <li class="<?php echo ($menu == "r_tc") ? "active" : "" ?>">
+                            <a href="technical_report_mats.php">
+                                <svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg>
+                                <p>Technical</p>
+                            </a>
+                        </li>
+                        <li class="<?php echo ($menu == "r_pd") ? "active" : "" ?>">
+                            <a href="production_report_mats.php">
+                                <svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg>
+                                <p>Production</p>
+                            </a>
+                        </li>
+                        <li class="<?php echo ($menu == "r_wh") ? "active" : "" ?>">
+                            <a href="warehouse_report_mats.php">
+                                <svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg>
+                                <p>Warehouse</p>
+                            </a>
+                        </li>
+                        <li class="<?php echo ($menu == "r_sp") ? "active" : "" ?>">
+                            <a href="shipping_report_mats.php">
+                                <svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg>
+                                <p>Shipping</p>
+                            </a>
+                        </li>
+                        <li class="<?php echo ($menu == "r_af") ? "active" : "" ?>">
+                            <a href="account_report_mats.php">
+                                <svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg>
+                                <p>Account</p>
+                            </a>
+                        </li>                        
+                        <li class="<?php echo ($menu == "r_em") ? "active" : "" ?>">
+                            <a href="engineer_report_mats.php">
+                                <svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg>
+                                <p>Engineering</p>
+                            </a>
+                        </li>                                                                                                                        
+                        <li class="<?php echo ($menu == "r_ha") ? "active" : "" ?>">
+                            <a href="hr_report_mats.php">
+                                <svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg>
+                                <p>HR & Admin</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li>
+                    <div class="box <?php echo in_array($menu, ['f_data', 'q_data']) ? 'check-box' : '' ?>">
+                        <div class="menu-link-content">
+                            <span class="menu-icon-wrapper">
+                                <img src="assets/menu/report_small.png">
+                            </span>
+                            <small>FORM & QUERY</small>
+                        </div>
+                        <svg class="arrow-icon" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+                    </div>
+                    <ul class="nested <?php echo in_array($menu, ['f_data', 'q_data']) ? 'active' : '' ?>">
+                        <li class="<?php echo ($menu == "f_data") ? "active" : "" ?>">
                             <a href="template_mats.php">
                                 <svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg>
                                 <p>Form</p>
                             </a>
                         </li>
-                        <li class="<?php echo ($menu == "r_who") ? "active" : "" ?>">
+                        <li class="<?php echo ($menu == "q_data") ? "active" : "" ?>">
                             <a href="template_mats.php">
                                 <svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg>
                                 <p>Query</p>
                             </a>
                         </li>
-                        <li class="<?php echo ($menu == "r_who") ? "active" : "" ?>">
-                            <a href="template_mats.php">
-                                <svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg>
-                                <p>Report</p>
-                            </a>
-                        </li>
                     </ul>
                 </li>
+
             </ul>
         </div>
     </div>

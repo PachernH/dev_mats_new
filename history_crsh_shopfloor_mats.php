@@ -90,7 +90,7 @@ if (!empty($product_no)) {
     }
 
     /*** 2. List Pallet Combine (CMBNPROD1) ***/
-    $sql_cmb = "SELECT PRODUCT_NO, CMBN_WEIGHT FROM CMBNPROD1 WHERE PRODUCT_NO = :product_no";
+    $sql_cmb = "SELECT PRODUCT_NO,PRODUCT_REFERENCE,CMBN_WEIGHT,CMBN_PIECE,CMBN_OPERATOR FROM CMBNPROD1 WHERE PRODUCT_NO = :product_no";
     $stmt_cmb = $conn->prepare($sql_cmb);
     $stmt_cmb->bindParam(':product_no', $product_no, PDO::PARAM_STR);
     $stmt_cmb->execute();
@@ -354,8 +354,11 @@ function format_wt($value) {
                             <thead>
                                 <tr>
                                     <th style="text-align: center; width: 60px;">#</th>
-                                    <th>Product No</th>
+                                    <th>Main Product No</th>
+                                    <th>Combined Product Ref</th>
                                     <th style="text-align: right;">Combine Weight (kg.)</th>
+                                    <th style="text-align: right;">Combine PIECE (ps)</th>
+                                    <th style="text-align: right;">OPERATOR</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -370,7 +373,10 @@ function format_wt($value) {
                                         <tr>
                                             <td align="center"><?php echo $idx + 1; ?></td>
                                             <td style="font-weight: 700; color: #0284c7;"><?php echo htmlspecialchars($row['PRODUCT_NO'] ?? '-'); ?></td>
+                                            <td style="font-weight: 700; color: #0284c7;"><?php echo htmlspecialchars($row['PRODUCT_REFERENCE'] ?? '-'); ?></td>
                                             <td align="right" style="font-weight: 700;"><?php echo format_wt($row['CMBN_WEIGHT']); ?></td>
+                                            <td align="right" style="font-weight: 700;"><?php echo format_wt($row['CMBN_PIECE']); ?></td>
+                                            <td align="right" style="font-weight: 700; color: #0284c7;"><?php echo htmlspecialchars($row['CMBN_OPERATOR'] ?? '-'); ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>

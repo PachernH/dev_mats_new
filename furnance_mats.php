@@ -546,8 +546,8 @@ function use_document(ref) {
 
 function edit_document(ref) {
     var data_fun = document.getElementById("func").value;
-    // เปลี่ยนไปยังหน้าฟอร์มแก้ไขตามชื่อไฟล์ของคุณ (เช่น furnance_charging_mats_edit.php)
-    window.location.assign('furnance_charging_mats_edit.php?func=' + encodeURIComponent(data_fun) + '&bno=' + encodeURIComponent(ref));
+    // เปลี่ยนไปยังหน้าฟอร์มแก้ไขตามชื่อไฟล์ของคุณ (เช่น furnance_charging_edit_mats.php)
+    window.location.assign('furnance_charging_edit_mats.php?func=' + encodeURIComponent(data_fun) + '&bno=' + encodeURIComponent(ref));
 }
 
 function search_batch_no(){   

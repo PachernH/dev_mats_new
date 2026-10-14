@@ -320,7 +320,6 @@ include 'include/'.$folder_func.'/navigation.php';
                                         <th style="text-align: center;">Product Ref</th>
                                         <th style="text-align: center;">Start Date</th>
                                         <th style="text-align: center;">Sale Order No</th>
-                                        <th style="text-align: center;">Sale Order Item</th>
                                         <th style="text-align: center;">Job Order</th>
                                         <th style="text-align: center;">Alloy</th>
                                         <th style="text-align: center;">Temper</th>
@@ -401,8 +400,6 @@ include 'include/'.$folder_func.'/navigation.php';
                                                 -
                                             <?php endif; ?>
                                         </td>
-
-                                        <td align="center"><?php echo htmlspecialchars($coil['SALEORDER_ITEM'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                         
                                         <!-- Job Order ปุ่มกด -->
                                         <td align="center">
