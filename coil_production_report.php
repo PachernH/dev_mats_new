@@ -105,15 +105,13 @@ if ($dbConnection) {
                 $productField = "A.COIL_NO";
                 break;
 
-            default: // CASTING PRODUCTION REPORT ตาม r1.txt
+            default: // CASTING PRODUCTION REPORT
                 $dateField = "B.COIL_ENDDATE";
                 $tableJoin = "dbo.COILPROD1 AS B WITH (NOLOCK)";
                 $weightAccept = "CAST(B.COIL_FIRSTWEIGHT AS DECIMAL(12,2))";
                 $weightReject = "0.00";
                 $extraWhere = "";
                 $productField = "B.COIL_NO";
-
-                // กำหนดเงื่อนไข Line Process พิเศษสำหรับ Casting ตาม r1.txt
                 if ($cmbLineProcess === 'ALL') {
                     $extraWhere .= " AND (B.LINE_PROCESS BETWEEN '1' AND '2')";
                 }
@@ -144,16 +142,18 @@ if ($dbConnection) {
 
         $whereClause = implode(" AND ", $conditions);
 
-// ปรับ SQL Query ให้ดึง F_THICKNESS และ JOIN บน B.JOB_ORDER สำหรับ Casting[cite: 1]
+        $thkField = ($cmbProcess === 'CASTING PRODUCTION REPORT') ? "B.F_THICKNESS" : "B.THICKNESS";
+        $jobJoinField = ($cmbProcess === 'CASTING PRODUCTION REPORT') ? "B.JOB_ORDER" : "B.JOB_PROCESS";
+
         $sql = "
             SELECT 
                 {$productField} AS product_no,
                 B.COIL_STATUS AS status_id,
                 CONVERT(VARCHAR(10), {$dateField}, 101) AS produce_date,
                 B.SALEORDER_NO AS saleorder_no,
-                B.JOB_ORDER AS job_order,
+                B.JOB_PROCESS AS job_order,
                 ISNULL(B.PRODUCT_REFERENCE, '') AS coil_ref,
-                '' AS caster_coil,
+                ISNULL(B.PRODUCT_REFERENCE, '') AS caster_coil,
                 ISNULL(B.CSTMSPPL_ID, '') AS coil_from,
                 B.ALLOY AS alloy,
                 B.F_TEMPER AS tp_org,
@@ -162,8 +162,8 @@ if ($dbConnection) {
                 B.SURFACE_GRADE AS surface_grade,
                 B.METALLURGICAL_GRADE AS meta_grade,
                 ISNULL(B.T5_TEMPERATURE, '') AS t5_temp,
-                CAST(" . ($cmbProcess === 'CASTING PRODUCTION REPORT' ? "B.F_THICKNESS" : "B.THICKNESS") . " AS DECIMAL(10,3)) AS thk_act,
-                CAST(" . ($cmbProcess === 'CASTING PRODUCTION REPORT' ? "B.F_THICKNESS" : "B.THICKNESS") . " AS DECIMAL(10,3)) AS thk_spec,
+                CAST({$thkField} AS DECIMAL(10,3)) AS thk_act,
+                CAST({$thkField} AS DECIMAL(10,3)) AS thk_spec,
                 CAST(B.WIDTH AS DECIMAL(10,2)) AS width,
                 ISNULL(B.CURRENT_PASS, 0) AS current_pass,
                 0 AS coil_slit,
@@ -175,7 +175,7 @@ if ($dbConnection) {
                 ISNULL(B.COIL_REMARK, '') AS remark,
                 B.LINE_PROCESS AS line_process
             FROM {$tableJoin}
-            LEFT OUTER JOIN dbo.JOBORDER1 AS C WITH (NOLOCK) ON B.JOB_ORDER = C.JOB_ORDER
+            LEFT OUTER JOIN dbo.JOBORDER1 AS C WITH (NOLOCK) ON {$jobJoinField} = C.JOB_ORDER
             WHERE {$whereClause} {$extraWhere}
             ORDER BY CONVERT(VARCHAR(10), {$dateField}, 120) ASC, B.LINE_PROCESS ASC, {$productField} ASC
         ";
@@ -281,7 +281,7 @@ if (isset($_POST['export_excel'])) {
 
                 if ($lineChanged || $dateChanged):
             ?>
-                    <tr style="background-color: #e2e8f0; font-weight: bold;">
+                    <tr style="background-color: #e2e8f0; font-weight: bold; font-size: 15px;">
                         <td colspan="21" style="text-align: left;">SUBTOTAL BY LINE PROCESS &nbsp;&nbsp; <?=$currentLine?></td>
                         <td style="text-align: right; color: #172554;"><?=number_format($lineAcceptSum, 0)?></td>
                         <td style="text-align: right; color: #7f1d1d;"><?=$lineRejectSum > 0 ? number_format($lineRejectSum, 0) : ''?></td>
@@ -294,7 +294,7 @@ if (isset($_POST['export_excel'])) {
 
                 if ($dateChanged):
             ?>
-                    <tr style="background-color: #f8fafc; font-weight: bold;">
+                    <tr style="background-color: #f8fafc; font-weight: bold; font-size: 15px;">
                         <td colspan="20" style="text-align: left;">SUBTOTAL BY PRODUCE DATE &nbsp;&nbsp; <?=$currentDate?></td>
                         <td style="text-align: center;"><?=$dateCoilCount?> COILS</td>
                         <td style="text-align: right; color: #1e3a8a;"><?=number_format($dateAcceptSum, 0)?></td>
@@ -353,7 +353,7 @@ if (isset($_POST['export_excel'])) {
             <?php endforeach; ?>
 
             <?php if ($currentLine !== null): ?>
-                <tr style="background-color: #e2e8f0; font-weight: bold;">
+                <tr style="background-color: #e2e8f0; font-weight: bold; font-size: 15px;">
                     <td colspan="21" style="text-align: left;">SUBTOTAL BY LINE PROCESS &nbsp;&nbsp; <?=$currentLine?></td>
                     <td style="text-align: right; color: #172554;"><?=number_format($lineAcceptSum, 0)?></td>
                     <td style="text-align: right; color: #7f1d1d;"><?=$lineRejectSum > 0 ? number_format($lineRejectSum, 0) : ''?></td>
@@ -362,7 +362,7 @@ if (isset($_POST['export_excel'])) {
             <?php endif; ?>
 
             <?php if ($currentDate !== null): ?>
-                <tr style="background-color: #f8fafc; font-weight: bold;">
+                <tr style="background-color: #f8fafc; font-weight: bold; font-size: 15px;">
                     <td colspan="20" style="text-align: left;">SUBTOTAL BY PRODUCE DATE &nbsp;&nbsp; <?=$currentDate?></td>
                     <td style="text-align: center;"><?=$dateCoilCount?> COILS</td>
                     <td style="text-align: right; color: #1e3a8a;"><?=number_format($dateAcceptSum, 0)?></td>
@@ -371,7 +371,8 @@ if (isset($_POST['export_excel'])) {
                 </tr>
             <?php endif; ?>
 
-            <tr style="background-color: #cbd5e1; font-weight: bold;">
+            <!-- GRAND TOTAL ขนาดฟอนต์เท่ากับ SUBTOTAL BY LINE PROCESS (15px) -->
+            <tr style="background-color: #cbd5e1; font-weight: bold; font-size: 15px;">
                 <td colspan="20" style="text-align: left;">GRAND TOTAL</td>
                 <td style="text-align: center;"><?=$grandCoilCount?> COILS</td>
                 <td style="text-align: right; color: #172554;"><?=number_format($grandAcceptSum, 0)?></td>
@@ -395,32 +396,28 @@ if (isset($_POST['export_excel'])) {
     <script src="assets/js/tailwindcss.js"></script>
 
     <style>
-
-        /* 1. กำหนดให้กล่องหุ้มตารางกำหนดความสูงสูงสุดและเปิด Scrollbar แนวตั้ง */
         .rpt-table-wrapper {
             width: 100%;
-            max-height: 70vh; /* กำหนดความสูงตารางไม่เกิน 70% ของหน้าจอ */
-            overflow-y: auto;  /* เปิด Scrollbar แนวตั้งเมื่อข้อมูลยาวล้นหน้า */
-            overflow-x: auto;  /* เปิด Scrollbar แนวนอน */
+            max-height: 70vh;
+            overflow-y: auto;
+            overflow-x: auto;
             background: #fff;
             border-radius: 8px;
             margin-top: 10px;
             border: 1px solid #cbd5e1;
         }
 
-        /* 2. ตรึงหัวตารางบรรทัดที่ 1 (Header Row 1) */
         table.rpt-table thead tr:nth-child(1) th {
             position: sticky;
             top: 0;
             z-index: 20;
-            background-color: #f1f5f9 !important; /* ต้องใส่ background ป้องกันเนื้อหาด้านล่างทะลุขึ้นมา */
-            box-shadow: inset 0 -1px 0 #cbd5e1; /* ใส่เส้นขอบล่าง */
+            background-color: #f1f5f9 !important;
+            box-shadow: inset 0 -1px 0 #cbd5e1;
         }
 
-        /* 3. ตรึงหัวตารางบรรทัดที่ 2 (Header Row 2) ให้ต่อตูดบรรทัดแรก */
         table.rpt-table thead tr:nth-child(2) th {
             position: sticky;
-            top: 35px; /* ระยะความสูงของแถวแรก (ปรับตามความสูงจริง) */
+            top: 35px;
             z-index: 19;
             background-color: #f1f5f9 !important;
             box-shadow: inset 0 -1px 0 #cbd5e1;
@@ -449,7 +446,6 @@ if (isset($_POST['export_excel'])) {
             transition: all 0.2s ease; cursor: pointer;
         }
 
-        .rpt-table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 8px; margin-top: 10px; }
         .rpt-header-screen { margin-bottom: 15px; border-bottom: 2px solid #cbd5e1; padding-bottom: 12px; }
         .rpt-header-screen h1 { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0; }
         .rpt-header-screen h2 { font-size: 17px; font-weight: 700; color: #2563eb; margin: 4px 0 0 0; }
@@ -463,17 +459,17 @@ if (isset($_POST['export_excel'])) {
         table.rpt-table td { padding: 8px 8px; border: 1px solid #e2e8f0; white-space: nowrap; vertical-align: middle; }
         table.rpt-table tbody tr:hover { background-color: #f8fafc; }
 
-        .subtotal-row td {
-            background-color: #f8fafc !important; font-weight: bold; color: #0f172a; font-size: 14px;
+        /* ปรับฟอนต์แถบสรุปยอดทั้งหมด (PRODUCE DATE, LINE PROCESS, GRAND TOTAL) ให้เท่ากันที่ 15px Bold */
+        .subtotal-row td, .line-subtotal-row td, .grandtotal-row td {
+            font-weight: bold !important; color: #0f172a; font-size: 15px !important;
             border-top: 2px solid #64748b !important; border-bottom: 2px solid #64748b !important;
         }
-        .line-subtotal-row td {
-            background-color: #e2e8f0 !important; font-weight: bold; color: #0f172a; font-size: 15px;
-            border-top: 2px solid #1e293b !important; border-bottom: 2px solid #1e293b !important;
-        }
+        .subtotal-row td { background-color: #f8fafc !important; }
+        .line-subtotal-row td { background-color: #e2e8f0 !important; border-top: 2px solid #1e293b !important; border-bottom: 2px solid #1e293b !important; }
+        .grandtotal-row td { background-color: #cbd5e1 !important; border-top: 2px solid #0f172a !important; border-bottom: 2px solid #0f172a !important; }
 
+/* สไตล์ พิมพ์ / PDF ปรับขนาดคอลัมน์และป้องกันขอบขวาหาย */
 @media print {
-    /* 1. ซ่อน Element ที่ไม่ได้ใช้พิมพ์ */
     .sidebar, .navbar, .footer, .no-print, nav, header, form, button { 
         display: none !important; 
     }
@@ -496,10 +492,9 @@ if (isset($_POST['export_excel'])) {
         font-size: 7.5pt !important; 
     }
 
-    /* 2. ตั้งค่าระยะขอบกระดาษ A4 แนวนอน (Landscape) */
     @page { 
         size: A4 landscape; 
-        margin: 5mm 3mm; 
+        margin: 4mm 3mm; 
     }
 
     .print-container { 
@@ -509,7 +504,6 @@ if (isset($_POST['export_excel'])) {
         margin: 0 !important;
     }
     
-    /* 3. ปลดล็อก Overflow ทั้งหมดเพื่อเปิดทางให้ขอบขวา */
     .rpt-table-wrapper { 
         width: 100% !important;
         max-height: none !important; 
@@ -519,13 +513,13 @@ if (isset($_POST['export_excel'])) {
         padding: 0 !important;
     }
 
-    /* 4. ปรับตารางให้ยืด-หดอัตโนมัติตามหน้ากระดาษ */
     table.rpt-table {
         width: 100% !important;
-        min-width: 0 !important;
-        font-size: 5.5pt !important; /* ปรับขนาดฟอนต์ให้เล็กพอดี 28 คอลัมน์ */
+        min-width: 100% !important;
+        max-width: 100% !important;
+        font-size: 5.2pt !important;
         border-collapse: collapse !important;
-        table-layout: auto !important; /* เปลี่ยนเป็น auto เพื่อให้เบราว์เซอร์คำนวณความกว้างคอลัมน์ให้อยู่ในหน้า */
+        table-layout: fixed !important;
     }
 
     table.rpt-table thead {
@@ -541,8 +535,9 @@ if (isset($_POST['export_excel'])) {
         background-color: #f1f5f9 !important;
         border: 0.5pt solid #000 !important;
         padding: 1px 0.5px !important;
-        font-size: 5.5pt !important;
-        word-break: break-all !important;
+        font-size: 5.2pt !important;
+        word-wrap: break-word !important;
+        overflow: hidden !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
@@ -550,7 +545,13 @@ if (isset($_POST['export_excel'])) {
     table.rpt-table td {
         border: 0.5pt solid #444 !important;
         padding: 1px 0.5px !important;
-        word-break: break-all !important;
+        word-wrap: break-word !important;
+        overflow: hidden !important;
+    }
+
+    .subtotal-row td, .line-subtotal-row td, .grandtotal-row td {
+        font-size: 5.8pt !important;
+        font-weight: bold !important;
     }
 
     tr { 
@@ -758,42 +759,72 @@ if (isset($_POST['export_excel'])) {
 
                     <div class="rpt-table-wrapper">
                         <table class="rpt-table">
+                            <colgroup>
+                                <col style="width: 2.2%;">
+                                <col style="width: 5.8%;">
+                                <col style="width: 2.2%;">
+                                <col style="width: 5.0%;">
+                                <col style="width: 5.5%;">
+                                <col style="width: 4.8%;">
+                                <col style="width: 4.8%;">
+                                <col style="width: 4.8%;">
+                                <col style="width: 3.2%;">
+                                <col style="width: 2.8%;">
+                                <col style="width: 2.8%;">
+                                <col style="width: 2.8%;">
+                                <col style="width: 2.4%;">
+                                <col style="width: 2.4%;">
+                                <col style="width: 2.4%;">
+                                <col style="width: 3.8%;">
+                                <col style="width: 3.8%;">
+                                <col style="width: 3.8%;">
+                                <col style="width: 3.8%;">
+                                <col style="width: 3.2%;">
+                                <col style="width: 3.2%;">
+                                <col style="width: 5.2%;">
+                                <col style="width: 5.2%;">
+                                <col style="width: 6.0%;">
+                                <col style="width: 3.8%;">
+                                <col style="width: 3.8%;">
+                                <col style="width: 3.8%;">
+                                <col style="width: 7.5%;">
+                            </colgroup>
                             <thead>
                                 <tr>
-                                    <th rowspan="2" style="width: 45px;">NO.</th>
-                                    <th rowspan="2" style="width: 120px;">PRODUCT NO.</th>
-                                    <th rowspan="2" style="width: 45px;">ST.</th>
-                                    <th rowspan="2" style="width: 105px;">PRODUCE DATE</th>
-                                    <th rowspan="2" style="width: 120px;">SALE ORDER NO.</th>
-                                    <th rowspan="2" style="width: 100px;">JOB ORDER</th>
-                                    <th rowspan="2" style="width: 100px;">COIL REF.</th>
-                                    <th rowspan="2" style="width: 100px;">CASTER COIL</th>
-                                    <th rowspan="2" style="width: 70px;">COIL FROM</th>
-                                    <th rowspan="2" style="width: 60px;">A</th>
-                                    <th colspan="2" style="width: 120px;">TP</th>
-                                    <th rowspan="2" style="width: 50px;">G</th>
-                                    <th rowspan="2" style="width: 50px;">SG</th>
-                                    <th rowspan="2" style="width: 50px;">MG</th>
-                                    <th rowspan="2" style="width: 80px;">T5 TEMP.</th>
-                                    <th colspan="2" style="width: 160px;">THICKNESS</th>
-                                    <th rowspan="2" style="width: 80px;">W</th>
-                                    <th rowspan="2" style="width: 75px;">CRRNT PASS</th>
-                                    <th rowspan="2" style="width: 70px;">COIL SLIT</th>
-                                    <th colspan="2" style="width: 220px;">WEIGHT</th>
-                                    <th rowspan="2" style="width: 130px;">WORK PROCESS</th>
-                                    <th rowspan="2" style="width: 80px;">NEXT ST.</th>
-                                    <th colspan="2" style="width: 160px;">BATCH</th>
+                                    <th rowspan="2">NO.</th>
+                                    <th rowspan="2">PRODUCT NO.</th>
+                                    <th rowspan="2">ST.</th>
+                                    <th rowspan="2">PRODUCE DATE</th>
+                                    <th rowspan="2">SALE ORDER NO.</th>
+                                    <th rowspan="2">JOB ORDER</th>
+                                    <th rowspan="2">COIL REF.</th>
+                                    <th rowspan="2">CASTER COIL</th>
+                                    <th rowspan="2">COIL FROM</th>
+                                    <th rowspan="2">A</th>
+                                    <th colspan="2">TP</th>
+                                    <th rowspan="2">G</th>
+                                    <th rowspan="2">SG</th>
+                                    <th rowspan="2">MG</th>
+                                    <th rowspan="2">T5 TEMP.</th>
+                                    <th colspan="2">THICKNESS</th>
+                                    <th rowspan="2">W</th>
+                                    <th rowspan="2">CRRNT PASS</th>
+                                    <th rowspan="2">COIL SLIT</th>
+                                    <th colspan="2">WEIGHT</th>
+                                    <th rowspan="2">WORK PROCESS</th>
+                                    <th rowspan="2">NEXT ST.</th>
+                                    <th colspan="2">BATCH</th>
                                     <th rowspan="2">REMARK</th>
                                 </tr>
                                 <tr>
-                                    <th style="width: 60px;">ORG</th>
-                                    <th style="width: 60px;">FNL</th>
-                                    <th style="width: 80px;">ACT.</th>
-                                    <th style="width: 80px;">SPEC.</th>
-                                    <th style="width: 110px;">ACCEPT</th>
-                                    <th style="width: 110px;">REJECT</th>
-                                    <th style="width: 80px;">ST.</th>
-                                    <th style="width: 80px;">RESULT</th>
+                                    <th>ORG</th>
+                                    <th>FNL</th>
+                                    <th>ACT.</th>
+                                    <th>SPEC.</th>
+                                    <th>ACCEPT</th>
+                                    <th>REJECT</th>
+                                    <th>ST.</th>
+                                    <th>RESULT</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -931,11 +962,12 @@ if (isset($_POST['export_excel'])) {
                                     </tr>
                                 <?php endif; ?>
 
-                                <tr style="background-color: #cbd5e1; font-weight: bold; border-top: 2px solid #0f172a; border-bottom: 2px solid #0f172a;">
-                                    <td colspan="20" class="text-left font-extrabold uppercase">GRAND TOTAL</td>
-                                    <td class="text-center font-extrabold"><?=$grandCoilCount?> COILS</td>
-                                    <td class="text-right font-extrabold text-blue-950"><?=number_format($grandAcceptSum, 0)?></td>
-                                    <td class="text-right font-extrabold text-red-950"><?=$grandRejectSum > 0 ? number_format($grandRejectSum, 0) : ''?></td>
+                                <!-- GRAND TOTAL ขนาดฟอนต์เท่ากับ SUBTOTAL BY LINE PROCESS (15px) -->
+                                <tr class="grandtotal-row">
+                                    <td colspan="20" class="text-left font-bold uppercase">GRAND TOTAL</td>
+                                    <td class="text-center font-bold"><?=$grandCoilCount?> COILS</td>
+                                    <td class="text-right font-bold text-blue-950"><?=number_format($grandAcceptSum, 0)?></td>
+                                    <td class="text-right font-bold text-red-950"><?=$grandRejectSum > 0 ? number_format($grandRejectSum, 0) : ''?></td>
                                     <td colspan="5"></td>
                                 </tr>
 

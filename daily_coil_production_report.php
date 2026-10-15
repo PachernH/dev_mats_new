@@ -299,19 +299,19 @@ if (isset($_POST['export_excel'])) {
 
                 if ($currentShift !== null && $currentShift !== $shift):
             ?>
-                    <tr style="background-color: #f8fafc; font-weight: bold;">
-                        <td colspan="19" style="text-align: left;">SUBTOTAL SHIFT &nbsp;&nbsp; <?=$currentShift?></td>
-                        <td style="text-align: center;"><?=$shiftCoils?> COILS</td>
-                        <td style="text-align: right; color: #1e3a8a;"><?=number_format($shiftAcceptSum)?></td>
+                    <tr style="background-color: #f8fafc; font-weight: bold; font-size: 14px;">
+                        <td colspan="19" style="text-align: left; font-weight: bold;">SUBTOTAL SHIFT &nbsp;&nbsp; <?=$currentShift?></td>
+                        <td style="text-align: center; font-weight: bold;"><?=$shiftCoils?> COILS</td>
+                        <td style="text-align: right; font-weight: bold; color: #1e3a8a;"><?=number_format($shiftAcceptSum)?></td>
                         <td colspan="5"></td>
                     </tr>
             <?php
                     if ($currentDate !== null && $currentDate !== $date):
             ?>
-                        <tr style="background-color: #e2e8f0; font-weight: bold;">
-                            <td colspan="19" style="text-align: left;">SUBTOTAL PRODUCE DATE &nbsp;&nbsp; <?=$currentDate?></td>
-                            <td style="text-align: center;"><?=$dateCoils?> COILS</td>
-                            <td style="text-align: right; color: #172554;"><?=number_format($dateAcceptSum)?></td>
+                        <tr style="background-color: #e2e8f0; font-weight: bold; font-size: 14px;">
+                            <td colspan="19" style="text-align: left; font-weight: bold;">SUBTOTAL PRODUCE DATE &nbsp;&nbsp; <?=$currentDate?></td>
+                            <td style="text-align: center; font-weight: bold;"><?=$dateCoils?> COILS</td>
+                            <td style="text-align: right; font-weight: bold; color: #172554;"><?=number_format($dateAcceptSum)?></td>
                             <td colspan="5"></td>
                         </tr>
             <?php
@@ -363,27 +363,27 @@ if (isset($_POST['export_excel'])) {
             <?php endforeach; ?>
 
             <?php if ($currentShift !== null): ?>
-                <tr style="background-color: #f8fafc; font-weight: bold;">
-                    <td colspan="19" style="text-align: left;">SUBTOTAL SHIFT &nbsp;&nbsp; <?=$currentShift?></td>
-                    <td style="text-align: center;"><?=$shiftCoils?> COILS</td>
-                    <td style="text-align: right; color: #1e3a8a;"><?=number_format($shiftAcceptSum)?></td>
+                <tr style="background-color: #f8fafc; font-weight: bold; font-size: 14px;">
+                    <td colspan="19" style="text-align: left; font-weight: bold;">SUBTOTAL SHIFT &nbsp;&nbsp; <?=$currentShift?></td>
+                    <td style="text-align: center; font-weight: bold;"><?=$shiftCoils?> COILS</td>
+                    <td style="text-align: right; font-weight: bold; color: #1e3a8a;"><?=number_format($shiftAcceptSum)?></td>
                     <td colspan="5"></td>
                 </tr>
             <?php endif; ?>
 
             <?php if ($currentDate !== null): ?>
-                <tr style="background-color: #e2e8f0; font-weight: bold;">
-                    <td colspan="19" style="text-align: left;">SUBTOTAL PRODUCE DATE &nbsp;&nbsp; <?=$currentDate?></td>
-                    <td style="text-align: center;"><?=$dateCoils?> COILS</td>
-                    <td style="text-align: right; color: #172554;"><?=number_format($dateAcceptSum)?></td>
+                <tr style="background-color: #e2e8f0; font-weight: bold; font-size: 14px;">
+                    <td colspan="19" style="text-align: left; font-weight: bold;">SUBTOTAL PRODUCE DATE &nbsp;&nbsp; <?=$currentDate?></td>
+                    <td style="text-align: center; font-weight: bold;"><?=$dateCoils?> COILS</td>
+                    <td style="text-align: right; font-weight: bold; color: #172554;"><?=number_format($dateAcceptSum)?></td>
                     <td colspan="5"></td>
                 </tr>
             <?php endif; ?>
 
-            <tr style="background-color: #cbd5e1; font-weight: bold; font-size: 15px;">
-                <td colspan="19" style="text-align: left;">GRAND TOTAL</td>
-                <td style="text-align: center;"><?=$grandCoils?> COILS</td>
-                <td style="text-align: right; color: #0f172a;"><?=number_format($grandAcceptSum)?></td>
+            <tr style="background-color: #cbd5e1; font-weight: bold; font-size: 14px;">
+                <td colspan="19" style="text-align: left; font-weight: bold;">GRAND TOTAL</td>
+                <td style="text-align: center; font-weight: bold;"><?=$grandCoils?> COILS</td>
+                <td style="text-align: right; font-weight: bold; color: #0f172a;"><?=number_format($grandAcceptSum)?></td>
                 <td colspan="5"></td>
             </tr>
 
@@ -402,41 +402,38 @@ if (isset($_POST['export_excel'])) {
     <link href="assets-graph/styles.css" rel="stylesheet" />
     <script src="assets/js/tailwindcss.js"></script>
 
-    <style>
-        .rpt-table-wrapper {
-            width: 100%;
-            max-height: 70vh;
-            overflow-y: auto;
-            overflow-x: auto;
-            background: #fff;
-            border-radius: 8px;
-            margin-top: 10px;
-            border: 1px solid #cbd5e1;
-        }
+<style>
+    /* สไตล์การแสดงผลบนหน้าจอปกติ */
+    .rpt-table-wrapper {
+        width: 100%;
+        max-height: 70vh;
+        overflow-y: auto;
+        overflow-x: auto;
+        background: #fff;
+        border-radius: 8px;
+        margin-top: 10px;
+        border: 1px solid #cbd5e1;
+    }
 
-        table.rpt-table thead tr:nth-child(1) th {
-            position: sticky;
-            top: 0;
-            z-index: 20;
-            background-color: #f1f5f9 !important;
-            box-shadow: inset 0 -1px 0 #cbd5e1;
-        }
+    table.rpt-table thead tr:nth-child(1) th {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background-color: #f1f5f9 !important;
+        box-shadow: inset 0 -1px 0 #cbd5e1;
+    }
 
-        table.rpt-table thead tr:nth-child(2) th {
-            position: sticky;
-            top: 35px;
-            z-index: 19;
-            background-color: #f1f5f9 !important;
-            box-shadow: inset 0 -1px 0 #cbd5e1;
-        }
+    table.rpt-table thead tr:nth-child(2) th {
+        position: sticky;
+        top: 35px;
+        z-index: 19;
+        background-color: #f1f5f9 !important;
+        box-shadow: inset 0 -1px 0 #cbd5e1;
+    }
 
-        body { font-family: 'Segoe UI', 'Tahoma', 'Sarabun', sans-serif; font-size: 15px; background-color: #f8fafc; }
-        .main-panel .content { padding: 15px 15px !important; }
+    body { font-family: 'Segoe UI', 'Tahoma', 'Sarabun', sans-serif; font-size: 15px; background-color: #f8fafc; }
+    .main-panel .content { padding: 15px 15px !important; }
 
-        .input-group-custom { display: flex; flex-direction: column; gap: 6px; }
-        .input-label-custom { font-size: 15px; font-weight: 800; color: #1e293b; }
-        
-/* ปรับขนาด Font ช่อง Process, วันที่ และช่วงเวลา ให้ใหญ่ขึ้นกว่าปกติ 0.5 เท่า (พอดีสายตา) */
     .input-group-custom { display: flex; flex-direction: column; gap: 4px; }
     .input-label-custom { font-size: 13.5px; font-weight: 700; color: #334155; }
     
@@ -459,129 +456,145 @@ if (isset($_POST['export_excel'])) {
         white-space: nowrap; flex-shrink: 0; transition: all 0.2s ease; cursor: pointer;
     }
 
-        .rpt-header-screen { margin-bottom: 15px; border-bottom: 2px solid #cbd5e1; padding-bottom: 12px; }
-        .rpt-header-screen h1 { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0; }
-        .rpt-header-screen h2 { font-size: 17px; font-weight: 700; color: #2563eb; margin: 4px 0 0 0; }
-        .rpt-meta-screen { font-size: 14px !important; font-weight: 700 !important; color: #1e293b !important; line-height: 1.5; }
+    .rpt-header-screen { margin-bottom: 15px; border-bottom: 2px solid #cbd5e1; padding-bottom: 12px; }
+    .rpt-header-screen h1 { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0; }
+    .rpt-header-screen h2 { font-size: 17px; font-weight: 700; color: #2563eb; margin: 4px 0 0 0; }
+    .rpt-meta-screen { font-size: 14px !important; font-weight: 700 !important; color: #1e293b !important; line-height: 1.5; }
 
-        table.rpt-table { width: 100%; min-width: 2300px; border-collapse: collapse; font-size: 14px; color: #1e293b; }
+    table.rpt-table { width: 100%; min-width: 2300px; border-collapse: collapse; font-size: 14px; color: #1e293b; }
+    table.rpt-table th {
+        background-color: #f1f5f9; color: #0f172a; font-weight: 700; padding: 8px 6px;
+        border: 1px solid #cbd5e1; white-space: nowrap; text-align: center; font-size: 13px; vertical-align: middle;
+    }
+    table.rpt-table td { padding: 8px 8px; border: 1px solid #e2e8f0; white-space: nowrap; vertical-align: middle; }
+    table.rpt-table tbody tr:hover { background-color: #f8fafc; }
+
+    .subtotal-row td, .line-subtotal-row td, .grandtotal-row td {
+        background-color: #ffffff !important; 
+        font-size: 14px !important; 
+        font-weight: bold !important; 
+        color: #0f172a;
+        border-top: 1.5px solid #000000 !important; 
+        border-bottom: 1.5px solid #000000 !important;
+    }
+    .grandtotal-row td {
+        border-bottom: 2px double #000000 !important;
+    }
+
+    /* สไตล์สำหรับการพิมพ์ (Print Mode) */
+    @media print {
+        .sidebar, .navbar, .footer, .no-print, nav, header, form { 
+            display: none !important; 
+        }
+
+        .main-panel { 
+            width: 100% !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            float: none !important; 
+        }
+        .content { 
+            padding: 0 !important; 
+            margin: 0 !important; 
+        }
+        body { 
+            background: #fff !important; 
+            color: #000 !important; 
+            font-size: 8pt !important; 
+        }
+
+        @page { 
+            size: A4 landscape; 
+            margin: 5mm; 
+        }
+        .print-container { 
+            width: 100% !important; 
+            border: none !important; 
+            padding: 0 !important; 
+            margin: 0 !important;
+        }
+        .rpt-table-wrapper { 
+            overflow: visible !important; 
+            max-height: none !important; 
+            border: none !important;
+        }
+
+        .rpt-header-screen { 
+            display: flex !important; 
+            justify-content: space-between !important; 
+            align-items: flex-start !important; 
+            margin-bottom: 10px !important; 
+            border-bottom: 1.5pt solid #000 !important; 
+            padding-bottom: 5px !important; 
+        }
+        .rpt-header-screen h1 { 
+            font-size: 14pt !important; 
+            font-weight: bold !important; 
+            color: #000 !important; 
+            margin: 0 !important;
+        }
+        .rpt-header-screen h2 { 
+            font-size: 12pt !important; 
+            font-weight: bold !important; 
+            color: #000 !important; 
+            margin: 2px 0 0 0 !important;
+        }
+        .rpt-meta-screen { 
+            font-size: 9pt !important; 
+            font-weight: bold !important; 
+            color: #000 !important; 
+            line-height: 1.3 !important;
+        }
+
+        table.rpt-table { 
+            width: 100% !important; 
+            min-width: 0 !important; 
+            font-size: 6.5pt !important; 
+            border-collapse: collapse !important;
+        }
+
+        /* ยกเลิกการ Sticky ของหัวตารางเวลาพิมพ์ เพื่อไม่ให้หัวตารางหลุดขอบกระดาษเวลามีการ Scroll */
+        table.rpt-table thead tr:nth-child(1) th,
+        table.rpt-table thead tr:nth-child(2) th,
         table.rpt-table th {
-            background-color: #f1f5f9; color: #0f172a; font-weight: 700; padding: 8px 6px;
-            border: 1px solid #cbd5e1; white-space: nowrap; text-align: center; font-size: 13px; vertical-align: middle;
-        }
-        table.rpt-table td { padding: 8px 8px; border: 1px solid #e2e8f0; white-space: nowrap; vertical-align: middle; }
-        table.rpt-table tbody tr:hover { background-color: #f8fafc; }
-
-        .subtotal-row td {
-            background-color: #ffffff !important; font-weight: bold; color: #0f172a; font-size: 14px;
-            border-top: 1.5px solid #000000 !important; border-bottom: 1.5px solid #000000 !important;
-        }
-        .line-subtotal-row td {
-            background-color: #ffffff !important; font-weight: bold; color: #0f172a; font-size: 14px;
-            border-top: 1.5px solid #000000 !important; border-bottom: 1.5px solid #000000 !important;
-        }
-        .grandtotal-row td {
-            background-color: #ffffff !important; font-weight: bold; color: #0f172a; font-size: 15px;
-            border-top: 2px solid #000000 !important; border-bottom: 2px double #000000 !important;
+            position: static !important;
+            top: auto !important;
+            box-shadow: none !important;
         }
 
-        @media print {
-            .sidebar, .navbar, .footer, .no-print, nav, header, form { 
-                display: none !important; 
-            }
-
-            .main-panel { 
-                width: 100% !important; 
-                margin: 0 !important; 
-                padding: 0 !important; 
-                float: none !important; 
-            }
-            .content { 
-                padding: 0 !important; 
-                margin: 0 !important; 
-            }
-            body { 
-                background: #fff !important; 
-                color: #000 !important; 
-                font-size: 8pt !important; 
-            }
-
-            @page { 
-                size: A4 landscape; 
-                margin: 5mm; 
-            }
-            .print-container { 
-                width: 100% !important; 
-                border: none !important; 
-                padding: 0 !important; 
-                margin: 0 !important;
-            }
-            .rpt-table-wrapper { 
-                overflow: visible !important; 
-                max-height: none !important; 
-                border: none !important;
-            }
-
-            .rpt-header-screen { 
-                display: flex !important; 
-                justify-content: space-between !important; 
-                align-items: flex-start !important; 
-                margin-bottom: 10px !important; 
-                border-bottom: 1.5pt solid #000 !important; 
-                padding-bottom: 5px !important; 
-            }
-            .rpt-header-screen h1 { 
-                font-size: 14pt !important; 
-                font-weight: bold !important; 
-                color: #000 !important; 
-                margin: 0 !important;
-            }
-            .rpt-header-screen h2 { 
-                font-size: 12pt !important; 
-                font-weight: bold !important; 
-                color: #000 !important; 
-                margin: 2px 0 0 0 !important;
-            }
-            .rpt-meta-screen { 
-                font-size: 9pt !important; 
-                font-weight: bold !important; 
-                color: #000 !important; 
-                line-height: 1.3 !important;
-            }
-
-            table.rpt-table { 
-                width: 100% !important; 
-                min-width: 0 !important; 
-                font-size: 6.5pt !important; 
-                border-collapse: collapse !important;
-            }
-            thead { 
-                display: table-header-group !important; 
-            }
-            tbody { 
-                display: table-row-group !important; 
-            }
-            tr { 
-                page-break-inside: avoid !important; 
-            }
-            
-            table.rpt-table th { 
-                background-color: #f1f5f9 !important; 
-                color: #000 !important;
-                border: 0.5pt solid #000 !important; 
-                padding: 3px 2px !important; 
-                font-size: 6.5pt !important; 
-                font-weight: bold !important;
-                text-align: center !important;
-                -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact;
-            }
-            table.rpt-table td { 
-                border: 0.5pt solid #000 !important; 
-                padding: 2px 2px !important; 
-            }
+        table.rpt-table thead { 
+            display: table-header-group !important; 
         }
-    </style>
+        table.rpt-table tbody { 
+            display: table-row-group !important; 
+        }
+        table.rpt-table tr { 
+            page-break-inside: avoid !important; 
+        }
+        
+        table.rpt-table th { 
+            background-color: #f1f5f9 !important; 
+            color: #000 !important;
+            border: 0.5pt solid #000 !important; 
+            padding: 3px 2px !important; 
+            font-size: 6.5pt !important; 
+            font-weight: bold !important;
+            text-align: center !important;
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact;
+        }
+
+        table.rpt-table td, 
+        .subtotal-row td, 
+        .line-subtotal-row td, 
+        .grandtotal-row td { 
+            border: 0.5pt solid #000 !important; 
+            padding: 2px 2px !important; 
+            font-size: 6.5pt !important;
+            font-weight: bold !important;
+        }
+    }
+</style>
 </head>
 
 <body>
@@ -602,60 +615,56 @@ if (isset($_POST['export_excel'])) {
         <div class="content">    
             <div class="w-full mx-auto">
                 
-                <!-- INPUT FORM PANEL (แบ่งครึ่ง 50/50 Font ใหญ่ 2 เท่า คมชัด ชัดเจน) -->
-                <div class="bg-white rounded-xl shadow-md border border-slate-200 p-5 mb-4 no-print">
-                    <form method="POST" action="" id="reportForm" class="flex flex-col gap-4">
+                <!-- INPUT FORM PANEL (แบ่งครึ่ง 50/50 Font ใหญ่กว่าเดิม 0.5 เท่า กำลังพอดี) -->
+                <div class="bg-white rounded-xl shadow-md border border-slate-200 p-4 mb-4 no-print">
+                    <form method="POST" action="" id="reportForm" class="flex flex-col gap-3">
                         
-<!-- INPUT FORM PANEL (แบ่งครึ่ง 50/50 Font ใหญ่กว่าเดิม 0.5 เท่า กำลังพอดี) -->
-<div class="bg-white rounded-xl shadow-md border border-slate-200 p-4 mb-4 no-print">
-    <form method="POST" action="" id="reportForm" class="flex flex-col gap-3">
-        
-        <!-- บรรทัดที่ 1: แบ่งครึ่งสมดุล 50 / 50 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-            
-            <!-- Process Selection (ฝั่งซ้าย 50%) -->
-            <div class="input-group-custom">
-                <label class="input-label-custom">Process</label>
-                <select name="cmbProcess" onchange="this.form.submit()" class="input-field-custom w-full cursor-pointer shadow-sm">
-                    <option value="DAILY CASTING PRODUCTION REPORT" <?=$cmbProcess == 'DAILY CASTING PRODUCTION REPORT' ? 'selected' : ''?>>DAILY CASTING PRODUCTION REPORT</option>
-                    <option value="DAILY COLD MILL PRODUCTION REPORT" <?=$cmbProcess == 'DAILY COLD MILL PRODUCTION REPORT' ? 'selected' : ''?>>DAILY COLD MILL PRODUCTION REPORT</option>
-                    <option value="DAILY SWISS SLITTER PRODUCTION REPORT" <?=$cmbProcess == 'DAILY SWISS SLITTER PRODUCTION REPORT' ? 'selected' : ''?>>DAILY SWISS SLITTER PRODUCTION REPORT</option>
-                    <option value="DAILY BATCH ANNEALING PRODUCTION REPORT" <?=$cmbProcess == 'DAILY BATCH ANNEALING PRODUCTION REPORT' ? 'selected' : ''?>>DAILY BATCH ANNEALING PRODUCTION REPORT</option>
-                    <option value="DAILY PACKING PRODUCTION REPORT" <?=$cmbProcess == 'DAILY PACKING PRODUCTION REPORT' ? 'selected' : ''?>>DAILY PACKING PRODUCTION REPORT</option>
-                </select>
-            </div>
+                        <!-- บรรทัดที่ 1: แบ่งครึ่งสมดุล 50 / 50 -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                            
+                            <!-- Process Selection (ฝั่งซ้าย 50%) -->
+                            <div class="input-group-custom">
+                                <label class="input-label-custom">Process</label>
+                                <select name="cmbProcess" onchange="this.form.submit()" class="input-field-custom w-full cursor-pointer shadow-sm">
+                                    <option value="DAILY CASTING PRODUCTION REPORT" <?=$cmbProcess == 'DAILY CASTING PRODUCTION REPORT' ? 'selected' : ''?>>DAILY CASTING PRODUCTION REPORT</option>
+                                    <option value="DAILY COLD MILL PRODUCTION REPORT" <?=$cmbProcess == 'DAILY COLD MILL PRODUCTION REPORT' ? 'selected' : ''?>>DAILY COLD MILL PRODUCTION REPORT</option>
+                                    <option value="DAILY SWISS SLITTER PRODUCTION REPORT" <?=$cmbProcess == 'DAILY SWISS SLITTER PRODUCTION REPORT' ? 'selected' : ''?>>DAILY SWISS SLITTER PRODUCTION REPORT</option>
+                                    <option value="DAILY BATCH ANNEALING PRODUCTION REPORT" <?=$cmbProcess == 'DAILY BATCH ANNEALING PRODUCTION REPORT' ? 'selected' : ''?>>DAILY BATCH ANNEALING PRODUCTION REPORT</option>
+                                    <option value="DAILY PACKING PRODUCTION REPORT" <?=$cmbProcess == 'DAILY PACKING PRODUCTION REPORT' ? 'selected' : ''?>>DAILY PACKING PRODUCTION REPORT</option>
+                                </select>
+                            </div>
 
-            <!-- Produce Date From Selection (ฝั่งขวา 50%) -->
-            <div class="input-group-custom">
-                <label class="input-label-custom">Produce Date From</label>
-                <div class="flex items-center gap-2">
-                    <input type="date" name="dtpProduceFrom" id="dtpProduceFrom" value="<?=$dtpProduceFrom?>" class="input-field-custom w-1/2">
-<span class="text-2xl sm:text-3xl font-black text-blue-900 bg-blue-100/90 px-4 py-2.5 rounded-xl whitespace-nowrap border-2 border-blue-400 shadow-sm w-1/2 text-center shrink-0">
-    - 8:00 To <span id="lblDateTo" class="text-blue-700 underline underline-offset-4 decoration-blue-500"><?=date('m/d/Y', strtotime($dtpProduceTo))?></span> - 8:00
-</span>
+                            <!-- Produce Date From Selection (ฝั่งขวา 50%) -->
+                            <div class="input-group-custom">
+                                <label class="input-label-custom">Produce Date From</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="date" name="dtpProduceFrom" id="dtpProduceFrom" value="<?=$dtpProduceFrom?>" class="input-field-custom w-1/2">
+                                    <span class="text-2xl sm:text-3xl font-black text-blue-900 bg-blue-100/90 px-4 py-2.5 rounded-xl whitespace-nowrap border-2 border-blue-400 shadow-sm w-1/2 text-center shrink-0">
+                                        - 8:00 To <span id="lblDateTo" class="text-blue-700 underline underline-offset-4 decoration-blue-500"><?=date('m/d/Y', strtotime($dtpProduceTo))?></span> - 8:00
+                                    </span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                <!-- บรรทัดที่ 2: กลุ่มปุ่มคำสั่งหลัก (ย้ายมาชิดฝั่งขวา) -->
+                        <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-end gap-2">
+                            <button type="submit" class="btn-action-lg bg-blue-600 hover:bg-blue-700 text-white shadow-md font-bold min-w-[110px]">
+                                🔍 ค้นหาข้อมูล
+                            </button>
+                            <a href="<?=$_SERVER['PHP_SELF']?>" class="btn-action-lg bg-slate-200 hover:bg-slate-300 text-slate-700 border border-slate-300 shadow-sm text-decoration-none font-bold min-w-[100px]">
+                                🔄 ล้างค่า
+                            </a>
+                            <button type="submit" name="export_excel" value="1" class="btn-action-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-md font-bold min-w-[110px]">
+                                📊 Export Excel
+                            </button>
+                            <button type="button" onclick="window.print()" class="btn-action-lg bg-slate-800 hover:bg-slate-900 text-white shadow-md font-bold min-w-[100px]">
+                                🖨️ พิมพ์
+                            </button>
+                        </div>
+
+                    </form>
                 </div>
-            </div>
-
-        </div>
-
-        <!-- บรรทัดที่ 2: กลุ่มปุ่มคำสั่งหลัก -->
-        <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-start gap-2">
-            <button type="submit" class="btn-action-lg bg-blue-600 hover:bg-blue-700 text-white shadow-md font-bold min-w-[110px]">
-                🔍 ค้นหาข้อมูล
-            </button>
-            <a href="<?=$_SERVER['PHP_SELF']?>" class="btn-action-lg bg-slate-200 hover:bg-slate-300 text-slate-700 border border-slate-300 shadow-sm text-decoration-none font-bold min-w-[100px]">
-                🔄 ล้างค่า
-            </a>
-            <button type="submit" name="export_excel" value="1" class="btn-action-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-md font-bold min-w-[110px]">
-                📊 Export Excel
-            </button>
-            <button type="button" onclick="window.print()" class="btn-action-lg bg-slate-800 hover:bg-slate-900 text-white shadow-md font-bold min-w-[100px]">
-                🖨️ พิมพ์
-            </button>
-        </div>
-
-    </form>
-</div>
 
                 <!-- REPORT CONTAINER -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 print-container">
@@ -739,7 +748,7 @@ if (isset($_POST['export_excel'])) {
                                     if ($currentShift !== null && $currentShift !== $shift):
                                 ?>
                                         <tr class="subtotal-row">
-                                            <td colspan="19" style="text-align: left;">SUBTOTAL SHIFT &nbsp;&nbsp;&nbsp;&nbsp; <?=$currentShift?></td>
+                                            <td colspan="19" style="text-align: left; font-weight: bold;">SUBTOTAL SHIFT &nbsp;&nbsp;&nbsp;&nbsp; <?=$currentShift?></td>
                                             <td class="text-center font-bold"><?=$shiftCoils?> COILS</td>
                                             <td class="text-right font-bold"><?=number_format($shiftAcceptSum)?></td>
                                             <td colspan="5"></td>
@@ -748,7 +757,7 @@ if (isset($_POST['export_excel'])) {
                                         if ($currentDate !== null && $currentDate !== $date):
                                 ?>
                                             <tr class="line-subtotal-row">
-                                                <td colspan="19" style="text-align: left;">SUBTOTAL PRODUCE DATE &nbsp;&nbsp;&nbsp;&nbsp; <?=$currentDate?></td>
+                                                <td colspan="19" style="text-align: left; font-weight: bold;">SUBTOTAL PRODUCE DATE &nbsp;&nbsp;&nbsp;&nbsp; <?=$currentDate?></td>
                                                 <td class="text-center font-bold"><?=$dateCoils?> COILS</td>
                                                 <td class="text-right font-bold"><?=number_format($dateAcceptSum)?></td>
                                                 <td colspan="5"></td>
@@ -803,7 +812,7 @@ if (isset($_POST['export_excel'])) {
 
                                 <?php if ($currentShift !== null): ?>
                                     <tr class="subtotal-row">
-                                        <td colspan="19" style="text-align: left;">SUBTOTAL SHIFT &nbsp;&nbsp;&nbsp;&nbsp; <?=$currentShift?></td>
+                                        <td colspan="19" style="text-align: left; font-weight: bold;">SUBTOTAL SHIFT &nbsp;&nbsp;&nbsp;&nbsp; <?=$currentShift?></td>
                                         <td class="text-center font-bold"><?=$shiftCoils?> COILS</td>
                                         <td class="text-right font-bold"><?=number_format($shiftAcceptSum)?></td>
                                         <td colspan="5"></td>
@@ -812,17 +821,17 @@ if (isset($_POST['export_excel'])) {
 
                                 <?php if ($currentDate !== null): ?>
                                     <tr class="line-subtotal-row">
-                                        <td colspan="19" style="text-left font-bold">SUBTOTAL PRODUCE DATE &nbsp;&nbsp;&nbsp;&nbsp; <?=$currentDate?></td>
-                                        <td style="text-align: center;"><?=$dateCoils?> COILS</td>
-                                        <td style="text-align: right; color: #172554;"><?=number_format($dateAcceptSum)?></td>
+                                        <td colspan="19" style="text-align: left; font-weight: bold;">SUBTOTAL PRODUCE DATE &nbsp;&nbsp;&nbsp;&nbsp; <?=$currentDate?></td>
+                                        <td style="text-align: center; font-weight: bold;"><?=$dateCoils?> COILS</td>
+                                        <td style="text-align: right; font-weight: bold; color: #172554;"><?=number_format($dateAcceptSum)?></td>
                                         <td colspan="5"></td>
                                     </tr>
                                 <?php endif; ?>
 
                                 <tr class="grandtotal-row">
-                                    <td colspan="19" style="text-left font-bold">GRAND TOTAL</td>
-                                    <td style="text-align: center;"><?=$grandCoils?> COILS</td>
-                                    <td style="text-align: right; color: #0f172a;"><?=number_format($grandAcceptSum)?></td>
+                                    <td colspan="19" style="text-align: left; font-weight: bold;">GRAND TOTAL</td>
+                                    <td style="text-align: center; font-weight: bold;"><?=$grandCoils?> COILS</td>
+                                    <td style="text-align: right; font-weight: bold; color: #0f172a;"><?=number_format($grandAcceptSum)?></td>
                                     <td colspan="5"></td>
                                 </tr>
 
