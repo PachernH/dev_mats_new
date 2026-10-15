@@ -316,7 +316,7 @@ include 'include/'.$folder_func.'/navigation.php';
                                     // Query 500 รายการจาก JOBORDER1
                                     $sql = "SELECT TOP 500 JOB_ORDER, JOBORDER_DATE, SALEORDER_NO, PRODUCT_ID, 
                                                    ALLOY, TEMPER, THICKNESS, WIDTH, LENGTH, JOB_ACTUALWEIGHT, JOB_ACTUALPIECE, JOB_STATUS 
-                                            FROM [MATS-NEW].dbo.JOBORDER1 
+                                            FROM JOBORDER1 
                                             {$where_sql}
                                             ORDER BY JOBORDER_DATE DESC, JOB_ORDER DESC";
 

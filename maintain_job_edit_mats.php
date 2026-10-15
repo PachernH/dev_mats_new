@@ -18,7 +18,7 @@ if (!empty($jno)) {
     $sql = "SELECT JOB_ORDER, SALEORDER_NO, SALEORDER_ITEM, PRODUCT_ID, ALLOY, TEMPER, 
                    THICKNESS, WIDTH, LENGTH, WEIGHT_PIECE, CUT_WIDTH, CUT_LENGTH, CUT_WEIGHTPIECE, 
                    JOB_WORKPROCESS, JOB_STATUS, JOB_MAXTOLERANCE, PRD_REMARK1, PRD_REMARK2, OTHER_COILWIDTH 
-            FROM [MATS-NEW].dbo.JOBORDER1 
+            FROM JOBORDER1 
             WHERE JOB_ORDER = :jno";
     $stmt = $conn->prepare($sql);
     $stmt->execute([':jno' => $jno]);

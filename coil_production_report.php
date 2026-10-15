@@ -35,7 +35,7 @@ if ($dbConnection) {
 
 // 3. รับค่า Filter จากฟอร์มแบบ POST
 $dtpProduceFrom = !isset($_POST['dtpProduceFrom']) ? date('Y-m-d') : htmlspecialchars($_POST['dtpProduceFrom'], ENT_QUOTES, 'UTF-8');
-$dtpProduceTo   = !isset($_POST['dtpProduceTo'])   ? date('Y-m-d', strtotime('+1 day')) : htmlspecialchars($_POST['dtpProduceTo'], ENT_QUOTES, 'UTF-8');
+$dtpProduceTo   = !isset($_POST['dtpProduceTo'])   ? date('Y-m-d') : htmlspecialchars($_POST['dtpProduceTo'], ENT_QUOTES, 'UTF-8');
 $txtProductFrom = !isset($_POST['txtProductFrom']) ? '0' : htmlspecialchars($_POST['txtProductFrom'], ENT_QUOTES, 'UTF-8');
 $txtProductTo   = !isset($_POST['txtProductTo'])   ? 'Z' : htmlspecialchars($_POST['txtProductTo'], ENT_QUOTES, 'UTF-8');
 $txtJobOrder    = !isset($_POST['txtJobOrder'])    ? 'ALL' : htmlspecialchars($_POST['txtJobOrder'], ENT_QUOTES, 'UTF-8');
@@ -49,7 +49,6 @@ $cmbGrade       = !isset($_POST['cmbGrade'])       ? 'ALL' : htmlspecialchars($_
 $txtThickness   = !isset($_POST['txtThickness'])   ? '0.000' : htmlspecialchars($_POST['txtThickness'], ENT_QUOTES, 'UTF-8');
 $txtWidth       = !isset($_POST['txtWidth'])       ? '0.00' : htmlspecialchars($_POST['txtWidth'], ENT_QUOTES, 'UTF-8');
 $cmbStatus      = !isset($_POST['cmbStatus'])      ? 'ALL' : htmlspecialchars($_POST['cmbStatus'], ENT_QUOTES, 'UTF-8');
-$chkOption      = isset($_POST['chkOption']) ? 1 : 0;
 
 $iduser_func = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
 $folder_func = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
@@ -60,11 +59,13 @@ $errorMessage = '';
 
 if ($dbConnection) {
     try {
+        $dtpProduceToNextDay = date('Y-m-d', strtotime($dtpProduceTo . ' +1 day'));
+
         $bindParams = [
-            ':dtpProduceFrom' => $dtpProduceFrom . ' 00:00:00',
-            ':dtpProduceTo'   => $dtpProduceTo . ' 23:59:59',
-            ':txtProductFrom' => $txtProductFrom,
-            ':txtProductTo'   => $txtProductTo
+            ':dtpProduceFrom'     => $dtpProduceFrom . ' 00:00:00',
+            ':dtpProduceToNextDay' => $dtpProduceToNextDay . ' 00:00:00',
+            ':txtProductFrom'     => $txtProductFrom,
+            ':txtProductTo'       => $txtProductTo
         ];
 
         switch ($cmbProcess) {
@@ -100,32 +101,27 @@ if ($dbConnection) {
                 $tableJoin = "dbo.CDMLPROD1 AS A WITH (NOLOCK) INNER JOIN dbo.COILPROD1 AS B WITH (NOLOCK) ON A.COIL_NO = B.COIL_NO";
                 $weightAccept = "CAST(A.CDML_ACCEPTWEIGHT AS DECIMAL(12,2))";
                 $weightReject = "CAST(A.CDML_REJECTWEIGHT AS DECIMAL(12,2))";
+                $extraWhere = "";
                 $productField = "A.COIL_NO";
-
-                // ดึงเฉพาะ Pass ล่าสุดเมื่อมีการติ๊ก Final Weight[cite: 1]
-                if ($chkOption == 1) {
-                    $extraWhere = "AND A.PASS_NO = (
-                        SELECT MAX(X.PASS_NO) 
-                        FROM dbo.CDMLPROD1 AS X WITH (NOLOCK) 
-                        WHERE X.COIL_NO = A.COIL_NO
-                    )";
-                } else {
-                    $extraWhere = "";
-                }
                 break;
 
-            default: // CASTING PRODUCTION REPORT
+            default: // CASTING PRODUCTION REPORT ตาม r1.txt
                 $dateField = "B.COIL_ENDDATE";
                 $tableJoin = "dbo.COILPROD1 AS B WITH (NOLOCK)";
                 $weightAccept = "CAST(B.COIL_FIRSTWEIGHT AS DECIMAL(12,2))";
                 $weightReject = "0.00";
                 $extraWhere = "";
                 $productField = "B.COIL_NO";
+
+                // กำหนดเงื่อนไข Line Process พิเศษสำหรับ Casting ตาม r1.txt
+                if ($cmbLineProcess === 'ALL') {
+                    $extraWhere .= " AND (B.LINE_PROCESS BETWEEN '1' AND '2')";
+                }
                 break;
         }
 
         $conditions = [
-            "({$dateField} BETWEEN :dtpProduceFrom AND :dtpProduceTo)",
+            "({$dateField} >= :dtpProduceFrom AND {$dateField} < :dtpProduceToNextDay)",
             "({$productField} BETWEEN :txtProductFrom AND :txtProductTo)"
         ];
 
@@ -148,15 +144,16 @@ if ($dbConnection) {
 
         $whereClause = implode(" AND ", $conditions);
 
+// ปรับ SQL Query ให้ดึง F_THICKNESS และ JOIN บน B.JOB_ORDER สำหรับ Casting[cite: 1]
         $sql = "
             SELECT 
                 {$productField} AS product_no,
                 B.COIL_STATUS AS status_id,
                 CONVERT(VARCHAR(10), {$dateField}, 101) AS produce_date,
                 B.SALEORDER_NO AS saleorder_no,
-                B.JOB_PROCESS AS job_order,
+                B.JOB_ORDER AS job_order,
                 ISNULL(B.PRODUCT_REFERENCE, '') AS coil_ref,
-                ISNULL(B.PRODUCT_REFERENCE, '') AS caster_coil,
+                '' AS caster_coil,
                 ISNULL(B.CSTMSPPL_ID, '') AS coil_from,
                 B.ALLOY AS alloy,
                 B.F_TEMPER AS tp_org,
@@ -165,8 +162,8 @@ if ($dbConnection) {
                 B.SURFACE_GRADE AS surface_grade,
                 B.METALLURGICAL_GRADE AS meta_grade,
                 ISNULL(B.T5_TEMPERATURE, '') AS t5_temp,
-                CAST(B.THICKNESS AS DECIMAL(10,3)) AS thk_act,
-                CAST(B.THICKNESS AS DECIMAL(10,3)) AS thk_spec,
+                CAST(" . ($cmbProcess === 'CASTING PRODUCTION REPORT' ? "B.F_THICKNESS" : "B.THICKNESS") . " AS DECIMAL(10,3)) AS thk_act,
+                CAST(" . ($cmbProcess === 'CASTING PRODUCTION REPORT' ? "B.F_THICKNESS" : "B.THICKNESS") . " AS DECIMAL(10,3)) AS thk_spec,
                 CAST(B.WIDTH AS DECIMAL(10,2)) AS width,
                 ISNULL(B.CURRENT_PASS, 0) AS current_pass,
                 0 AS coil_slit,
@@ -178,9 +175,9 @@ if ($dbConnection) {
                 ISNULL(B.COIL_REMARK, '') AS remark,
                 B.LINE_PROCESS AS line_process
             FROM {$tableJoin}
-            LEFT OUTER JOIN dbo.JOBORDER1 AS C WITH (NOLOCK) ON B.JOB_PROCESS = C.JOB_ORDER
+            LEFT OUTER JOIN dbo.JOBORDER1 AS C WITH (NOLOCK) ON B.JOB_ORDER = C.JOB_ORDER
             WHERE {$whereClause} {$extraWhere}
-            ORDER BY B.LINE_PROCESS ASC, CONVERT(VARCHAR(10), {$dateField}, 120) ASC, {$productField} ASC
+            ORDER BY CONVERT(VARCHAR(10), {$dateField}, 120) ASC, B.LINE_PROCESS ASC, {$productField} ASC
         ";
 
         $stmt = $dbConnection->prepare($sql);
@@ -259,41 +256,69 @@ if (isset($_POST['export_excel'])) {
             <?php
             $currentLine = null;
             $currentDate = null;
+            
             $dateAcceptSum = 0;
+            $dateRejectSum = 0;
+            $dateCoilCount = 0;
+            
             $lineAcceptSum = 0;
+            $lineRejectSum = 0;
+            
+            $grandAcceptSum = 0;
+            $grandRejectSum = 0;
+            $grandCoilCount = count($reportData);
+            
             $itemNo = 1;
 
             foreach ($reportData as $row):
                 $line = $row['line_process'];
                 $date = $row['produce_date'];
                 $acceptWeight = (float)$row['accept_weight'];
+                $rejectWeight = (float)$row['reject_weight'];
 
-                if ($currentDate !== null && $currentDate !== $date):
-            ?>
-                    <tr style="background-color: #f8fafc; font-weight: bold;">
-                        <td colspan="21" style="text-align: left;">SUBTOTAL BY PRODUCE DATE &nbsp;&nbsp; <?=$currentDate?></td>
-                        <td style="text-align: right; color: #1e3a8a;"><?=number_format($dateAcceptSum, 2)?></td>
-                        <td colspan="6"></td>
-                    </tr>
-            <?php
-                    $dateAcceptSum = 0;
-                endif;
+                $lineChanged = ($currentLine !== null && $currentLine !== $line);
+                $dateChanged = ($currentDate !== null && $currentDate !== $date);
 
-                if ($currentLine !== null && $currentLine !== $line):
+                if ($lineChanged || $dateChanged):
             ?>
                     <tr style="background-color: #e2e8f0; font-weight: bold;">
                         <td colspan="21" style="text-align: left;">SUBTOTAL BY LINE PROCESS &nbsp;&nbsp; <?=$currentLine?></td>
-                        <td style="text-align: right; color: #172554;"><?=number_format($lineAcceptSum, 2)?></td>
-                        <td colspan="6"></td>
+                        <td style="text-align: right; color: #172554;"><?=number_format($lineAcceptSum, 0)?></td>
+                        <td style="text-align: right; color: #7f1d1d;"><?=$lineRejectSum > 0 ? number_format($lineRejectSum, 0) : ''?></td>
+                        <td colspan="5"></td>
                     </tr>
             <?php
                     $lineAcceptSum = 0;
+                    $lineRejectSum = 0;
+                endif;
+
+                if ($dateChanged):
+            ?>
+                    <tr style="background-color: #f8fafc; font-weight: bold;">
+                        <td colspan="20" style="text-align: left;">SUBTOTAL BY PRODUCE DATE &nbsp;&nbsp; <?=$currentDate?></td>
+                        <td style="text-align: center;"><?=$dateCoilCount?> COILS</td>
+                        <td style="text-align: right; color: #1e3a8a;"><?=number_format($dateAcceptSum, 0)?></td>
+                        <td style="text-align: right; color: #7f1d1d;"><?=$dateRejectSum > 0 ? number_format($dateRejectSum, 0) : ''?></td>
+                        <td colspan="5"></td>
+                    </tr>
+            <?php
+                    $dateAcceptSum = 0;
+                    $dateRejectSum = 0;
+                    $dateCoilCount = 0;
                 endif;
 
                 $currentLine = $line;
                 $currentDate = $date;
+
                 $dateAcceptSum += $acceptWeight;
+                $dateRejectSum += $rejectWeight;
+                $dateCoilCount++;
+                
                 $lineAcceptSum += $acceptWeight;
+                $lineRejectSum += $rejectWeight;
+                
+                $grandAcceptSum += $acceptWeight;
+                $grandRejectSum += $rejectWeight;
             ?>
                 <tr>
                     <td style="text-align: center;"><?=$itemNo++?></td>
@@ -317,8 +342,8 @@ if (isset($_POST['export_excel'])) {
                     <td style="text-align: right;"><?=number_format((float)$row['width'], 2)?></td>
                     <td style="text-align: center;"><?=$row['current_pass']?></td>
                     <td style="text-align: center;"><?=$row['coil_slit'] ?: ''?></td>
-                    <td style="text-align: right; font-weight: bold;"><?=number_format($acceptWeight, 2)?></td>
-                    <td style="text-align: right;"><?=number_format((float)$row['reject_weight'], 2)?></td>
+                    <td style="text-align: right; font-weight: bold;"><?=number_format($acceptWeight, 0)?></td>
+                    <td style="text-align: right;"><?=$rejectWeight > 0 ? number_format($rejectWeight, 0) : ''?></td>
                     <td><?=$row['work_process']?></td>
                     <td><?=$row['next_process']?></td>
                     <td><?=$row['batch_result']?></td>
@@ -327,21 +352,32 @@ if (isset($_POST['export_excel'])) {
                 </tr>
             <?php endforeach; ?>
 
-            <?php if ($currentDate !== null): ?>
-                <tr style="background-color: #f8fafc; font-weight: bold;">
-                    <td colspan="21" style="text-align: left;">SUBTOTAL BY PRODUCE DATE &nbsp;&nbsp; <?=$currentDate?></td>
-                    <td style="text-align: right; color: #1e3a8a;"><?=number_format($dateAcceptSum, 2)?></td>
-                    <td colspan="6"></td>
-                </tr>
-            <?php endif; ?>
-
             <?php if ($currentLine !== null): ?>
                 <tr style="background-color: #e2e8f0; font-weight: bold;">
                     <td colspan="21" style="text-align: left;">SUBTOTAL BY LINE PROCESS &nbsp;&nbsp; <?=$currentLine?></td>
-                    <td style="text-align: right; color: #172554;"><?=number_format($lineAcceptSum, 2)?></td>
-                    <td colspan="6"></td>
+                    <td style="text-align: right; color: #172554;"><?=number_format($lineAcceptSum, 0)?></td>
+                    <td style="text-align: right; color: #7f1d1d;"><?=$lineRejectSum > 0 ? number_format($lineRejectSum, 0) : ''?></td>
+                    <td colspan="5"></td>
                 </tr>
             <?php endif; ?>
+
+            <?php if ($currentDate !== null): ?>
+                <tr style="background-color: #f8fafc; font-weight: bold;">
+                    <td colspan="20" style="text-align: left;">SUBTOTAL BY PRODUCE DATE &nbsp;&nbsp; <?=$currentDate?></td>
+                    <td style="text-align: center;"><?=$dateCoilCount?> COILS</td>
+                    <td style="text-align: right; color: #1e3a8a;"><?=number_format($dateAcceptSum, 0)?></td>
+                    <td style="text-align: right; color: #7f1d1d;"><?=$dateRejectSum > 0 ? number_format($dateRejectSum, 0) : ''?></td>
+                    <td colspan="5"></td>
+                </tr>
+            <?php endif; ?>
+
+            <tr style="background-color: #cbd5e1; font-weight: bold;">
+                <td colspan="20" style="text-align: left;">GRAND TOTAL</td>
+                <td style="text-align: center;"><?=$grandCoilCount?> COILS</td>
+                <td style="text-align: right; color: #172554;"><?=number_format($grandAcceptSum, 0)?></td>
+                <td style="text-align: right; color: #7f1d1d;"><?=$grandRejectSum > 0 ? number_format($grandRejectSum, 0) : ''?></td>
+                <td colspan="5"></td>
+            </tr>
 
         <?php endif; ?>
         </tbody>
@@ -436,25 +472,91 @@ if (isset($_POST['export_excel'])) {
             border-top: 2px solid #1e293b !important; border-bottom: 2px solid #1e293b !important;
         }
 
-        @media print {
-            .sidebar, .navbar, .footer, .no-print, nav, header { display: none !important; }
-            .main-panel { width: 100% !important; margin: 0 !important; padding: 0 !important; float: none !important; }
-            .content { padding: 0 !important; margin: 0 !important; }
-            body { background: #fff !important; color: #000 !important; font-size: 9pt; }
+@media print {
+    /* 1. ซ่อน Element ที่ไม่ได้ใช้พิมพ์ */
+    .sidebar, .navbar, .footer, .no-print, nav, header, form, button { 
+        display: none !important; 
+    }
+    
+    .main-panel { 
+        width: 100% !important; 
+        margin: 0 !important; 
+        padding: 0 !important; 
+        float: none !important; 
+    }
+    
+    .content { 
+        padding: 0 !important; 
+        margin: 0 !important; 
+    }
+    
+    body { 
+        background: #fff !important; 
+        color: #000 !important; 
+        font-size: 7.5pt !important; 
+    }
 
-            @page { size: A4 landscape; margin: 5mm; }
-            .print-container { width: 100%; border: none !important; padding: 0 !important; }
-            .rpt-table-wrapper { overflow: visible !important; }
-            .rpt-header-screen h1 { font-size: 13pt; color: #000; }
-            .rpt-header-screen h2 { font-size: 11pt; color: #000; }
-            .rpt-meta-screen { font-size: 9pt !important; font-weight: bold !important; color: #000 !important; }
+    /* 2. ตั้งค่าระยะขอบกระดาษ A4 แนวนอน (Landscape) */
+    @page { 
+        size: A4 landscape; 
+        margin: 5mm 3mm; 
+    }
 
-            table.rpt-table { width: 100% !important; min-width: 0 !important; font-size: 6.8pt !important; }
-            table.rpt-table th { background-color: #f8fafc !important; border: 0.5pt solid #000 !important; padding: 2px 1px !important; font-size: 6.5pt !important; -webkit-print-color-adjust: exact; }
-            table.rpt-table td { border: 0.5pt solid #ccc !important; padding: 2px 1px !important; }
-            thead { display: table-header-group; }
-            tr { page-break-inside: avoid; }
-        }
+    .print-container { 
+        width: 100% !important; 
+        border: none !important; 
+        padding: 0 !important; 
+        margin: 0 !important;
+    }
+    
+    /* 3. ปลดล็อก Overflow ทั้งหมดเพื่อเปิดทางให้ขอบขวา */
+    .rpt-table-wrapper { 
+        width: 100% !important;
+        max-height: none !important; 
+        overflow: visible !important; 
+        border: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* 4. ปรับตารางให้ยืด-หดอัตโนมัติตามหน้ากระดาษ */
+    table.rpt-table {
+        width: 100% !important;
+        min-width: 0 !important;
+        font-size: 5.5pt !important; /* ปรับขนาดฟอนต์ให้เล็กพอดี 28 คอลัมน์ */
+        border-collapse: collapse !important;
+        table-layout: auto !important; /* เปลี่ยนเป็น auto เพื่อให้เบราว์เซอร์คำนวณความกว้างคอลัมน์ให้อยู่ในหน้า */
+    }
+
+    table.rpt-table thead {
+        display: table-header-group !important;
+    }
+
+    table.rpt-table tbody {
+        display: table-row-group !important;
+    }
+
+    table.rpt-table thead tr th {
+        position: static !important;
+        background-color: #f1f5f9 !important;
+        border: 0.5pt solid #000 !important;
+        padding: 1px 0.5px !important;
+        font-size: 5.5pt !important;
+        word-break: break-all !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    table.rpt-table td {
+        border: 0.5pt solid #444 !important;
+        padding: 1px 0.5px !important;
+        word-break: break-all !important;
+    }
+
+    tr { 
+        page-break-inside: avoid !important;
+    }
+}
     </style>
 </head>
 
@@ -493,11 +595,9 @@ if (isset($_POST['export_excel'])) {
                                         <select name="cmbProcess" class="input-field-custom font-bold text-blue-700 bg-blue-50/50 border-blue-300">
                                             <option value="CASTING PRODUCTION REPORT" <?=$cmbProcess == 'CASTING PRODUCTION REPORT' ? 'selected' : ''?>>CASTING PRODUCTION REPORT</option>
                                             <option value="COLD MILL PRODUCTION REPORT" <?=$cmbProcess == 'COLD MILL PRODUCTION REPORT' ? 'selected' : ''?>>COLD MILL PRODUCTION REPORT</option>
-                                            <option value="COLD MILL PRODUCTION BY PASS REPORT" <?=$cmbProcess == 'COLD MILL PRODUCTION BY PASS REPORT' ? 'selected' : ''?>>COLD MILL PRODUCTION BY PASS REPORT</option>
                                             <option value="SWISS SLITTER PRODUCTION REPORT" <?=$cmbProcess == 'SWISS SLITTER PRODUCTION REPORT' ? 'selected' : ''?>>SWISS SLITTER PRODUCTION REPORT</option>
                                             <option value="BATCH ANNEALING PRODUCTION REPORT" <?=$cmbProcess == 'BATCH ANNEALING PRODUCTION REPORT' ? 'selected' : ''?>>BATCH ANNEALING PRODUCTION REPORT</option>
                                             <option value="PACKING PRODUCTION REPORT" <?=$cmbProcess == 'PACKING PRODUCTION REPORT' ? 'selected' : ''?>>PACKING PRODUCTION REPORT</option>
-                                            <option value="ALL COIL MOVEMENT REPORT" <?=$cmbProcess == 'ALL COIL MOVEMENT REPORT' ? 'selected' : ''?>>ALL COIL MOVEMENT REPORT</option>
                                         </select>
                                     </div>
                                     <div class="grid grid-cols-2 gap-2">
@@ -619,27 +719,22 @@ if (isset($_POST['export_excel'])) {
 
                         </div>
 
-                        <!-- ACTION BAR (เพิ่มปุ่ม Export Excel) -->
+                        <!-- ACTION BAR -->
                         <div class="flex flex-col sm:flex-row justify-between items-center pt-4 border-t border-slate-200 gap-4 mt-3">
-                        <div class="flex items-center">
-                            <label id="lblFinalWeight" class="inline-flex items-center cursor-pointer select-none bg-blue-50 hover:bg-blue-100 border border-blue-300 py-2.5 px-5 rounded-xl shadow-sm transition">
-                                <input type="checkbox" name="chkOption" id="chkOption" value="1" <?=$chkOption ? 'checked' : ''?> class="w-6 h-6 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
-                                <span class="ml-3 text-base font-bold text-slate-900">Final Weight</span>
-                            </label>
-                        </div>
+                            <div></div>
 
                             <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-                                <a href="<?=$_SERVER['PHP_SELF']?>" class="btn-action-lg bg-slate-200 hover:bg-slate-300 text-slate-700 shadow-sm border border-slate-300">
-                                    🔄 ล้างค่า
-                                </a>
                                 <button type="submit" class="btn-action-lg bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg">
                                     🔍 ค้นหาข้อมูล
                                 </button>
+                                <a href="<?=$_SERVER['PHP_SELF']?>" class="btn-action-lg bg-slate-200 hover:bg-slate-300 text-slate-700 shadow-sm border border-slate-300">
+                                    🔄 ล้างค่า
+                                </a>                                
                                 <button type="submit" name="export_excel" value="1" class="btn-action-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg">
                                     📊 Export Excel
                                 </button>
                                 <button type="button" onclick="window.print()" class="btn-action-lg bg-slate-800 hover:bg-slate-900 text-white shadow-md hover:shadow-lg">
-                                    🖨️ พิมพ์ / PDF
+                                    🖨️ พิมพ์
                                 </button>
                             </div>
                         </div>
@@ -718,41 +813,71 @@ if (isset($_POST['export_excel'])) {
                                 <?php
                                 $currentLine = null;
                                 $currentDate = null;
+                                
                                 $dateAcceptSum = 0;
+                                $dateRejectSum = 0;
+                                $dateCoilCount = 0;
+                                
                                 $lineAcceptSum = 0;
+                                $lineRejectSum = 0;
+                                
+                                $grandAcceptSum = 0;
+                                $grandRejectSum = 0;
+                                $grandCoilCount = count($reportData);
+                                
                                 $itemNo = 1;
 
                                 foreach ($reportData as $index => $row):
                                     $line = $row['line_process'];
                                     $date = $row['produce_date'];
                                     $acceptWeight = (float)$row['accept_weight'];
+                                    $rejectWeight = (float)$row['reject_weight'];
 
-                                    if ($currentDate !== null && $currentDate !== $date):
-                                ?>
-                                        <tr class="subtotal-row">
-                                            <td colspan="21" class="text-left font-bold">SUBTOTAL BY PRODUCE DATE &nbsp;&nbsp;&nbsp;&nbsp; <?=$currentDate?></td>
-                                            <td class="text-right font-bold text-blue-900"><?=number_format($dateAcceptSum, 2)?></td>
-                                            <td colspan="6"></td>
-                                        </tr>
-                                <?php
-                                        $dateAcceptSum = 0;
-                                    endif;
+                                    $lineChanged = ($currentLine !== null && $currentLine !== $line);
+                                    $dateChanged = ($currentDate !== null && $currentDate !== $date);
 
-                                    if ($currentLine !== null && $currentLine !== $line):
+                                    // สรุปยอดกลุ่ม LINE PROCESS
+                                    if ($lineChanged || $dateChanged):
                                 ?>
                                         <tr class="line-subtotal-row">
                                             <td colspan="21" class="text-left font-bold">SUBTOTAL BY LINE PROCESS &nbsp;&nbsp;&nbsp;&nbsp; <?=$currentLine?></td>
-                                            <td class="text-right font-bold text-blue-950"><?=number_format($lineAcceptSum, 2)?></td>
-                                            <td colspan="6"></td>
+                                            <td class="text-right font-bold text-blue-950"><?=number_format($lineAcceptSum, 0)?></td>
+                                            <td class="text-right font-bold text-red-950"><?=$lineRejectSum > 0 ? number_format($lineRejectSum, 0) : ''?></td>
+                                            <td colspan="5"></td>
                                         </tr>
                                 <?php
                                         $lineAcceptSum = 0;
+                                        $lineRejectSum = 0;
+                                    endif;
+
+                                    // สรุปยอดกลุ่ม PRODUCE DATE
+                                    if ($dateChanged):
+                                ?>
+                                        <tr class="subtotal-row">
+                                            <td colspan="20" class="text-left font-bold">SUBTOTAL BY PRODUCE DATE &nbsp;&nbsp;&nbsp;&nbsp; <?=$currentDate?></td>
+                                            <td class="text-center font-bold"><?=$dateCoilCount?> COILS</td>
+                                            <td class="text-right font-bold text-blue-900"><?=number_format($dateAcceptSum, 0)?></td>
+                                            <td class="text-right font-bold text-red-900"><?=$dateRejectSum > 0 ? number_format($dateRejectSum, 0) : ''?></td>
+                                            <td colspan="5"></td>
+                                        </tr>
+                                <?php
+                                        $dateAcceptSum = 0;
+                                        $dateRejectSum = 0;
+                                        $dateCoilCount = 0;
                                     endif;
 
                                     $currentLine = $line;
                                     $currentDate = $date;
+
                                     $dateAcceptSum += $acceptWeight;
+                                    $dateRejectSum += $rejectWeight;
+                                    $dateCoilCount++;
+                                    
                                     $lineAcceptSum += $acceptWeight;
+                                    $lineRejectSum += $rejectWeight;
+                                    
+                                    $grandAcceptSum += $acceptWeight;
+                                    $grandRejectSum += $rejectWeight;
                                 ?>
                                     <tr>
                                         <td class="text-center font-semibold"><?=$itemNo++?></td>
@@ -776,8 +901,8 @@ if (isset($_POST['export_excel'])) {
                                         <td class="text-right font-medium"><?=number_format((float)$row['width'], 2)?></td>
                                         <td class="text-center"><?=$row['current_pass']?></td>
                                         <td class="text-center"><?=$row['coil_slit'] ?: ''?></td>
-                                        <td class="text-right font-bold text-slate-900"><?=number_format($acceptWeight, 2)?></td>
-                                        <td class="text-right"><?=number_format((float)$row['reject_weight'], 2)?></td>
+                                        <td class="text-right font-bold text-slate-900"><?=number_format($acceptWeight, 0)?></td>
+                                        <td class="text-right"><?=$rejectWeight > 0 ? number_format($rejectWeight, 0) : ''?></td>
                                         <td><?=htmlspecialchars($row['work_process'])?></td>
                                         <td><?=htmlspecialchars($row['next_process'])?></td>
                                         <td><?=htmlspecialchars($row['batch_result'])?></td>
@@ -786,21 +911,33 @@ if (isset($_POST['export_excel'])) {
                                     </tr>
                                 <?php endforeach; ?>
 
-                                <?php if ($currentDate !== null): ?>
-                                    <tr class="subtotal-row">
-                                        <td colspan="21" class="text-left font-bold">SUBTOTAL BY PRODUCE DATE &nbsp;&nbsp;&nbsp;&nbsp; <?=$currentDate?></td>
-                                        <td class="text-right font-bold text-blue-900"><?=number_format($dateAcceptSum, 2)?></td>
-                                        <td colspan="6"></td>
-                                    </tr>
-                                <?php endif; ?>
-
+                                <!-- สรุปยอดกลุ่มสุดท้าย -->
                                 <?php if ($currentLine !== null): ?>
                                     <tr class="line-subtotal-row">
                                         <td colspan="21" class="text-left font-bold">SUBTOTAL BY LINE PROCESS &nbsp;&nbsp;&nbsp;&nbsp; <?=$currentLine?></td>
-                                        <td class="text-right font-bold text-blue-950"><?=number_format($lineAcceptSum, 2)?></td>
-                                        <td colspan="6"></td>
+                                        <td class="text-right font-bold text-blue-950"><?=number_format($lineAcceptSum, 0)?></td>
+                                        <td class="text-right font-bold text-red-950"><?=$lineRejectSum > 0 ? number_format($lineRejectSum, 0) : ''?></td>
+                                        <td colspan="5"></td>
                                     </tr>
                                 <?php endif; ?>
+
+                                <?php if ($currentDate !== null): ?>
+                                    <tr class="subtotal-row">
+                                        <td colspan="20" class="text-left font-bold">SUBTOTAL BY PRODUCE DATE &nbsp;&nbsp;&nbsp;&nbsp; <?=$currentDate?></td>
+                                        <td class="text-center font-bold"><?=$dateCoilCount?> COILS</td>
+                                        <td class="text-right font-bold text-blue-900"><?=number_format($dateAcceptSum, 0)?></td>
+                                        <td class="text-right font-bold text-red-900"><?=$dateRejectSum > 0 ? number_format($dateRejectSum, 0) : ''?></td>
+                                        <td colspan="5"></td>
+                                    </tr>
+                                <?php endif; ?>
+
+                                <tr style="background-color: #cbd5e1; font-weight: bold; border-top: 2px solid #0f172a; border-bottom: 2px solid #0f172a;">
+                                    <td colspan="20" class="text-left font-extrabold uppercase">GRAND TOTAL</td>
+                                    <td class="text-center font-extrabold"><?=$grandCoilCount?> COILS</td>
+                                    <td class="text-right font-extrabold text-blue-950"><?=number_format($grandAcceptSum, 0)?></td>
+                                    <td class="text-right font-extrabold text-red-950"><?=$grandRejectSum > 0 ? number_format($grandRejectSum, 0) : ''?></td>
+                                    <td colspan="5"></td>
+                                </tr>
 
                             <?php endif; ?>
                             </tbody>
@@ -814,32 +951,6 @@ if (isset($_POST['export_excel'])) {
         <?php include 'include/content-footer.php';?>
 </div>
 </div>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const cmbProcess = document.querySelector('select[name="cmbProcess"]');
-    const chkOption = document.getElementById('chkOption');
-    const lblFinalWeight = document.getElementById('lblFinalWeight');
-
-    function toggleFinalWeight() {
-        if (cmbProcess.value === 'COLD MILL PRODUCTION REPORT') {
-            chkOption.disabled = false;
-            lblFinalWeight.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-slate-100', 'border-slate-300');
-            lblFinalWeight.classList.add('bg-blue-50', 'hover:bg-blue-100', 'border-blue-300', 'cursor-pointer');
-        } else {
-            chkOption.checked = false; // ยกเลิกการติ๊กเลือก
-            chkOption.disabled = true; // ล็อกปุ่มกด
-            lblFinalWeight.classList.add('opacity-50', 'cursor-not-allowed', 'bg-slate-100', 'border-slate-300');
-            lblFinalWeight.classList.remove('bg-blue-50', 'hover:bg-blue-100', 'border-blue-300', 'cursor-pointer');
-        }
-    }
-
-    // ตรวจสอบสถานะเมื่อโหลดหน้าเว็บครั้งแรก
-    toggleFinalWeight();
-
-    // ตรวจสอบเมื่อมีการเปลี่ยนตัวเลือกใน Process Report
-    cmbProcess.addEventListener('change', toggleFinalWeight);
-});
-</script>
 </body>
 <?php include 'include/footer.php';?>
 </html>

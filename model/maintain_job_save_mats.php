@@ -51,7 +51,7 @@ try {
     // -------------------------------------------------------------
     // คำสั่งที่ 1: UPDATE JOBORDER1 (ปรับชื่อ Column ตรงตาม Function VB)
     // -------------------------------------------------------------
-    $sql1 = "UPDATE [MATS-NEW].dbo.JOBORDER1 
+    $sql1 = "UPDATE JOBORDER1 
              SET JOB_STATUS       = :cmbJobStatus,
                  OTHER_COILWIDTH  = :strOtherWidth,
                  CUT_WIDTH        = :txtCutWidth,
@@ -82,7 +82,7 @@ try {
     // คำสั่งที่ 2: UPDATE CSTMORDR2 (ตาม Function VB)
     // -------------------------------------------------------------
     if (!empty($txtSaleOrderNo) && !empty($txtSaleOrderItem)) {
-        $sql2 = "UPDATE [MATS-NEW].dbo.CSTMORDR2 
+        $sql2 = "UPDATE CSTMORDR2 
                  SET CUT_WEIGHTPIECE = :txtCutWeightPiece 
                  WHERE SALEORDER_NO  = :txtSaleOrderNo 
                    AND SALEORDER_ITEM= :txtSaleOrderItem";
