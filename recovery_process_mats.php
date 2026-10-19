@@ -94,16 +94,11 @@ try {
 ?>
 
     <div class="main-panel">
+
         <nav class="navbar navbar-default navbar-fixed">
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navigation-example-2">
-                        <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" href="#">Recovery Performance Report</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size:20px;" href="#"> ✏️ Recovery Report Data</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>

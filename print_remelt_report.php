@@ -20,13 +20,21 @@ $sql = "SELECT REQUEST_NO, PRODUCT_NO, COIL_NO, PRODUCT_ID, ALLOY, TEMPER, GRADE
         WHERE REQUEST_NO = :rno";
 
 $stmt = $conn->prepare($sql);
-$stmt->execute([':rno' => $rno]);
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$stmt->execute([':rno' =>$rno]);
+$rows =$stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$total_weight = 0;
-foreach ($rows as $r) {
-    $total_weight += (float)($r['PRODUCT_WEIGHT'] ?? 0);
+// รวบรวม Remark ทั้งหมดที่ไม่ซ้ำกัน
+$remark_reasons = [];
+foreach ($rows as$r) {
+    if (!empty($r['REMELT_REASON'])) {
+        $remark_reasons[] =$r['REMELT_REASON'];
+    }
 }
+$unique_remarks = implode(', ', array_unique($remark_reasons));
+
+// แบ่งข้อมูลเป็นหน้าละ 15 record
+$chunks = empty($rows) ? [[]] : array_chunk($rows, 15);
+$total_pages = count($chunks);
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -36,7 +44,7 @@ foreach ($rows as $r) {
 <style>
   @page {
     size: A4 landscape;
-    margin: 5mm; /* ตั้ง margin รอบทิศทางเพื่อไม่ให้เส้นถูกตัด */
+    margin: 5mm;
   }
   
   *, *:before, *:after {
@@ -44,7 +52,6 @@ foreach ($rows as $r) {
   }
 
   html, body {
-    height: 100%;
     margin: 0;
     padding: 0;
   }
@@ -54,12 +61,13 @@ foreach ($rows as $r) {
     font-size: 11px;
     color: #000;
     background-color: #525659;
+    padding: 0 20px 40px 20px;
   }
 
   /* Toolbar */
   .preview-toolbar {
     width: 270mm;
-    margin: 10px auto;
+    margin: 10px auto 20px auto;
     background: #323639;
     padding: 8px 15px;
     border-radius: 6px;
@@ -108,12 +116,20 @@ foreach ($rows as $r) {
     cursor: pointer;
   }
 
-  /* ปรับขนาดพื้นที่กระดาษให้พอดีเส้นขอบขวา */
+  /* Wrapper สำหรับจองพื้นที่ตามสเกลจริง */
+  .page-wrapper {
+    width: 270mm;
+    height: 190mm;
+    margin: 0 auto 20px auto;
+    position: relative;
+    transition: height 0.15s ease, margin-bottom 0.15s ease;
+  }
+
+  /* พื้นที่กระดาษ */
   .paper-page {
     width: 270mm;
     height: 190mm;
     background: #fff;
-    margin: 0 auto 20px auto;
     padding: 5mm;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     display: flex;
@@ -222,24 +238,37 @@ foreach ($rows as $r) {
     vertical-align: bottom;
   }
 
-  /* ปรับปรุง CSS Print ให้เก็บขอบขวาครบทุกเส้น */
+  /* CSS สำหรับตอนสั่งพิมพ์ (Print) */
   @media print {
     html, body { 
-      height: 100%;
+      height: auto;
       width: 100%;
       background-color: #fff; 
+      padding: 0 !important;
     }
     body { padding: 0; margin: 0; }
     .preview-toolbar { display: none !important; }
-    .paper-page { 
-      box-shadow: none; 
-      padding: 0 !important; 
-      width: 100% !important; 
+    .page-wrapper {
+      width: 100% !important;
       height: 100% !important;
       margin: 0 !important;
       transform: none !important;
+      page-break-after: always;
+      break-after: page;
+    }
+    .page-wrapper:last-child {
       page-break-after: avoid;
+      break-after: avoid;
+    }
+    .paper-page { 
+      box-shadow: none; 
+      padding: 5mm !important; 
+      width: 270mm !important; 
+      height: 190mm !important;
+      margin: 0 !important;
+      transform: none !important;
       page-break-inside: avoid;
+      overflow: hidden;
     }
   }
 </style>
@@ -262,147 +291,164 @@ foreach ($rows as $r) {
   </div>
 </div>
 
-<div class="paper-page" id="paperPage">
-  <!-- ส่วนหัวกระดาษ -->
-  <table class="header-table">
-    <tr>
-      <td style="width: 65%;">
-        <div class="company-title">MEYER ALUMINIUM (THAILAND) CO.,LTD.</div>
-        <div class="doc-title">PRODUCT REMELT REQUISITION</div>
-      </td>
-      <td style="width: 35%;" class="meta-text">
-        REQUEST NO. : <b><?php echo htmlspecialchars($rno); ?></b><br>
-        PRINT DATE : <?php echo date('m/d/Y'); ?><br>
-        PAGE NO. : Page 1 of 1
-      </td>
-    </tr>
-  </table>
-
-  <!-- ตารางหลักยืดเต็มหน้า -->
-  <div class="table-container">
-    <table class="main-table">
-      <thead>
-        <tr>
-          <th style="width: 4%;">ITEM</th>
-          <th style="width: 12%;">PRODUCT NO.</th>
-          <th style="width: 12%;">COIL REFERENCE</th>
-          <th style="width: 4%;">PD.</th>
-          <th style="width: 5%;">A<br>TP.</th>
-          <th style="width: 5%;">SG.<br>MG.</th>
-          <th style="width: 5%;">TH.</th>
-          <th style="width: 7%;">WIDTH<br>LENGTH</th>
-          <th style="width: 8%;">QTY.<br>WEIGHT</th>
-          <th style="width: 10%;">RESPONSIBLE</th>
-          <th style="width: 22%;">REASON OF REMELT</th>
-          <th style="width: 6%;">RESULT</th>
-        </tr>
-        <tr>
-          <th colspan="3" style="text-align: left; padding-left: 15px;">CUSTOMER</th>
-          <th colspan="9"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php 
-        $item = 1;
-        $remark_reasons = [];
-        if (!empty($rows)):
-          foreach ($rows as $row): 
-            if (!empty($row['REMELT_REASON'])) {
-                $remark_reasons[] = $row['REMELT_REASON'];
-            }
-        ?>
-            <tr>
-              <td class="center"><?php echo $item++; ?></td>
-              <td><?php echo htmlspecialchars($row['PRODUCT_NO'] ?? ''); ?></td>
-              <td><?php echo htmlspecialchars($row['COIL_NO'] ?? ''); ?></td>
-              <td class="center"><?php echo htmlspecialchars($row['PRODUCT_ID'] ?? ''); ?></td>
-              <td class="center">
-                <?php echo htmlspecialchars($row['ALLOY'] ?? ''); ?><br>
-                <?php echo htmlspecialchars($row['TEMPER'] ?? ''); ?>
-              </td>
-              <td class="center">
-                <?php echo htmlspecialchars($row['SURFACE_GRADE'] ?? ''); ?><br>
-                <?php echo htmlspecialchars($row['METALLURGICAL_GRADE'] ?? ''); ?>
-              </td>
-              <td class="right"><?php echo number_format((float)($row['THICKNESS'] ?? 0), 2); ?></td>
-              <td class="right">
-                <?php echo number_format((float)($row['WIDTH'] ?? 0), 3); ?><br>
-                <?php echo !empty($row['LENGTH']) ? number_format((float)$row['LENGTH'], 3) : ''; ?>
-              </td>
-              <td class="right"><?php echo number_format((float)($row['PRODUCT_WEIGHT'] ?? 0), 2); ?></td>
-              <td><?php echo htmlspecialchars($row['RESPONS_TYPE'] ?? ''); ?></td>
-              <td><?php echo htmlspecialchars($row['REMELT_REASON'] ?? ''); ?></td>
-              <td></td>
-            </tr>
-          <?php endforeach; 
-        else: ?>
-          <tr>
-            <td colspan="12" class="center">ไม่พบข้อมูลสำหรับ Request No. นี้</td>
-          </tr>
-        <?php endif; ?>
-
-        <tr class="spacer-row">
-          <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-        </tr>
-
-        <tr>
-          <td colspan="8" class="bold">TOTAL</td>
-          <td class="right bold"><?php echo number_format($total_weight, 2); ?></td>
-          <td colspan="3"></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- ส่วนท้ายหน้ากระดาษ -->
-  <div class="footer-container">
-    <div class="remark-box">
-      <b>REMARK :</b><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      <?php echo htmlspecialchars(implode(', ', array_unique($remark_reasons))); ?>
-    </div>
-
-    <table class="signature-table">
+<?php 
+$item = 1;
+foreach ($chunks as $page_index =>$chunk_rows):
+    $page_no =$page_index + 1;
+    $page_total_weight = 0;
+    foreach ($chunk_rows as$row) {
+        $page_total_weight += (float)($row['PRODUCT_WEIGHT'] ?? 0);
+    }
+?>
+<div class="page-wrapper" id="wrapper_<?php echo $page_no; ?>">
+  <div class="paper-page">
+    <!-- ส่วนหัวกระดาษ -->
+    <table class="header-table">
       <tr>
-        <td>
-          <div class="sig-container">
-            <span class="sig-label">ISSUED BY :</span>
-            <span class="sig-dots"></span>
-          </div>
-          <div class="sig-container">
-            <span class="sig-label">DATE :</span>
-            <span class="sig-dots"></span>
-          </div>
+        <td style="width: 65%;">
+          <div class="company-title">MEYER ALUMINIUM (THAILAND) CO.,LTD.</div>
+          <div class="doc-title">PRODUCT REMELT REQUISITION</div>
         </td>
-        <td>
-          <div class="sig-container">
-            <span class="sig-label">CHECKED BY :</span>
-            <span class="sig-dots"></span>
-          </div>
-          <div class="sig-container">
-            <span class="sig-label">DATE :</span>
-            <span class="sig-dots"></span>
-          </div>
-        </td>
-        <td>
-          <div class="sig-container">
-            <span class="sig-label">APPROVED BY :</span>
-            <span class="sig-dots"></span>
-          </div>
-          <div class="sig-container">
-            <span class="sig-label">DATE :</span>
-            <span class="sig-dots"></span>
-          </div>
+        <td style="width: 35%;" class="meta-text">
+          REQUEST NO. : <b><?php echo htmlspecialchars($rno); ?></b><br>
+          PRINT DATE : <?php echo date('m/d/Y'); ?><br>
+          PAGE NO. : Page <?php echo $page_no; ?> of <?php echo$total_pages; ?>
         </td>
       </tr>
     </table>
+
+    <!-- ตารางหลักยืดเต็มหน้า -->
+    <div class="table-container">
+      <table class="main-table">
+        <thead>
+          <tr>
+            <th style="width: 4%;">ITEM</th>
+            <th style="width: 12%;">PRODUCT NO.</th>
+            <th style="width: 12%;">COIL REFERENCE</th>
+            <th style="width: 4%;">PD.</th>
+            <th style="width: 5%;">A<br>TP.</th>
+            <th style="width: 5%;">SG.<br>MG.</th>
+            <th style="width: 5%;">TH.</th>
+            <th style="width: 7%;">WIDTH<br>LENGTH</th>
+            <th style="width: 8%;">QTY.<br>WEIGHT</th>
+            <th style="width: 10%;">RESPONSIBLE</th>
+            <th style="width: 22%;">REASON OF REMELT</th>
+            <th style="width: 6%;">RESULT</th>
+          </tr>
+          <tr>
+            <th colspan="3" style="text-align: left; padding-left: 15px;">CUSTOMER</th>
+            <th colspan="9"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php 
+          if (!empty($chunk_rows)):
+            foreach ($chunk_rows as$row): 
+          ?>
+              <tr>
+                <td class="center"><?php echo $item++; ?></td>
+                <td><?php echo htmlspecialchars($row['PRODUCT_NO'] ?? ''); ?></td>
+                <td><?php echo htmlspecialchars($row['COIL_NO'] ?? ''); ?></td>
+                <td class="center"><?php echo htmlspecialchars($row['PRODUCT_ID'] ?? ''); ?></td>
+                <td class="center">
+                  <?php echo htmlspecialchars($row['ALLOY'] ?? ''); ?><br>
+                  <?php echo htmlspecialchars($row['TEMPER'] ?? ''); ?>
+                </td>
+                <td class="center">
+                  <?php echo htmlspecialchars($row['SURFACE_GRADE'] ?? ''); ?><br>
+                  <?php echo htmlspecialchars($row['METALLURGICAL_GRADE'] ?? ''); ?>
+                </td>
+                <td class="right"><?php echo number_format((float)($row['THICKNESS'] ?? 0), 2); ?></td>
+                <td class="right">
+                  <?php echo number_format((float)($row['WIDTH'] ?? 0), 3); ?><br>
+                  <?php echo !empty($row['LENGTH']) ? number_format((float)$row['LENGTH'], 3) : ''; ?>
+                </td>
+                <td class="right"><?php echo number_format((float)($row['PRODUCT_WEIGHT'] ?? 0), 2); ?></td>
+                <td><?php echo htmlspecialchars($row['RESPONS_TYPE'] ?? ''); ?></td>
+                <td><?php echo htmlspecialchars($row['REMELT_REASON'] ?? ''); ?></td>
+                <td></td>
+              </tr>
+            <?php endforeach; 
+          else: ?>
+            <tr>
+              <td colspan="12" class="center">ไม่พบข้อมูลสำหรับ Request No. นี้</td>
+            </tr>
+          <?php endif; ?>
+
+          <tr class="spacer-row">
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+
+          <tr>
+            <td colspan="8" class="bold">TOTAL</td>
+            <td class="right bold"><?php echo number_format($page_total_weight, 2); ?></td>
+            <td colspan="3"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ส่วนท้ายหน้ากระดาษ -->
+    <div class="footer-container">
+      <div class="remark-box">
+        <b>REMARK :</b><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <?php echo htmlspecialchars($unique_remarks); ?>
+      </div>
+
+      <table class="signature-table">
+        <tr>
+          <td>
+            <div class="sig-container">
+              <span class="sig-label">ISSUED BY :</span>
+              <span class="sig-dots"></span>
+            </div>
+            <div class="sig-container">
+              <span class="sig-label">DATE :</span>
+              <span class="sig-dots"></span>
+            </div>
+          </td>
+          <td>
+            <div class="sig-container">
+              <span class="sig-label">CHECKED BY :</span>
+              <span class="sig-dots"></span>
+            </div>
+            <div class="sig-container">
+              <span class="sig-label">DATE :</span>
+              <span class="sig-dots"></span>
+            </div>
+          </td>
+          <td>
+            <div class="sig-container">
+              <span class="sig-label">APPROVED BY :</span>
+              <span class="sig-dots"></span>
+            </div>
+            <div class="sig-container">
+              <span class="sig-label">DATE :</span>
+              <span class="sig-dots"></span>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
   </div>
 </div>
+<?php endforeach; ?>
 
 <script>
   function zoomPaper(scale) {
-    const paper = document.getElementById('paperPage');
-    paper.style.transform = `scale(${scale})`;
+    const wrappers = document.querySelectorAll('.page-wrapper');
+    const papers = document.querySelectorAll('.paper-page');
+    
+    wrappers.forEach((wrapper) => {
+      // ปรับความสูงและระยะห่างตามสเกล (รองรับทั้งตอน Zoom in และ Zoom out ไม่ให้ทับกัน)
+      wrapper.style.height = (190 * scale) + 'mm';
+      wrapper.style.marginBottom = ((20 * scale) + 10) + 'px';
+    });
+
+    papers.forEach(paper => {
+      paper.style.transform = `scale(${scale})`;
+    });
   }
 </script>
 

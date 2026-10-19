@@ -19,6 +19,15 @@ $folder_func = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], EN
 $line_func   = isset($_SESSION['LINE']) ? htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8') : '';
 $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
 
+// ตรวจสอบ Line Process ว่าตรงกับกระบวนการ Cold Mill System (Line M) หรือไม่
+$allowed_lines_ctl = ['M'];
+if (!in_array(strtoupper($line_func), $allowed_lines_ctl)) {
+    echo "<script>
+            alert('เตือน: Line การทำงานของคุณ (" . $line_func . ") ไม่ตรงกับกระบวนการ Cold Mill System (Line M)');
+            window.location.href = 'dashboard_mats.php';
+          </script>";
+}
+
 // ----------------------------------------------------------------------------------
 // ดึงข้อมูลจากฐานข้อมูล CDMLMCHN1 (อ้างอิง Logic จาก VB6)
 // ----------------------------------------------------------------------------------

@@ -62,30 +62,9 @@ include 'include/'.$folder_func.'/navigation.php';
         <nav class="navbar navbar-default navbar-fixed">
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navigation-example-2">
-                        <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" href="#"> GROUP DATA 1 </a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size:20px;" href="#"> ✏️ Master Data 1</a>
                 </div>
-                    <ul class="nav navbar-nav navbar-right">
-                      <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                  <p>
-                                      Account
-                                      <b class="caret"></b>
-                                  </p>
-                            </a>
-                            <ul class="dropdown-menu">
-                              <li><a href="change_password_mats.php" id="cp-btn">Change Password</a></li>
-                              <li class="divider"></li>
-                              <li><a href="logout.php">Log out</a></li>
-                            </ul>
-                      </li>
-                      <li class="separator hidden-lg"></li>
-                  </ul>
+                <?php include 'include/navbar.php';?>
             </div>
         </nav>
 
