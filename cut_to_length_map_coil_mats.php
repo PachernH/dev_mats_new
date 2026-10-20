@@ -544,13 +544,14 @@ function select_coil(coilObj, trElement) {
     trElement.classList.add('tr-selected');
 }
 
-// ส่งข้อมูลด้วย AJAX แล้วแจ้งเตือนก่อนย้ายกลับหน้า cut_to_length_mats.php
+// ส่งข้อมูลด้วย AJAX แล้วแจ้งเตือนก่อนย้ายกลับหน้า cut_to_length_mats.php พร้อมส่ง func และ jno
 function save_production(e) {
     e.preventDefault();
 
     var formElement = document.getElementById('frm_production');
     var formData = new FormData(formElement);
     var funcVal = document.getElementById('func').value;
+    var jobOrder = "<?php echo $job_order; ?>";
 
     var btnSave = document.getElementById('btn_submit_save');
     btnSave.disabled = true;
@@ -563,8 +564,10 @@ function save_production(e) {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            alert(data.message + ' (Product No: ' + data.pno + ')');
-            window.location.assign('cut_to_length_mats.php?func=' + encodeURIComponent(funcVal));
+            alert(data.message);
+            // Redirect ส่งค่า func และ jno กลับหน้าหลัก
+            var redirectUrl = 'cut_to_length_mats.php?func=' + encodeURIComponent(funcVal) + '&jno=' + encodeURIComponent(jobOrder);
+            window.location.assign(redirectUrl);
         } else {
             alert('เกิดข้อผิดพลาด: ' + data.message);
             btnSave.disabled = false;

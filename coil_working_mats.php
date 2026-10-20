@@ -57,11 +57,11 @@ function formatLineProcess($rawProcess) {
     // กรณีข้อมูลใน DB เก็บเป็นหมายเลข Line ตรงๆ (เช่น "1", "2", "5", "A", "F", "K", "M", "T") 
     // สามารถ Map ตามโครงสร้าง Line ของหน้า Index ได้ดังนี้:
     $singleLineMapping = [
-        '1' => 'Blanking (1)', // หรือ Caster (1) ขึ้นอยู่กับบริบท สามารถปรับแต่งเพิ่มได้
-        '2' => 'Blanking (2)',
-        '3' => 'Blanking (3)',
-        '4' => 'Blanking (4)',
-        '5' => 'Blanking (5)', // หรือ XY Circle Shear (5)
+        '1' => 'Blanking,Caster,Stretch,Packing (1)', // หรือ Caster (1) ขึ้นอยู่กับบริบท สามารถปรับแต่งเพิ่มได้
+        '2' => 'Blanking,Caster,Annealing,Stretch (2)',
+        '3' => 'Blanking,Annealing,Batch (3)',
+        '4' => 'Blanking,Batch (4)',
+        '5' => 'Blanking,XY Circle Shear (5)', // หรือ XY Circle Shear (5)
         'F' => 'A Press (F)',
         'G' => 'A Press (G)',
         'K' => 'K Press (K)',

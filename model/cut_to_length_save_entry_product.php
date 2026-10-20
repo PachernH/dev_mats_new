@@ -28,12 +28,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 require_once "../dbcon_mats-new.php";
 
-// รับค่าจาก Form POST
+// รับค่าจาก Form POST[cite: 1]
 $job_order      = isset($_POST['job_order']) ? trim($_POST['job_order']) : '';
 $coil_no        = isset($_POST['coil_no']) ? trim($_POST['coil_no']) : '';
 $produce_piece  = isset($_POST['produce_piece']) ? (float)$_POST['produce_piece'] : 0;
 $produce_weight = isset($_POST['produce_weight']) ? (float)$_POST['produce_weight'] : 0;
-$pallet_weight  = isset($_POST['pallet_weight']) ? (float)$_POST['pallet_weight'] : 0; // Pallet Weight
+$pallet_weight  = isset($_POST['pallet_weight']) ? (float)$_POST['pallet_weight'] : 0;
 $start_datetime = isset($_POST['start_datetime']) ? $_POST['start_datetime'] : '';
 $end_datetime   = isset($_POST['end_datetime']) ? $_POST['end_datetime'] : '';
 
@@ -42,6 +42,33 @@ if (empty($job_order) || empty($coil_no) || $produce_piece <= 0) {
     echo json_encode(['status' => 'error', 'message' => 'ข้อมูลไม่ครบถ้วน หรือจำนวนชิ้นงานต้องมากกว่า 0']);
     exit();
 }
+
+// -----------------------------------------------------------------
+// เพิ่ม: ตรวจสอบวันเวลาจบ ต้องไม่น้อยกว่าวันเวลาเริ่ม
+// -----------------------------------------------------------------
+if (!empty($start_datetime) && !empty($end_datetime)) {
+    if (strtotime($end_datetime) < strtotime($start_datetime)) {
+        ob_clean();
+        echo json_encode(['status' => 'error', 'message' => 'วัน/เวลา สิ้นสุดการผลิต ต้องไม่อยู่ก่อนวัน/เวลา เริ่มต้น']);
+        exit();
+    }
+}
+
+// ดึงค่าสเปก Release Weight, Produce Weight สะสมเดิม และ Max Tolerance %
+    $release_wt     = (float)($job['JOB_RELEASEWEIGHT'] ?? 0);
+    $curr_prod_wt   = (float)($job['JOB_PRODUCEWEIGHT'] ?? 0);
+    $max_tol_pct    = (float)($job['JOB_MAXTOLERANCE'] ?? 0);
+    $max_allowed_wt = $release_wt + (($release_wt * $max_tol_pct) / 100);
+
+    // เช็ก Hard Block: ถ้ายอดรวมใหม่ เกิน Max Allowed Weight
+    if ($max_allowed_wt > 0 && ($curr_prod_wt + $produce_weight) > $max_allowed_wt) {
+        ob_clean();
+        echo json_encode([
+            'status'  => 'error', 
+            'message' => 'ยอดผลิตสะสมรวมพาเลทนี้ (' . ($curr_prod_wt + $produce_weight) . ' kg.) เกินพิกัดสูงสุดที่อนุญาต (' . number_format($max_allowed_wt, 2) . ' kg. [+' . $max_tol_pct . '%]) กรุณาติดต่อฝ่ายวางแผน'
+        ]);
+        exit();
+    }
 
 try {
     $conn->beginTransaction();
@@ -83,10 +110,27 @@ try {
 
     $saleorder_no   = $job['SALEORDER_NO'] ?? '';
     $saleorder_item = $job['SALEORDER_ITEM'] ?? '';
-    $cut_wt_pc      = (float)($job['CUT_WEIGHTPIECE'] ?? 0);
+    $work_process   = $job['JOB_WORKPROCESS'] ?? '';
+
+    // === LOGIC f4: เช็ก WorkProcess เพื่อเลือก Weight per Piece ในการคำนวณสำรอง ===[cite: 1]
+    $pos_sh = strpos($work_process, 'SH>');
+    $pos_sc = strpos($work_process, 'SC>');
+    $pos_ct = strpos($work_process, 'CT>');
+
+    if (($pos_sh !== false && $pos_sh >= 2) || 
+        ($pos_sc !== false && $pos_sc >= 2) || 
+        ($pos_ct !== false && $pos_ct >= 2)) {
+        $wt_per_piece = (float)($job['CUT_WEIGHTPIECE'] ?? 0);
+    } else {
+        $wt_per_piece = (float)($job['WEIGHT_PIECE'] ?? 0);
+    }
+
+    // กรณีน้ำหนักผลิตส่งมาเป็น 0 คำนวณให้อัตโนมัติ[cite: 1]
+    if ($produce_weight <= 0 && $produce_piece > 0 && $wt_per_piece > 0) {
+        $produce_weight = round($produce_piece * $wt_per_piece);
+    }
 
     // คำนวณหา Next Process
-    $work_process = $job['JOB_WORKPROCESS'] ?? '';
     $next_process = 'SC';
     if (strpos($work_process, 'CL>') !== false) {
         $parts = explode('CL>', $work_process);
@@ -116,7 +160,7 @@ try {
     $alloy           = $coil['ALLOY'] ?? '';
     $location_id     = $coil['LOCATION_ID'] ?? 'NONE';
 
-    // คำนวณน้ำหนักคงเหลือใหม่หลังตัด
+    // คำนวณน้ำหนักคงเหลือใหม่หลังตัด[cite: 1]
     $new_balance_wt = $curr_balance_wt - $produce_weight;
 
     // 4. บันทึกข้อมูล Pallet ผลผลิตลง CRSHPROD1 ครบทุกฟิลด์ตามโครงสร้าง f4[cite: 1]
@@ -182,7 +226,7 @@ try {
     $stmt_crsh->bindValue(':actual_piece', $produce_piece);
     $stmt_crsh->bindValue(':produce_weight', $produce_weight);
     $stmt_crsh->bindValue(':produce_piece', $produce_piece);
-    $stmt_crsh->bindValue(':bottom_weight', $pallet_weight); // 👈 นำ Pallet Weight บันทึกลง CRSH_BOTTOMWEIGHT
+    $stmt_crsh->bindValue(':bottom_weight', $pallet_weight);
     $stmt_crsh->bindValue(':start_date', $start_date);
     $stmt_crsh->bindValue(':start_time', $start_time);
     $stmt_crsh->bindValue(':end_date', $end_date);
@@ -218,12 +262,23 @@ try {
 
     // 7. ตรวจสอบเงื่อนไข AUTO CLOSE COIL & AUTO SCRAP[cite: 1]
     $is_auto_closed = false;
-    if ($new_balance_wt < $cut_wt_pc || $new_balance_wt < 50) {
+    if ($new_balance_wt < $wt_per_piece || $new_balance_wt < 50) {
         $is_auto_closed = true;
         $scrap_weight   = $new_balance_wt > 0 ? $new_balance_wt : 0;
 
         // 7.1 บันทึกเศษเข้า SCRPPROD1 (ตาม f4 AddScrap)
         if ($scrap_weight > 0) {
+            // === เพิ่ม: รันเลข SCRAP_NO ใหม่ รูปแบบ SYYMMDD-Line-Running ===
+            $scrp_prefix = "S" . date('ymd') . "-" . strtoupper($line_func) . "-";
+            $sql_scrp_run = "SELECT COUNT(*) as run_cnt FROM SCRPPROD1 WHERE PRODUCT_NO LIKE :scrp_prefix";
+            $stmt_scrp_run = $conn->prepare($sql_scrp_run);
+            $search_scrp_prefix = $scrp_prefix . "%";
+            $stmt_scrp_run->bindParam(':scrp_prefix', $search_scrp_prefix, PDO::PARAM_STR);
+            $stmt_scrp_run->execute();
+            $row_scrp_run = $stmt_scrp_run->fetch(PDO::FETCH_ASSOC);
+            $next_scrp_no = ((int)($row_scrp_run['run_cnt'] ?? 0)) + 1;
+            $scrap_no = $scrp_prefix . sprintf("%02d", $next_scrp_no);
+
             $sql_scrp = "INSERT INTO SCRPPROD1 (
                             PRODUCT_NO, SCRP_DATE, COIL_NO, MATERIAL_IN, LINE_PROCESS, PROCESS, SCRP_FROM,
                             LOCATION_ID, ALLOY, SCRP_WIDTH, SCRP_WEIGHT, SCRP_REMARK, SCRP_LABEL, SCRP_OPERATOR,
@@ -234,7 +289,9 @@ try {
                             :operatedate, 'OP'
                         )";
             $stmt_scrp = $conn->prepare($sql_scrp);
-            $stmt_scrp->bindParam(':product_no', $product_no);
+            
+            // === แก้ไข: เปลี่ยนค่าที่ส่งเข้า :product_no เป็น $scrap_no ===
+            $stmt_scrp->bindParam(':product_no', $scrap_no, PDO::PARAM_STR);
             $stmt_scrp->bindParam(':scrp_date', $end_date);
             $stmt_scrp->bindParam(':coil_no', $coil_no);
             $stmt_scrp->bindParam(':material_in', $material_in);

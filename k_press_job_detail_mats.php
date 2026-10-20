@@ -9,7 +9,7 @@ if (!isset($_SESSION['ID'])) {
 
 
 // ดึงค่า JOB_ORDER จาก URL (รองรับทั้ง search_no และ JOB_ORDER)
-$job_order = isset($_GET['search_no']) ? htmlspecialchars(trim($_GET['search_no']), ENT_QUOTES, 'UTF-8') : (isset($_GET['JOB_ORDER']) ? htmlspecialchars(trim($_GET['JOB_ORDER']), ENT_QUOTES, 'UTF-8') : '');
+$job_order = isset($_GET['jno']) ? htmlspecialchars(trim($_GET['jno']), ENT_QUOTES, 'UTF-8') : (isset($_GET['JOB_ORDER']) ? htmlspecialchars(trim($_GET['JOB_ORDER']), ENT_QUOTES, 'UTF-8') : '');
 
 // ป้องกันกรณีไม่มี Session
 $iduser_func = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
@@ -271,7 +271,7 @@ function format_dim($value) {
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="history_crsh_log_mats.php?func=<?php echo $folder_func ?>">Circle or Sheet Information</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="k_press_mats.php?func=<?php echo $folder_func ?>">K Press Process (Line <?php echo $line_func; ?>)</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -281,7 +281,7 @@ function format_dim($value) {
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3 style="margin:0; font-weight:700; color:#1e293b; font-size: 24px;">
-                    📋 Job Order Details: <span style="color:#2563eb;"><a href="history_crsh_log_mats.php?func=<?php echo $folder_func ?>&pno=<?php echo $job_order ?>"><?php echo htmlspecialchars($job_order); ?></a></span>
+                    📋 Job Order Details: <span style="color:#2563eb;"><a href="k_press_mats.php?func=<?php echo $folder_func ?>&jno=<?php echo $job_order ?>"><?php echo htmlspecialchars($job_order); ?></a></span>
                 </h3>
                 <div>
                     <button type="button" class="btn btn-back" onclick="back_home()">
@@ -499,7 +499,7 @@ function format_dim($value) {
 <script>
 function back_home(){   
     var data_fun = document.getElementById("func").value;
-    window.location.assign('history_crsh_log_mats.php?func='+encodeURIComponent(data_fun)); 
+    window.location.assign('k_press_mats.php?func='+encodeURIComponent(data_fun)); 
 }
 </script>
 </html>

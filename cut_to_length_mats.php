@@ -5,7 +5,7 @@ session_start();
 // ดึงค่า Session ต่างๆ
 $iduser_func  = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
 $folder_func  = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
-$line_func    = isset($_SESSION['LINE']) ? htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8') : '';
+$line_func    = isset($_SESSION['LINE']) ? htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8') : 'A';
 $group_func   = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
 $process_func = isset($_SESSION['PROCESS_GROUP']) ? htmlspecialchars($_SESSION['PROCESS_GROUP'], ENT_QUOTES, 'UTF-8') : '';
 
@@ -37,7 +37,7 @@ $jno = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOT
 <!doctype html>
 <html lang="en">
 <head>
-    <title>Meyer Aluminium Thailand Co.,LTD. - Cut to Length Process</title>
+    <title>Meyer Aluminium Thailand Co.,LTD. - Cut to Length Process (Line <?php echo $line_func; ?>)</title>
     <?php include 'include/header.php';?>
     
     <link href="assets-graph/styles.css" rel="stylesheet" />
@@ -52,80 +52,95 @@ $jno = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOT
         
         .dashboard-card {
             background: #ffffff; border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.08);
             padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;
         }
 
+        /* Filter Section */
         .filter-wrapper {
             display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;
             background: #ffffff; padding: 18px 24px; border-radius: 12px;
             box-shadow: 0 1px 2px rgba(0,0,0,0.02); border: 1px solid #e2e8f0; margin-bottom: 24px;
         }
-        .filter-item { display: flex; flex-direction: column; gap: 8px; }
+        .filter-item { display: flex; flex-direction: column; gap: 6px; }
         .filter-item label {
-            font-size: 13px; font-weight: 700; color: #64748b; margin: 0;
+            font-size: 12px; font-weight: 700; color: #64748b; margin: 0;
             letter-spacing: 0.5px; text-transform: uppercase;
         }
 
         .form-control {
-            border-radius: 8px; border: 1px solid #cbd5e1; height: 42px;
-            padding: 8px 12px; font-size: 15px; color: #334155; transition: all 0.2s ease; box-shadow: none;
+            border-radius: 8px; border: 1px solid #cbd5e1; height: 40px;
+            padding: 8px 12px; font-size: 14px; color: #334155; transition: all 0.2s ease; box-shadow: none;
         }
         .form-control:focus {
-            border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); outline: none;
+            border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12); outline: none;
         }
 
         .form-control-minimal {
             border: none !important; border-bottom: 2px solid #cbd5e1 !important;
             border-radius: 0 !important; background-color: transparent !important;
             padding-left: 4px !important; padding-right: 4px !important;
-            height: 42px; font-size: 16px; font-weight: 600; color: #1e293b;
+            height: 40px; font-size: 15px; font-weight: 600; color: #1e293b;
             transition: border-color 0.2s ease; box-shadow: none !important;
         }
         .form-control-minimal:focus { border-bottom-color: #2563eb !important; outline: none; }
 
         .btn-search {
-            background-color: #1e293b; color: #ffffff; font-weight: 600; font-size: 14px;
-            letter-spacing: 0.5px; height: 42px; padding: 0 24px; border-radius: 8px; border: none; transition: all 0.2s;
+            background-color: #1e293b; color: #ffffff; font-weight: 600; font-size: 13px;
+            letter-spacing: 0.5px; height: 40px; padding: 0 24px; border-radius: 8px; border: none; transition: all 0.2s;
         }
         .btn-search:hover { background-color: #0f172a; color: #ffffff; transform: translateY(-1px); }
 
-        .btn-green-search {
-            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-            background-color: #059669; color: #ffffff !important; font-weight: 700; font-size: 13px;
-            padding: 6px 14px; border-radius: 8px; border: none; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            transition: all 0.2s ease; cursor: pointer; text-decoration: none !important;
-        }
-        .btn-green-search:hover { background-color: #047857; transform: translateY(-1px); }
-
-        .table-responsive { border: none !important; margin-top: 15px; }
+        /* Table Styling */
+        .table-responsive { border: none !important; margin-top: 10px; }
         #user_table { border-collapse: separate; border-spacing: 0; width: 100% !important; }
         #user_table thead th {
-            background-color: #f1f5f9; color: #475569; font-weight: 700;
-            text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px;
-            padding: 16px 12px; border-bottom: 2px solid #e2e8f0;
+            background-color: #f8fafc; color: #475569; font-weight: 700;
+            text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;
+            padding: 12px 10px; border-bottom: 2px solid #e2e8f0; white-space: nowrap;
         }
         #user_table tbody td {
-            padding: 16px 12px; vertical-align: middle; border-bottom: 1px solid #f1f5f9;
-            font-size: 15px; line-height: 1.6; color: #334155;
+            padding: 12px 10px; vertical-align: middle; border-bottom: 1px solid #f1f5f9;
+            font-size: 13.5px; color: #334155; white-space: nowrap;
         }
         
         #user_table tbody tr { cursor: pointer; transition: background-color 0.15s ease-in-out; }
         #user_table tbody tr:hover td { background-color: #f0f9ff !important; }
 
-        /* ปุ่ม Action "MAP COIL" สีน้ำเงิน */
+        /* Badges for Job & Sale Order */
+        .badge-job {
+            display: inline-flex; align-items: center; gap: 4px;
+            background-color: #eff6ff; color: #1d4ed8; font-weight: 700; font-size: 12.5px;
+            padding: 5px 12px; border-radius: 20px; border: 1px solid #bfdbfe; transition: all 0.2s;
+        }
+        .badge-job:hover { background-color: #dbeafe; color: #1e40af; }
+
+        .badge-so {
+            display: inline-flex; align-items: center; gap: 4px;
+            background-color: #ecfdf5; color: #047857; font-weight: 700; font-size: 12.5px;
+            padding: 5px 12px; border-radius: 20px; border: 1px solid #a7f3d0; transition: all 0.2s;
+        }
+        .badge-so:hover { background-color: #d1fae5; color: #065f46; }
+
+        .badge-product-id {
+            font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 6px; display: inline-block;
+        }
+        .badge-prod-sh { background-color: #fef3c7; color: #b45309; }
+        .badge-prod-cc { background-color: #e0e7ff; color: #4338ca; }
+        .badge-prod-nc { background-color: #f3e8ff; color: #6b21a8; }
+
+        /* Action Buttons */
         .btn-action-map {
-            background-color: #2563eb; color: #ffffff; font-weight: 600; font-size: 13px;
-            padding: 8px 14px; border-radius: 6px; border: none; width: 100%;
-            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.15); transition: all 0.2s;
+            background-color: #2563eb; color: #ffffff; font-weight: 600; font-size: 12.5px;
+            padding: 6px 14px; border-radius: 6px; border: none; min-width: 100px;
+            box-shadow: 0 1px 2px rgba(37, 99, 235, 0.15); transition: all 0.2s;
         }
         .btn-action-map:hover { background-color: #1d4ed8; color: #ffffff; transform: translateY(-1px); }
 
-        /* ปุ่ม Action "WORK" สีเขียว */
         .btn-action-work {
-            background-color: #059669; color: #ffffff; font-weight: 700; font-size: 13px;
-            padding: 8px 14px; border-radius: 6px; border: none; width: 100%;
-            box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2); transition: all 0.2s;
+            background-color: #059669; color: #ffffff; font-weight: 700; font-size: 12.5px;
+            padding: 6px 14px; border-radius: 6px; border: none; min-width: 100px;
+            box-shadow: 0 1px 2px rgba(5, 150, 105, 0.2); transition: all 0.2s;
         }
         .btn-action-work:hover { background-color: #047857; color: #ffffff; transform: translateY(-1px); }
     </style>
@@ -152,6 +167,7 @@ $jno = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOT
         </nav>
         
         <div class="container-fluid" style="padding-top: 20px;">
+            <!-- Filter Bar -->
             <div class="filter-wrapper">
                 <div class="filter-item" style="flex: 1; min-width: 240px;">
                     <label for="job_no">Job Process No.</label>
@@ -163,32 +179,34 @@ $jno = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOT
                 </div>
                 <div class="filter-item">
                     <button class="btn btn-search" id="btn_search_coil" onclick="search_batch_no()">
-                        SEARCH
+                        🔍 SEARCH
                     </button>
                 </div>
             </div>
 
+            <!-- Table Card -->
             <div class="row">
                 <div class="col-md-12">
                     <div class="dashboard-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Cut to Length Job Process Records (Line <?php echo $line_func; ?>)</h4>
+                            <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:17px;">📋 Cut to Length Job Process Records (Line <?php echo $line_func; ?>)</h4>
                         </div>
                         
                         <div class="table-responsive table-full-width">
                             <table id="user_table" class="table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 160px; text-align: center;">Job Process</th>
-                                        <th>JOB DATE</th>
-                                        <th>SALE ORDER</th>
-                                        <th>ALLOY</th>
-                                        <th>TEMPER</th>
-                                        <th>THICKNESS</th>
-                                        <th>WIDTH</th>
-                                        <th>WORKPROCESS</th>
-                                        <th>RELEASE WEIGHT / PIECE</th>
-                                        <th style="text-align: center;">ACTION</th>
+                                        <th style="text-align: center; width: 140px;">Job Process</th>
+                                        <th style="text-align: center;">Job Date</th>
+                                        <th style="text-align: center; width: 140px;">Sale Order</th>
+                                        <th style="text-align: center;">Prod ID</th>
+                                        <th style="text-align: center;">Alloy</th>
+                                        <th style="text-align: center;">Temper</th>
+                                        <th style="text-align: right;">Thickness</th>
+                                        <th style="text-align: right;">Cut Width x Length</th>
+                                        <th style="text-align: center;">Workprocess</th>
+                                        <th style="text-align: center;">Release Wt / Pcs</th>
+                                        <th style="text-align: center; width: 120px;">Action</th>
                                     </tr>
                                 </thead>
                                 
@@ -196,7 +214,6 @@ $jno = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOT
                                 <?php
                                     include 'function_mats.php';
                                     include("dbcon_mats-new.php");
-                                    ini_set('max_execution_time', 300);
 
                                     $y = date('Y');
                                     $date_st = $y.'-01-01 00:00:00';
@@ -204,17 +221,16 @@ $jno = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOT
 
                                     $params = [];
                                     
-                                    // ปรับเงื่อนไขให้ยืดหยุ่น: ไม่ตัด Job ออกทันทีเมื่อเจอน้ำหนักสะสมเพิ่มขึ้น[cite: 1]
+                                    // เงื่อนไขสอดคล้องตาม f4 (Line A, B)
                                     $where_base = "(j.PRODUCT_ID = 'CC' OR j.PRODUCT_ID = 'SH' OR j.PRODUCT_ID = 'NC') 
                                                    AND j.JOB_STATUS = 'OP' 
                                                    AND j.JOB_WORKPROCESS LIKE 'CL>%'";
 
-                                    $select_fields = "SELECT j.JOB_ORDER, j.JOBORDER_DATE, j.SALEORDER_NO, j.SALEORDER_ITEM, 
-                                                             j.ALLOY, j.TEMPER, j.THICKNESS, j.WIDTH, j.JOB_WORKPROCESS, 
+                                    $select_fields = "SELECT j.JOB_ORDER, j.JOBORDER_DATE, j.SALEORDER_NO, j.SALEORDER_ITEM, j.PRODUCT_ID,
+                                                             j.ALLOY, j.TEMPER, j.THICKNESS, j.CUT_WIDTH, j.CUT_LENGTH, j.JOB_WORKPROCESS, 
                                                              j.JOB_RELEASEWEIGHT, j.JOB_RELEASEPIECE, j.JOB_PRODUCEWEIGHT,
                                                              cw.COIL_NO AS WORK_COIL_NO ";
                                     
-                                    // ใช้ OUTER APPLY ดึงข้อมูล COILWORK1 เฉพาะรายการล่าสุด 1 Record ป้องกัน Row ซ้ำ[cite: 1]
                                     $from_sql = " FROM JOBORDER1 j 
                                                   OUTER APPLY (
                                                       SELECT TOP 1 COIL_NO 
@@ -252,40 +268,66 @@ $jno = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOT
                                         $safe_job_no  = htmlspecialchars($row['JOB_ORDER'] ?? '', ENT_QUOTES, 'UTF-8');
                                         $safe_so_no   = htmlspecialchars($row['SALEORDER_NO'] ?? '', ENT_QUOTES, 'UTF-8');
                                         $safe_so_item = htmlspecialchars($row['SALEORDER_ITEM'] ?? '', ENT_QUOTES, 'UTF-8');
+                                        $product_id   = strtoupper(trim($row['PRODUCT_ID'] ?? 'SH'));
                                         $work_coil_no = $row['WORK_COIL_NO'] ?? '';
                                         
+                                        // ฟอร์แมตวันที่ให้กระชับ YYYY-MM-DD
+                                        $job_date_fmt = !empty($row['JOBORDER_DATE']) ? date('Y-m-d', strtotime($row['JOBORDER_DATE'])) : '-';
+
                                         $so_display = $safe_so_no . ($safe_so_item !== '' ? '/' . $safe_so_item : '');
+
+                                        // Badge สไตล์ Product ID
+                                        $prod_class = 'badge-prod-sh';
+                                        if ($product_id === 'CC') $prod_class = 'badge-prod-cc';
+                                        if ($product_id === 'NC') $prod_class = 'badge-prod-nc';
+
+                                        $cut_size = htmlspecialchars(fmt2($row['CUT_WIDTH']), ENT_QUOTES, 'UTF-8') . ' x ' . htmlspecialchars(fmt2($row['CUT_LENGTH']), ENT_QUOTES, 'UTF-8');
 
                                         echo "<tr onclick=\"show_job_detail_ctl(event, '" . addslashes($row['JOB_ORDER']) . "')\">";
                                         
-                                        // 1. ปุ่ม Job Process สีเขียว
+                                        // 1. Job Process
                                         echo "<td align='center'>
-                                                <button type='button' class='btn-green-search' onclick=\"show_job_detail_ctl(event, '" . addslashes($row['JOB_ORDER']) . "')\">
-                                                    🔍 ".$safe_job_no."
-                                                </button>
+                                                <span class='badge-job' onclick=\"show_job_detail_ctl(event, '" . addslashes($row['JOB_ORDER']) . "')\">
+                                                    🔹 ".$safe_job_no."
+                                                </span>
                                               </td>";
                                         
-                                        echo "<td style='font-weight:600; color:#1e293b; font-size:15px;'>".htmlspecialchars($row['JOBORDER_DATE'] ?? '', ENT_QUOTES, 'UTF-8')."</td>";
+                                        // 2. Job Date
+                                        echo "<td align='center' style='font-weight:600; color:#475569;'>".$job_date_fmt."</td>";
                                         
-                                        // 2. ปุ่ม Sale Order
+                                        // 3. Sale Order
                                         echo "<td align='center'>";
                                         if(!empty($safe_so_no)) {
-                                            echo "<button type='button' class='btn-green-search' onclick=\"show_so_detail_ctl(event, '" . addslashes($safe_so_no) . "', '" . addslashes($safe_so_item) . "')\">
-                                                    🔍 ".$so_display."
-                                                  </button>";
+                                            echo "<span class='badge-so' onclick=\"show_so_detail_ctl(event, '" . addslashes($safe_so_no) . "', '" . addslashes($safe_so_item) . "')\">
+                                                    🏷️ ".$so_display."
+                                                  </span>";
                                         } else {
-                                            echo "-";
+                                            echo "<span style='color:#94a3b8;'>-</span>";
                                         }
                                         echo "</td>";
 
-                                        echo "<td>".htmlspecialchars($row['ALLOY'] ?? '', ENT_QUOTES, 'UTF-8')."</td>";
-                                        echo "<td>".htmlspecialchars($row['TEMPER'] ?? '', ENT_QUOTES, 'UTF-8')."</td>";
-                                        echo "<td>".htmlspecialchars(fmt2($row['THICKNESS']) ?? '', ENT_QUOTES, 'UTF-8')."</td>";
-                                        echo "<td>".htmlspecialchars($row['WIDTH'] ?? '', ENT_QUOTES, 'UTF-8')."</td>";
-                                        echo "<td>".htmlspecialchars($row['JOB_WORKPROCESS'] ?? '', ENT_QUOTES, 'UTF-8')."</td>";
-                                        echo "<td align='center'>".htmlspecialchars($row['JOB_RELEASEWEIGHT'] ?? '', ENT_QUOTES, 'UTF-8')." / ".htmlspecialchars($row['JOB_RELEASEPIECE'] ?? '', ENT_QUOTES, 'UTF-8')."</td>";
+                                        // 4. Product ID
+                                        echo "<td align='center'><span class='badge-product-id {$prod_class}'>".$product_id."</span></td>";
                                         
-                                        // 3. ปุ่ม Action MAP COIL / WORK (ตามการตรวจสอบ COILWORK1)
+                                        // 5. Alloy
+                                        echo "<td align='center' style='font-weight:600;'>".htmlspecialchars($row['ALLOY'] ?? '', ENT_QUOTES, 'UTF-8')."</td>";
+                                        
+                                        // 6. Temper
+                                        echo "<td align='center'>".htmlspecialchars($row['TEMPER'] ?? '', ENT_QUOTES, 'UTF-8')."</td>";
+                                        
+                                        // 7. Thickness
+                                        echo "<td align='right' style='font-weight:600;'>".htmlspecialchars(fmt2($row['THICKNESS']) ?? '', ENT_QUOTES, 'UTF-8')."</td>";
+                                        
+                                        // 8. Cut Size (W x L)
+                                        echo "<td align='right' style='font-weight:600;'>".$cut_size."</td>";
+                                        
+                                        // 9. Workprocess
+                                        echo "<td align='center' style='font-weight:600; color:#d97706;'>".htmlspecialchars($row['JOB_WORKPROCESS'] ?? '', ENT_QUOTES, 'UTF-8')."</td>";
+                                        
+                                        // 10. Release Wt / Pcs
+                                        echo "<td align='center' style='font-weight:600; color:#0f172a;'>".number_format((float)($row['JOB_RELEASEWEIGHT'] ?? 0), 0)." / ".number_format((float)($row['JOB_RELEASEPIECE'] ?? 0), 0)."</td>";
+                                        
+                                        // 11. Action
                                         if (!empty($work_coil_no)) {
                                             echo "<td align='center'>
                                                     <button type='button' class='btn-action-work' onclick=\"go_to_work(event, '" . addslashes($row['JOB_ORDER']) . "', '" . addslashes($work_coil_no) . "')\">

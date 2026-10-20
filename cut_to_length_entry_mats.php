@@ -34,9 +34,11 @@ include 'function_mats.php';
 $job_data       = null;
 $coil_data      = null;
 $history_list   = [];
+$wt_piece_to_use = 0;
+$wt_type_label  = '';
 
 if (!empty($job_order) && !empty($coil_no)) {
-    // 1. ดึงข้อมูล Job Order[cite: 1]
+    // 1. ดึงข้อมูล Job Order
     $sql_job = "SELECT 
                     j.JOB_ORDER, j.JOB_STATUS, j.SALEORDER_NO, j.SALEORDER_ITEM, 
                     c.CSTMSPPL_ID, c.CONFIRM_DATE, j.ALLOY, j.TEMPER, j.PRODUCE_TEMPER1, j.PRODUCE_TEMPER2, 
@@ -54,7 +56,38 @@ if (!empty($job_order) && !empty($coil_no)) {
     $stmt_job->execute();
     $job_data = $stmt_job->fetch(PDO::FETCH_ASSOC);
 
-    // 2. ดึงข้อมูล Coil[cite: 1]
+    if ($job_data) {
+        // === LOGIC f4: เช็กเงื่อนไข WorkProcess เพื่อเลือก Weight per Piece ในการคำนวณ ===
+        $work_proc = $job_data['JOB_WORKPROCESS'] ?? '';
+        $pos_sh = strpos($work_proc, 'SH>');
+        $pos_sc = strpos($work_proc, 'SC>');
+        $pos_ct = strpos($work_proc, 'CT>');
+
+        // เทียบเท่า InStr(1, txtWorkProcess, "SH>") > 2 Or InStr > 2 Or InStr > 2
+        if (($pos_sh !== false && $pos_sh >= 2) || 
+            ($pos_sc !== false && $pos_sc >= 2) || 
+            ($pos_ct !== false && $pos_ct >= 2)) {
+            $wt_piece_to_use = (float)($job_data['CUT_WEIGHTPIECE'] ?? 0);
+            $wt_type_label   = 'Cut Sheet Wt. per Piece';
+        } else {
+            $wt_piece_to_use = (float)($job_data['WEIGHT_PIECE'] ?? 0);
+            $wt_type_label   = 'Order Weight per Piece';
+        }
+    }
+
+    // คำนวณเพดานสูงสุดและยอดคงเหลือที่ผลิตเพิ่มได้อีก
+    $rel_wt       = (float)($job_data['JOB_RELEASEWEIGHT'] ?? 0);
+    $prod_wt      = (float)($job_data['JOB_PRODUCEWEIGHT'] ?? 0);
+    $max_tol_pct  = (float)($job_data['JOB_MAXTOLERANCE'] ?? 0);
+
+    // เพดานน้ำหนักสูงสุดตาม Tolerance
+    $max_allow_wt = $rel_wt + (($rel_wt * $max_tol_pct) / 100);
+
+    // น้ำหนักส่วนคงเหลือที่ยังผลิตเพิ่มได้อีกไม่เกินเพดาน
+    $remain_allow_wt = $max_allow_wt - $prod_wt;
+    if ($remain_allow_wt < 0) { $remain_allow_wt = 0; }
+
+    // 2. ดึงข้อมูล Coil
     $sql_coil = "SELECT 
                     COIL_NO, ALLOY, TEMPER, GRADE, SURFACE_GRADE, METALLURGICAL_GRADE, THICKNESS, WIDTH,
                     COIL_ACTUALWEIGHT, COIL_PRODUCEWEIGHT, COIL_SCRAPWEIGHT, COIL_ADJUSTWEIGHT, COIL_BALANCEWEIGHT,
@@ -67,7 +100,7 @@ if (!empty($job_order) && !empty($coil_no)) {
     $stmt_coil->execute();
     $coil_data = $stmt_coil->fetch(PDO::FETCH_ASSOC);
 
-    // 3. ดึงประวัติรายการ Pallet ที่ตัดผลิตเสร็จแล้วใน Job Order นี้ (CRSH_STATUS = 'OP' หรือ 'CP')[cite: 1]
+    // 3. ดึงประวัติรายการ Pallet ที่ตัดผลิตเสร็จแล้วใน Job Order นี้
     $sql_hist = "SELECT 
                     PRODUCT_NO, COIL_NO, CRSH_PRODUCEPIECE, CRSH_PRODUCEWEIGHT, 
                     CRSH_STARTDATE, CRSH_STARTTIME, CRSH_ENDDATE, CRSH_ENDTIME, 
@@ -117,7 +150,7 @@ function format_dim4($value) { return number_format((float)($value ?? 0), 4); }
         }
         .clean-info-table .lbl-col {
             background-color: #f8fafc; color: #64748b; font-weight: 700;
-            font-size: 12px; text-transform: uppercase; width: 30%;
+            font-size: 12px; text-transform: uppercase; width: 35%;
         }
         .clean-info-table .val-col { color: #0f172a; }
 
@@ -225,6 +258,37 @@ function format_dim4($value) { return number_format((float)($value ?? 0), 4); }
                             <div style="font-weight:700; color:#059669; font-size:14px;"><?php echo format_wt($job_data['JOB_RELEASEWEIGHT']); ?> kg. / <?php echo format_pcs($job_data['JOB_RELEASEPIECE']); ?> pcs.</div>
                         </div>
                     </div>
+
+                    <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #cbd5e1;">
+                        <div class="col-md-3 col-sm-6">
+                            <div class="info-label">Release Target Wt.</div>
+                            <div style="font-weight:700; color:#0369a1; font-size:14px;">
+                                <?php echo format_wt($rel_wt); ?> kg.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3 col-sm-6">
+                            <div class="info-label">Max Allowed Wt. (+<?php echo $max_tol_pct; ?>%)</div>
+                            <div style="font-weight:700; color:#d97706; font-size:14px;">
+                                <?php echo format_wt($max_allow_wt); ?> kg.
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 col-sm-6">
+                            <div class="info-label">Produced Wt. Actual</div>
+                            <div style="font-weight:700; color:#2563eb; font-size:14px;">
+                                <?php echo format_wt($prod_wt); ?> kg.
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 col-sm-6">
+                            <div class="info-label" style="color:#059669;">Quota Remaining Wt.</div>
+                            <div style="font-weight:700; color:#059669; font-size:15px; background-color:#ecfdf5; padding:2px 8px; border-radius:4px; display:inline-block;">
+                                <= <?php echo format_wt($remain_allow_wt); ?> kg.
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- 2. Selected Coil Summary -->
@@ -319,7 +383,8 @@ function format_dim4($value) { return number_format((float)($value ?? 0), 4); }
                         <input type="hidden" name="job_order" value="<?php echo htmlspecialchars($job_order); ?>">
                         <input type="hidden" name="coil_no" value="<?php echo htmlspecialchars($coil_no); ?>">
                         <input type="hidden" id="txt_last_product_no" value="" />
-                        <input type="hidden" id="cut_weight_piece" value="<?php echo $job_data['CUT_WEIGHTPIECE']; ?>">
+                        <!-- ซ่อนค่า weight per piece ที่ผ่านการเช็ก f4 WorkProcess แล้ว -->
+                        <input type="hidden" id="calc_weight_piece" value="<?php echo $wt_piece_to_use; ?>">
                         <input type="hidden" id="coil_balance_wt" value="<?php echo $coil_data['COIL_BALANCEWEIGHT']; ?>">
 
                         <div class="row">
@@ -346,6 +411,15 @@ function format_dim4($value) { return number_format((float)($value ?? 0), 4); }
                                     <tr>
                                         <td class="lbl-col">Cut Sheet Wt. per Piece</td>
                                         <td class="val-col" style="font-weight:700; color:#0284c7;"><?php echo format_dim4($job_data['CUT_WEIGHTPIECE']); ?> kg.</td>
+                                    </tr>
+                                    <tr style="background-color: #f0fdf4;">
+                                        <td class="lbl-col" style="color: #047857;">Calculation Weight Mode</td>
+                                        <td class="val-col" style="font-weight:700; color: #047857;">
+                                            <?php echo format_dim4($wt_piece_to_use); ?> kg./pc
+                                            <small style="color: #64748b; font-weight: normal; display: block; font-size: 11px;">
+                                                (<?php echo $wt_type_label; ?>)
+                                            </small>
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="lbl-col">Next Process</td>
@@ -419,15 +493,26 @@ function format_dim4($value) { return number_format((float)($value ?? 0), 4); }
 <?php include 'include/footer.php';?>
 
 <script>
-// คำนวณน้ำหนักผลิตอัตโนมัติ (ชิ้น x CUT_WEIGHTPIECE) + Verification Check
+// คำนวณน้ำหนักผลิตอัตโนมัติ พร้อมเช็ก Tolerance & Balance
 function calculate_entry_weight() {
     var pcsInput = document.getElementById('txt_produce_piece');
     var pcs = parseFloat(pcsInput.value) || 0;
-    var cutWtPiece = parseFloat(document.getElementById('cut_weight_piece').value) || 0;
+    
+    var wtPerPiece = parseFloat(document.getElementById('calc_weight_piece').value) || 0;
     var coilBalanceWt = parseFloat(document.getElementById('coil_balance_wt').value) || 0;
+    
+    // ดึงค่ายอดปล่อยผลิต, ยอดผลิตสะสมเดิม, และ Max Tolerance %
+    var releaseWt = parseFloat("<?php echo $job_data['JOB_RELEASEWEIGHT'] ?? 0; ?>") || 0;
+    var currentProdWt = parseFloat("<?php echo $job_data['JOB_PRODUCEWEIGHT'] ?? 0; ?>") || 0;
+    var maxTolPct = parseFloat("<?php echo $job_data['JOB_MAXTOLERANCE'] ?? 0; ?>") || 0;
+    
+    // คำนวณขีดจำกัดสูงสุดที่ยอมให้ผลิตได้ (Max Allowed Weight)
+    var maxAllowedWt = releaseWt + ((releaseWt * maxTolPct) / 100);
+    
     var btnSave = document.getElementById('btn_submit_entry');
     
-    var produceWt = Math.round(pcs * cutWtPiece);
+    // คำนวณน้ำหนักรวมพาเลทใหม่
+    var produceWt = Math.round(pcs * wtPerPiece);
     document.getElementById('txt_produce_weight').value = produceWt;
 
     if (pcs <= 0) {
@@ -435,15 +520,32 @@ function calculate_entry_weight() {
         return;
     }
 
-    // ตรวจสอบถ้าน้ำหนักเกิน Balance Weight ของ Coil -> บล็อกปุ่ม Save และล้างค่า
+    var totalNewProdWt = currentProdWt + produceWt;
+
+    // 1. Hard Block: ถ้าน้ำหนักพาเลทใหม่ เกินยอดคงเหลือของ Coil (Coil Balance Weight)
     if (coilBalanceWt > 0 && produceWt > coilBalanceWt) {
         alert('❌ ไม่สามารถบันทึกได้: น้ำหนักผลิตรวม (' + produceWt + ' kg.) เกินกว่าน้ำหนักคงเหลือของ Coil (' + coilBalanceWt.toFixed(2) + ' kg.)');
-        
         pcsInput.value = '';
         document.getElementById('txt_produce_weight').value = '0';
         btnSave.disabled = true;
         return false;
-    } else {
+    } 
+    // 2. Hard Block: ถ้ายอดสะสมรวมพาเลทใหม่ เกินเกณฑ์สูงสุด Max Tolerance (+%' . maxTolPct . ')
+    else if (maxAllowedWt > 0 && totalNewProdWt > maxAllowedWt) {
+        var overMax = (totalNewProdWt - maxAllowedWt).toFixed(2);
+        alert('❌ ไม่สามารถบันทึกได้: ยอดผลิตสะสมรวมพาเลทนี้ (' + totalNewProdWt + ' kg.) เกินพิกัดสูงสุดที่อนุญาต (' + maxAllowedWt.toFixed(2) + ' kg. [+' + maxTolPct + '%]) อยู่ ' + overMax + ' kg.\n\nกรุณาติดต่อฝ่ายวางแผน (Planning) เพื่อปรับขยาย Tolerance ใน Job Order');
+        pcsInput.value = '';
+        document.getElementById('txt_produce_weight').value = '0';
+        btnSave.disabled = true;
+        return false;
+    } 
+    // 3. Soft Warning: เกินยอดสั่งปล่อย (Release Weight) แต่ยังอยู่ในช่วง Tolerance
+    else if (releaseWt > 0 && totalNewProdWt > releaseWt) {
+        var overRel = (totalNewProdWt - releaseWt).toFixed(2);
+        console.warn('⚠️ Soft Warning: ยอดผลิตสะสมจะเกิน Release Target อยู่ ' + overRel + ' kg. (แต่อยู่ในเกณฑ์ Tolerance)');
+        btnSave.disabled = false;
+    } 
+    else {
         btnSave.disabled = false;
     }
 
@@ -469,52 +571,79 @@ function calculate_efficiency() {
 function save_entry_product(e) {
     e.preventDefault();
 
-    var pcs = parseFloat(document.getElementById('txt_produce_piece').value) || 0;
-    var produceWt = parseFloat(document.getElementById('txt_produce_weight').value) || 0;
-    var coilBalanceWt = parseFloat(document.getElementById('coil_balance_wt').value) || 0;
+    // 1. Guard Check: ตรวจสอบวัน/เวลาจบ ต้องไม่น้อยกว่าวัน/เวลาเริ่ม
+    var dtStart = new Date(document.getElementById('dt_start').value);
+    var dtEnd   = new Date(document.getElementById('dt_end').value);
 
-    // Guard Checks
-    if (pcs <= 0) {
-        alert('กรุณาระบุจำนวนชิ้นงานที่ผลิตให้ถูกต้อง');
+    if (dtEnd < dtStart) {
+        alert('❌ ไม่สามารถบันทึกได้: วัน/เวลา สิ้นสุดการผลิต ต้องไม่อยู่ก่อนวัน/เวลา เริ่มต้น');
+        document.getElementById('dt_end').focus();
         return false;
     }
 
+    // 2. Guard Check: ดึงค่าตรวจสอบยอดผลิตเกิน Max Tolerance
+    var pcs = parseFloat(document.getElementById('txt_produce_piece').value) || 0;
+    var produceWt = parseFloat(document.getElementById('txt_produce_weight').value) || 0;
+    var coilBalanceWt = parseFloat(document.getElementById('coil_balance_wt').value) || 0;
+    
+    var releaseWt = parseFloat("<?php echo $job_data['JOB_RELEASEWEIGHT'] ?? 0; ?>") || 0;
+    var currentProdWt = parseFloat("<?php echo $job_data['JOB_PRODUCEWEIGHT'] ?? 0; ?>") || 0;
+    var maxTolPct = parseFloat("<?php echo $job_data['JOB_MAXTOLERANCE'] ?? 0; ?>") || 0;
+    var maxAllowedWt = releaseWt + ((releaseWt * maxTolPct) / 100);
+
+    var totalNewProdWt = currentProdWt + produceWt;
+
+    // Guard Check: ยอดชิ้นงาน/น้ำหนักต้องมากกว่า 0
+    if (pcs <= 0 && produceWt <= 0) {
+        alert('กรุณาระบุจำนวนชิ้นงานหรือน้ำหนักผลิตให้ถูกต้อง');
+        return false;
+    }
+
+    // Guard Check: น้ำหนักผลิตต้องไม่เกิน Balance Weight ของ Coil
     if (coilBalanceWt > 0 && produceWt > coilBalanceWt) {
         alert('❌ ระบบไม่อนุญาตให้บันทึกเนื่องจากน้ำหนักเกิน Coil Balance Weight');
         return false;
     }
 
+    // Guard Check: ยอดผลิตสะสมรวมต้องไม่เกิน Max Allowed Weight (Hard Block)
+    if (maxAllowedWt > 0 && totalNewProdWt > maxAllowedWt) {
+        var overMax = (totalNewProdWt - maxAllowedWt).toFixed(2);
+        alert('❌ ระบบไม่อนุญาตให้บันทึกเนื่องจากยอดผลิตสะสมรวม (' + totalNewProdWt + ' kg.) เกินพิกัดสูงสุดที่อนุญาต (' + maxAllowedWt.toFixed(2) + ' kg. [+' + maxTolPct + '%]) อยู่ ' + overMax + ' kg.\n\nกรุณาติดต่อฝ่ายวางแผน (PPC)');
+        return false;
+    }
+
+    // -----------------------------------------------------------------
+    // เมื่อผ่านการตรวจ Guard Check ทั้งหมดแล้ว จึงทำการ Disable ปุ่มและส่งข้อมูล AJAX
+    // -----------------------------------------------------------------
     var formElement = document.getElementById('frm_entry');
     var formData = new FormData(formElement);
 
-    // ปิดการทำงานของปุ่มทันทีเพื่อป้องกันการกดซ้ำ (Prevent Double Submit)
     var btnSave = document.getElementById('btn_submit_entry');
     var btnKeep = document.querySelector('.btn-keep');
     btnSave.disabled = true;
     if (btnKeep) btnKeep.disabled = true;
     btnSave.innerHTML = '⏳ Saving Product...';
 
-    fetch('model/cut_to_length_save_entry_product.php', {
+    // เลือกใช้ endpoint ตามไฟล์ 
+    var targetUrl = 'model/cut_to_length_save_entry_product.php'; 
+
+    fetch(targetUrl, {
         method: 'POST',
         body: formData
     })
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            // 1. ตรวจสอบว่าเข้าเงื่อนไขปิดม้วน (Auto Close Coil) หรือไม่
             if (data.auto_closed) {
                 alert('✅ บันทึก Pallet ผลผลิตสำเร็จ (Product No: ' + data.pno + ')\n\n🔒 เนื่องจากน้ำหนักคงเหลือของ Coil น้อยกว่าเกณฑ์ (< 50 kg.) ระบบได้ทำการ Close Coil และ Auto Scrap เศษวัตถุดิบให้อัตโนมัติเรียบร้อยแล้ว');
-                // เด้งกลับไปหน้าหลักเนื่องจากม้วน Coil ปิดการทำงานแล้ว
                 back_home();
             } else {
                 alert('✅ บันทึก Pallet ผลผลิตสำเร็จ (Product No: ' + data.pno + ')');
                 
-                // 2. หากยังไม่ปิดม้วน ให้เปิดหน้าต่างพิมพ์ Label สำหรับ Pallet ล่าสุด
                 var jno = "<?php echo $job_order; ?>";
                 var printUrl = 'print_circle_sheet_product_label_mats.php?productno=' + encodeURIComponent(data.pno) + '&joborder=' + encodeURIComponent(jno);
                 window.open(printUrl, '_blank');
 
-                // 3. Refresh หน้าจอทันทีเพื่อให้ตาราง Job Order Pallet History และยอดคงเหลืออัปเดต
                 window.location.reload();
             }
         } else {

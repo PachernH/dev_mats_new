@@ -289,15 +289,15 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                         <svg class="arrow-icon" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
                     </div>
                     <ul class="nested <?php echo in_array($menu, $act_menus) ? 'active' : '' ?>">
-                        <li class="<?php echo ($menu == "A1") ? "active" : "" ?>"><a href="sale_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Sale Module</p></a></li>
-                        <li class="<?php echo ($menu == "A2") ? "active" : "" ?>"><a href="planing_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Planing Module</p></a></li>
-                        <li class="<?php echo ($menu == "A3") ? "active" : "" ?>"><a href="technical_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Technical Module</p></a></li>
-                        <li class="<?php echo ($menu == "A4") ? "active" : "" ?>"><a href="production_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Production Module</p></a></li>
-                        <li class="<?php echo ($menu == "A5") ? "active" : "" ?>"><a href="warehouse_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Warehouse Module</p></a></li>
-                        <li class="<?php echo ($menu == "A6") ? "active" : "" ?>"><a href="shipping_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Shipping Module</p></a></li>
-                        <li class="<?php echo ($menu == "A7") ? "active" : "" ?>"><a href="account_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Account Module</p></a></li>
-                        <li class="<?php echo ($menu == "A8") ? "active" : "" ?>"><a href="engineer_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Engineer Module</p></a></li>
-                        <li class="<?php echo ($menu == "A9") ? "active" : "" ?>"><a href="hr_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>HR Module</p></a></li>
+                        <li class="<?php echo ($menu == "A1") ? "active" : "" ?>"><a href="sale_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Sale</p></a></li>
+                        <li class="<?php echo ($menu == "A2") ? "active" : "" ?>"><a href="planing_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Planning</p></a></li>
+                        <li class="<?php echo ($menu == "A3") ? "active" : "" ?>"><a href="technical_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Technical</p></a></li>
+                        <li class="<?php echo ($menu == "A4") ? "active" : "" ?>"><a href="production_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Production</p></a></li>
+                        <li class="<?php echo ($menu == "A5") ? "active" : "" ?>"><a href="warehouse_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Warehouse</p></a></li>
+                        <li class="<?php echo ($menu == "A6") ? "active" : "" ?>"><a href="shipping_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Shipping</p></a></li>
+                        <li class="<?php echo ($menu == "A7") ? "active" : "" ?>"><a href="account_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Account</p></a></li>
+                        <li class="<?php echo ($menu == "A8") ? "active" : "" ?>"><a href="engineer_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>Engineering</p></a></li>
+                        <li class="<?php echo ($menu == "A9") ? "active" : "" ?>"><a href="hr_module_mats.php"><svg class="dot-icon" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256"/></svg><p>HR & Admin</p></a></li>
                     </ul>    
                 </li>     
 

@@ -9,7 +9,7 @@ if (!isset($_SESSION['ID'])) {
 
 
 // ดึงค่า SALEORDER_NO และ JOB_ORDER จาก URL
-$saleorder_no = isset($_GET['search_no']) ? htmlspecialchars(trim($_GET['search_no']), ENT_QUOTES, 'UTF-8') : (isset($_GET['SALEORDER_NO']) ? htmlspecialchars(trim($_GET['SALEORDER_NO']), ENT_QUOTES, 'UTF-8') : '');
+$saleorder_no = isset($_GET['sono']) ? htmlspecialchars(trim($_GET['sono']), ENT_QUOTES, 'UTF-8') : (isset($_GET['SALEORDER_NO']) ? htmlspecialchars(trim($_GET['SALEORDER_NO']), ENT_QUOTES, 'UTF-8') : '');
 $job_order    = isset($_GET['JOB_ORDER']) ? htmlspecialchars(trim($_GET['JOB_ORDER']), ENT_QUOTES, 'UTF-8') : (isset($_GET['job_order']) ? htmlspecialchars(trim($_GET['job_order']), ENT_QUOTES, 'UTF-8') : '');
 
 // ป้องกันกรณีไม่มี Session
@@ -284,7 +284,7 @@ function format_num($value) {
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="history_crsh_log_mats.php?func=<?php echo $folder_func ?>">Circle or Sheet Information</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="k_press_mats.php?func=<?php echo $folder_func ?>">K Press Process (Line <?php echo $line_func; ?>)</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -294,7 +294,7 @@ function format_num($value) {
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3 style="margin:0; font-weight:700; color:#1e293b; font-size: 24px;">
-                    📋 Sale Order Details: <span style="color:#2563eb;"><a href="history_crsh_log_mats.php?func=<?php echo $folder_func ?>&pno=<?php echo $saleorder_no ?>"><?php echo htmlspecialchars($saleorder_no); ?></a></span>
+                    📋 Sale Order Details: <span style="color:#2563eb;"><a href="k_press_mats.php?func=<?php echo $folder_func ?>&sno=<?php echo $saleorder_no ?>"><?php echo htmlspecialchars($saleorder_no); ?></a></span>
                 </h3>
                 <div>
                     <button type="button" class="btn btn-back" onclick="back_home()">
@@ -428,7 +428,7 @@ function format_num($value) {
 <script>
 function back_home(){   
     var data_fun = document.getElementById("func").value;
-    window.location.assign('history_crsh_log_mats.php?func='+encodeURIComponent(data_fun)); 
+    window.location.assign('k_press_mats.php?func='+encodeURIComponent(data_fun)); 
 }
 </script>
 </html>

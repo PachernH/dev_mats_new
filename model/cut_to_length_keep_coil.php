@@ -65,6 +65,17 @@ try {
 
         // 3.1 บันทึกเศษเข้า SCRPPROD1 (ตาม f4 AddScrap)
         if ($scrap_weight > 0) {
+            // === เพิ่ม: รันเลข SCRAP_NO ใหม่ รูปแบบ SYYMMDD-Line-Running ===
+            $scrp_prefix = "S" . date('ymd') . "-" . strtoupper($line_func) . "-";
+            $sql_scrp_run = "SELECT COUNT(*) as run_cnt FROM SCRPPROD1 WHERE PRODUCT_NO LIKE :scrp_prefix";
+            $stmt_scrp_run = $conn->prepare($sql_scrp_run);
+            $search_scrp_prefix = $scrp_prefix . "%";
+            $stmt_scrp_run->bindParam(':scrp_prefix', $search_scrp_prefix, PDO::PARAM_STR);
+            $stmt_scrp_run->execute();
+            $row_scrp_run = $stmt_scrp_run->fetch(PDO::FETCH_ASSOC);
+            $next_scrp_no = ((int)($row_scrp_run['run_cnt'] ?? 0)) + 1;
+            $scrap_no = $scrp_prefix . sprintf("%02d", $next_scrp_no);
+
             $sql_scrp = "INSERT INTO SCRPPROD1 (
                             PRODUCT_NO, SCRP_DATE, COIL_NO, MATERIAL_IN, LINE_PROCESS, PROCESS, SCRP_FROM,
                             LOCATION_ID, ALLOY, SCRP_WIDTH, SCRP_WEIGHT, SCRP_REMARK, SCRP_LABEL, SCRP_OPERATOR,
@@ -75,7 +86,9 @@ try {
                             :operatedate, 'OP'
                         )";
             $stmt_scrp = $conn->prepare($sql_scrp);
-            $stmt_scrp->bindParam(':product_no', $product_no, PDO::PARAM_STR);
+            
+            // === แก้ไข: เปลี่ยนค่าที่ส่งเข้า :product_no เป็น $scrap_no ===
+            $stmt_scrp->bindParam(':product_no', $scrap_no, PDO::PARAM_STR);
             $stmt_scrp->bindParam(':scrp_date', $today_date, PDO::PARAM_STR);
             $stmt_scrp->bindParam(':coil_no', $coil_no, PDO::PARAM_STR);
             $stmt_scrp->bindParam(':material_in', $material_in, PDO::PARAM_STR);

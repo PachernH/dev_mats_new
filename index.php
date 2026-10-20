@@ -111,6 +111,10 @@
                                     <option value="CTL">CUT TO LENGTH</option>
                                     <option value="COLD_MILL">COLD MILL</option>
                                     <option value="SLITTER">SWISS SLITTER</option>
+                                    <option value="ANNEALING">ANNEALING</option>
+                                    <option value="BATCH">BATCH</option>
+                                    <option value="STRETCHER">STRETCHER</option>
+                                    <option value="PACKING">PACKING</option>
                                 </select>
                             </div>
 
@@ -183,6 +187,41 @@
                                 <select class="form-control" name="machine_line">
                                     <option value="" selected disabled>-- Select Line --</option>
                                     <option value="T">Line T</option>
+                                </select>
+                            </div>
+
+                            <!-- กลุ่ม ANNEALING -->
+                            <div class="form-group line-sub-group" id="line-group-ANNEALING" style="display: none;">
+                                <select class="form-control" name="machine_line">
+                                    <option value="" selected disabled>-- Select Line --</option>
+                                    <option value="2">Line 2</option>
+                                    <option value="3">Line 3</option>
+                                </select>
+                            </div>
+
+                            <!-- กลุ่ม BATCH -->
+                            <div class="form-group line-sub-group" id="line-group-BATCH" style="display: none;">
+                                <select class="form-control" name="machine_line">
+                                    <option value="" selected disabled>-- Select Line --</option>
+                                    <option value="3">Line 3</option>
+                                    <option value="4">Line 4</option>
+                                </select>
+                            </div>
+
+                            <!-- กลุ่ม STRETCHER -->
+                            <div class="form-group line-sub-group" id="line-group-STRETCHER" style="display: none;">
+                                <select class="form-control" name="machine_line">
+                                    <option value="" selected disabled>-- Select Line --</option>
+                                    <option value="1">Line 1</option>
+                                    <option value="2">Line 2</option>
+                                </select>
+                            </div>
+
+                            <!-- กลุ่ม PACKING -->
+                            <div class="form-group line-sub-group" id="line-group-PACKING" style="display: none;">
+                                <select class="form-control" name="machine_line">
+                                    <option value="" selected disabled>-- Select Line --</option>
+                                    <option value="1">Line 1</option>
                                 </select>
                             </div>
                                                         
