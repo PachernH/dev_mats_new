@@ -1,7 +1,7 @@
 <?php
 $serverName = "DB1SERVER"; 
-//$databaseName = "MATS-NEWII";
-$databaseName = "MATS-NEW";
+$databaseName = "MATS-NEWII";
+//$databaseName = "MATS-NEW";
 //$databaseName = "MATS";
 $username = "sa";
 $password = "DATASYSTEM";

@@ -62,7 +62,7 @@ if (!empty($coil_no)) {
     $row_data = $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-// ดึงรายการ PRODUCT_ID และ PRODUCT_MODEL จาก MATS.dbo.PRODMSTR1
+// ดึงรายการ PRODUCT_ID และ PRODUCT_MODEL จาก PRODMSTR1
 $product_master_list = [];
 $sql_prod = "SELECT PRODUCT_ID, PRODUCT_MODEL FROM PRODMSTR1 ORDER BY PRODUCT_ID ASC";
 $stmt_prod = $conn->prepare($sql_prod);

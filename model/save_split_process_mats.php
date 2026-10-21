@@ -42,7 +42,7 @@ try {
                         COIL_ENDTIME, PRODUCE_FLAG, COIL_LABEL, LABEL_CODE, EXTRA_DESCRIPTION1, EXTRA_DESCRIPTION2,
                         EXTRA_DESCRIPTION3, EDGE_OPS, TPBT_OPS, EDGE_DRS, TPBT_DRS, BTWN_OPS, BTWN_DRS, TPBT_BTWN,
                         COIL_REMARK, COIL_OPERATOR1, COIL_OPERATEDATE, COIL_STATUS
-                 FROM [MATS-TEST].dbo.COILPROD1 AS c
+                 FROM COILPROD1 AS c
                  WHERE COIL_NO = :coil_no";
     
     $stmt_main = $conn->prepare($sql_main);

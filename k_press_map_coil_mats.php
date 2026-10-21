@@ -89,7 +89,7 @@ if (!empty($job_order)) {
         $rel_sheet_wt = round($rel_pc * $cut_wt_pc);
         $min_sheet_wt = round($min_pc * $cut_wt_pc);
 
-        // 2. เจนเนอเรต Product No (รูปแบบ PYYMMDD-K-XX)
+        // 2. เจนเนอเรต Product No (รูปแบบ PYYMMDD-K-XX จาก CRSHPROD1)
         $prefix = "P" . date('ymd') . "-" . strtoupper($line_func) . "-";
         $sql_run = "SELECT COUNT(*) as run_cnt FROM CRSHPROD1 WHERE PRODUCT_NO LIKE :prefix";
         $stmt_run = $conn->prepare($sql_run);
@@ -207,6 +207,7 @@ function format_dim($value) { return number_format((float)($value ?? 0), 3); }
         }
         .btn-save { background-color: #059669; color: #ffffff; }
         .btn-save:hover { background-color: #047857; transform: translateY(-1px); box-shadow: 0 4px 6px rgba(5, 150, 105, 0.2); }
+        .btn-save:disabled { background-color: #cbd5e1 !important; color: #94a3b8 !important; cursor: not-allowed !important; transform: none !important; box-shadow: none !important; }
 
         .btn-back {
             background-color: #64748b; color: #ffffff; font-weight: 700;
@@ -218,14 +219,14 @@ function format_dim($value) { return number_format((float)($value ?? 0), 3); }
 <body>
 
 <div class="wrapper">
-<?php $menu = 'A4';?>
+<?php $menu = 'K1';?>
     <?php if (!empty($folder_func) && !empty($group_func)) { include 'include/'.$folder_func.'/navigation.php'; } ?>
 
     <div class="main-panel">
         <nav class="navbar navbar-default navbar-fixed">
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="k_press_mats.php?func=<?php echo $folder_func ?>">K Press Process (Line <?php echo $line_func; ?>)</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="k_press_mats.php?func=<?php echo $folder_func ?>">Circle Press Process (Line <?php echo $line_func; ?>)</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -254,7 +255,7 @@ function format_dim($value) { return number_format((float)($value ?? 0), 3); }
                 <div class="dashboard-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px;">
                         <h4 style="margin:0; font-weight:700; color:#1e3a8a; font-size:18px;">
-                            📌 Job Order Information <span style="color:#2563eb;"></span>
+                            📌 Job Order Information
                         </h4>
                         <span class="badge" style="background-color:#059669; font-size:14px; padding:6px 14px; font-weight:700;">STATUS: <?php echo htmlspecialchars($job_data['JOB_STATUS']); ?></span>
                     </div>
@@ -496,6 +497,7 @@ function format_dim($value) { return number_format((float)($value ?? 0), 3); }
                                 </div>
 
                                 <div style="margin-top: 20px; text-align: right;">
+                                    <!-- ใส่ disabled ไว้ตั้งแต่เริ่มต้น -->
                                     <button type="submit" class="btn-action btn-save" id="btn_submit_save" disabled style="width: 100%; justify-content: center; height: 46px; font-size: 16px;">
                                         💾 Save Production
                                     </button>
@@ -518,7 +520,7 @@ function format_dim($value) { return number_format((float)($value ?? 0), 3); }
 <?php include 'include/footer.php';?>
 
 <script>
-// เลือก Coil
+// เลือก Coil -> อัปเดตข้อมูล UI และปลดล็อกปุ่ม Save (btn_submit_save)
 function select_coil(coilObj, trElement) {
     document.getElementById('txt_coil_no').value    = coilObj.COIL_NO;
     document.getElementById('txt_material_in').value = coilObj.MATERIAL_IN || '';
@@ -537,6 +539,7 @@ function select_coil(coilObj, trElement) {
     document.getElementById('lbl_scrap_adj_wt').innerText  = (parseFloat(coilObj.COIL_SCRAPWEIGHT)||0).toFixed(2) + ' / ' + (parseFloat(coilObj.COIL_ADJUSTWEIGHT)||0).toFixed(2) + ' kg.';
     document.getElementById('lbl_balance_wt').innerText    = (parseFloat(coilObj.COIL_BALANCEWEIGHT)||0).toFixed(2) + ' kg.';
 
+    // ปลดล็อกเปิดใช้งานปุ่ม Save Production
     document.getElementById('btn_submit_save').disabled = false;
 
     var rows = document.querySelectorAll('#tbl_coil_list tbody tr');
@@ -544,7 +547,7 @@ function select_coil(coilObj, trElement) {
     trElement.classList.add('tr-selected');
 }
 
-// ส่งข้อมูลด้วย AJAX แล้วแจ้งเตือนก่อนย้ายกลับหน้า k_press_mats.php
+// ส่งข้อมูลด้วย AJAX
 function save_production(e) {
     e.preventDefault();
 

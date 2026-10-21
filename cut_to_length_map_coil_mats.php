@@ -5,7 +5,7 @@ session_start();
 // ดึงค่า Session
 $iduser_func  = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
 $folder_func  = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
-$line_func    = isset($_SESSION['LINE']) ? htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8') : '';
+$line_func    = isset($_SESSION['LINE']) ? htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8') : 'A';
 $group_func   = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
 
 // ถ้าไม่มี Session ให้กลับไปหน้า index.php
@@ -43,7 +43,7 @@ $min_sheet_wt = 0;
 $product_no   = '';
 
 if (!empty($job_order)) {
-    // 1. ดึงข้อมูล Job Order แบบ LEFT JOIN
+    // 1. ดึงข้อมูล Job Order สเปก Cut to Length
     $sql_job = "SELECT 
                     j.JOB_ORDER, j.JOB_STATUS, j.SALEORDER_NO, j.SALEORDER_ITEM, 
                     c.CSTMSPPL_ID, c.CONFIRM_DATE, 
@@ -53,7 +53,7 @@ if (!empty($job_order)) {
                     j.THICKNESS, j.WIDTH, j.LENGTH, j.WEIGHT_PIECE, 
                     j.CUT_WIDTH, j.CUT_LENGTH, j.CUT_WEIGHTPIECE, j.JOB_WORKPROCESS, 
                     j.JOB_RELEASEWEIGHT, j.JOB_RELEASEPIECE, j.JOB_PRODUCEWEIGHT, j.JOB_PRODUCEPIECE,
-                    j.JOB_MAXTOLERANCE, j.JOB_MINTOLERANCE, j.MATERIAL_IN, j.JOB_REMARK
+                    j.JOB_MAXTOLERANCE, j.JOB_MINTOLERANCE, j.MATERIAL_IN, j.JOB_REMARK, j.PRODUCT_ID
                 FROM JOBORDER1 j
                 LEFT JOIN CSTMORDR2 c ON j.SALEORDER_NO = c.SALEORDER_NO AND j.SALEORDER_ITEM = c.SALEORDER_ITEM
                 WHERE j.JOB_ORDER = :job_order 
@@ -66,12 +66,10 @@ if (!empty($job_order)) {
     $job_data = $stmt_job->fetch(PDO::FETCH_ASSOC);
 
     if ($job_data) {
-        // ฟอร์แมตวันที่ ETD
         if (!empty($job_data['CONFIRM_DATE'])) {
             $etd_date = date('Y-m-d', strtotime($job_data['CONFIRM_DATE']));
         }
 
-        // คำนวณค่า Max/Min และ Sheet Weight
         $rel_wt    = (float)($job_data['JOB_RELEASEWEIGHT'] ?? 0);
         $rel_pc    = (float)($job_data['JOB_RELEASEPIECE'] ?? 0);
         $max_tol   = (float)($job_data['JOB_MAXTOLERANCE'] ?? 0);
@@ -89,7 +87,7 @@ if (!empty($job_order)) {
         $rel_sheet_wt = round($rel_pc * $cut_wt_pc);
         $min_sheet_wt = round($min_pc * $cut_wt_pc);
 
-        // 2. เจนเนอเรต Product No (รูปแบบ PYYMMDD-A-XX)
+        // 2. เจนเนอเรต Product No (รูปแบบ PYYMMDD-Line-XX) จาก CRSHPROD1
         $prefix = "P" . date('ymd') . "-" . strtoupper($line_func) . "-";
         $sql_run = "SELECT COUNT(*) as run_cnt FROM CRSHPROD1 WHERE PRODUCT_NO LIKE :prefix";
         $stmt_run = $conn->prepare($sql_run);
@@ -138,7 +136,7 @@ function format_dim($value) { return number_format((float)($value ?? 0), 3); }
 <!doctype html>
 <html lang="en">
 <head>
-    <title>Meyer Aluminium Thailand Co.,LTD. - Map Coil Cut to Length</title>
+    <title>Meyer Aluminium Thailand Co.,LTD. - Map Coil Cut to Length (Line <?php echo $line_func; ?>)</title>
     <?php include 'include/header.php';?>
     <link href="assets-graph/styles.css" rel="stylesheet" />
 
@@ -174,11 +172,6 @@ function format_dim($value) { return number_format((float)($value ?? 0), 3); }
             padding-bottom: 10px; font-weight: 700; font-size: 18px; margin-top: 0; margin-bottom: 20px; 
         }
 
-        .card-title-g3 { 
-            color: #059669; border-bottom: 2px solid #a7f3d0; 
-            padding-bottom: 10px; font-weight: 700; font-size: 18px; margin-top: 0; margin-bottom: 20px; 
-        }
-
         .table-responsive { border: none !important; margin-top: 10px; }
         
         .custom-job-table {
@@ -207,6 +200,7 @@ function format_dim($value) { return number_format((float)($value ?? 0), 3); }
         }
         .btn-save { background-color: #059669; color: #ffffff; }
         .btn-save:hover { background-color: #047857; transform: translateY(-1px); box-shadow: 0 4px 6px rgba(5, 150, 105, 0.2); }
+        .btn-save:disabled { background-color: #cbd5e1 !important; color: #94a3b8 !important; cursor: not-allowed !important; transform: none !important; box-shadow: none !important; }
 
         .btn-back {
             background-color: #64748b; color: #ffffff; font-weight: 700;
@@ -254,7 +248,7 @@ function format_dim($value) { return number_format((float)($value ?? 0), 3); }
                 <div class="dashboard-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px;">
                         <h4 style="margin:0; font-weight:700; color:#1e3a8a; font-size:18px;">
-                            📌 Job Order Information <span style="color:#2563eb;"></span>
+                            📌 Job Order Information
                         </h4>
                         <span class="badge" style="background-color:#059669; font-size:14px; padding:6px 14px; font-weight:700;">STATUS: <?php echo htmlspecialchars($job_data['JOB_STATUS']); ?></span>
                     </div>
@@ -496,6 +490,7 @@ function format_dim($value) { return number_format((float)($value ?? 0), 3); }
                                 </div>
 
                                 <div style="margin-top: 20px; text-align: right;">
+                                    <!-- กำหนด disabled เป็นค่าเริ่มต้น -->
                                     <button type="submit" class="btn-action btn-save" id="btn_submit_save" disabled style="width: 100%; justify-content: center; height: 46px; font-size: 16px;">
                                         💾 Save Production
                                     </button>
@@ -518,7 +513,7 @@ function format_dim($value) { return number_format((float)($value ?? 0), 3); }
 <?php include 'include/footer.php';?>
 
 <script>
-// เลือก Coil
+// เลือก Coil -> อัปเดตข้อมูล UI และปลดล็อกปุ่ม Save (btn_submit_save)
 function select_coil(coilObj, trElement) {
     document.getElementById('txt_coil_no').value    = coilObj.COIL_NO;
     document.getElementById('txt_material_in').value = coilObj.MATERIAL_IN || '';
@@ -537,6 +532,7 @@ function select_coil(coilObj, trElement) {
     document.getElementById('lbl_scrap_adj_wt').innerText  = (parseFloat(coilObj.COIL_SCRAPWEIGHT)||0).toFixed(2) + ' / ' + (parseFloat(coilObj.COIL_ADJUSTWEIGHT)||0).toFixed(2) + ' kg.';
     document.getElementById('lbl_balance_wt').innerText    = (parseFloat(coilObj.COIL_BALANCEWEIGHT)||0).toFixed(2) + ' kg.';
 
+    // ปลดล็อกปุ่ม Save Production ให้ Active
     document.getElementById('btn_submit_save').disabled = false;
 
     var rows = document.querySelectorAll('#tbl_coil_list tbody tr');
@@ -544,7 +540,7 @@ function select_coil(coilObj, trElement) {
     trElement.classList.add('tr-selected');
 }
 
-// ส่งข้อมูลด้วย AJAX แล้วแจ้งเตือนก่อนย้ายกลับหน้า cut_to_length_mats.php พร้อมส่ง func และ jno
+// ส่งข้อมูลด้วย AJAX
 function save_production(e) {
     e.preventDefault();
 
@@ -565,7 +561,6 @@ function save_production(e) {
     .then(data => {
         if (data.status === 'success') {
             alert(data.message);
-            // Redirect ส่งค่า func และ jno กลับหน้าหลัก
             var redirectUrl = 'cut_to_length_mats.php?func=' + encodeURIComponent(funcVal) + '&jno=' + encodeURIComponent(jobOrder);
             window.location.assign(redirectUrl);
         } else {

@@ -7,30 +7,39 @@ if (!isset($_SESSION['ID'])) {
     exit();
 }
 
-// ดึงค่า COIL และตรวจสอบข้อมูลนำเข้า
-$coil_no = isset($_GET['COIL']) ? htmlspecialchars(trim($_GET['COIL']), ENT_QUOTES, 'UTF-8') : (isset($_GET['coil_no']) ? htmlspecialchars(trim($_GET['coil_no']), ENT_QUOTES, 'UTF-8') : '');
+$iduser_func  = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
+$folder_func  = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
+$line_func    = isset($_SESSION['LINE']) ? htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8') : 'K';
+$group_func   = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$process_func = isset($_SESSION['PROCESS_GROUP']) ? htmlspecialchars($_SESSION['PROCESS_GROUP'], ENT_QUOTES, 'UTF-8') : '';
 
-// ป้องกันกรณีไม่มี Session เพื่อไม่ให้เกิด Undefined array key Warning
-$iduser_func = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
-$folder_func = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
-$line_func   = isset($_SESSION['LINE']) ? htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8') : '';
-$group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$coil_no = isset($_GET['COIL']) ? htmlspecialchars(trim($_GET['COIL']), ENT_QUOTES, 'UTF-8') : (isset($_GET['coil_no']) ? htmlspecialchars(trim($_GET['coil_no']), ENT_QUOTES, 'UTF-8') : '');
 
 include("dbcon_mats-new.php");
 include 'function_mats.php';
 
-// Query ดึงข้อมูล Coil Product Details
 $row_data = null;
-$job_list = [];
 $coil_tree_list = [];
+$is_weight_too_low = false;
+$scrap_limit_weight = 0; // ค่าน้ำหนักเกณฑ์เกิด Scrap อัตโนมัติ
 
 if (!empty($coil_no)) {
-    // 1. Query ดึงข้อมูล Coil หลัก (เพิ่ม BLN_SLITWIDTH, ACC_SLITWIDTH)
+    // ดึงค่า Scrap Limit Width จากตาราง STNDMSTR14 ( default คือ 200 mm )
+    $scrap_limit_width = 200.0;
+    $sql_stnd = "SELECT VOLUM FROM STNDMSTR14 WHERE PROCESS = 'SS'";
+    $stmt_stnd = $conn->prepare($sql_stnd);
+    $stmt_stnd->execute();
+    $stnd_data = $stmt_stnd->fetch(PDO::FETCH_ASSOC);
+    if (!empty($stnd_data) && is_numeric($stnd_data['VOLUM'])) {
+        $scrap_limit_width = (float)$stnd_data['VOLUM'];
+    }
+
+    // Query ดึงข้อมูล Coil หลัก
     $sql = "SELECT 
                 p.COIL_NO, p.PRODUCT_REFERENCE, p.BATCH_NO, p.MATERIAL_IN, p.CSTMSPPL_ID, p.ALLOY, p.TEMPER, p.GRADE, 
                 p.SURFACE_GRADE, p.METALLURGICAL_GRADE, p.THICKNESS, p.WIDTH, p.F_THICKNESS, p.F_WIDTH, 
                 p.T5_TEMPERATURE, p.COIL_STATUS, p.COIL_WORKPROCESS, p.COIL_NEXTPROCESS, p.USE_FORPROCESS,
-                p.COIL_CASTWEIGHT, p.COIL_ACTUALWEIGHT,p.COIL_BALANCEWEIGHT, p.COIL_PRODUCEWEIGHT, p.COIL_REMARK, p.LINE_PROCESS, 
+                p.COIL_CASTWEIGHT, p.COIL_ACTUALWEIGHT, p.COIL_BALANCEWEIGHT, p.COIL_PRODUCEWEIGHT, p.COIL_REMARK, p.LINE_PROCESS, 
                 p.BLN_SLITWIDTH, p.ACC_SLITWIDTH,
                 i.INSPECTION_DATE, i.MAL_CASTNO
             FROM COILPROD1 p
@@ -42,85 +51,22 @@ if (!empty($coil_no)) {
     $stmt->execute();
     $row_data = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // 2. Query ดึงข้อมูล Job Order (Group 2) แบบรวมผลลัพธ์จากทั้ง USE_FORPROCESS และ COIL_REMARK
     if ($row_data) {
-        $found_jobs_map = [];
-
-        // [A] ค้นหาจาก USE_FORPROCESS (ถ้ามีค่า)
-        $raw_use_forprocess = !empty($row_data['USE_FORPROCESS']) ? trim($row_data['USE_FORPROCESS']) : '';
-        $clean_use_forprocess = preg_replace('/[0-9]/', '', $raw_use_forprocess);
-
-        if (!empty($clean_use_forprocess)) {
-            $sql_job1 = "SELECT JOB_ORDER, ALLOY, TEMPER, PRODUCE_TEMPER1, PRODUCE_TEMPER2, 
-                                GRADE, PRODUCE_GRADE1, PRODUCE_GRADE2, SURFACE_GRADE, METALLURGICAL_GRADE, 
-                                THICKNESS, WIDTH, JOB_WORKPROCESS, JOB_RELEASEWEIGHT, JOB_PRODUCEWEIGHT, JOB_STATUS 
-                         FROM JOBORDER1
-                         WHERE ALLOY = :alloy
-                           AND (TEMPER = :temper OR PRODUCE_TEMPER1 = :temper OR PRODUCE_TEMPER2 = :temper)
-                           AND (GRADE = :grade OR PRODUCE_GRADE1 = :grade OR PRODUCE_GRADE2 = :grade)
-                           AND SURFACE_GRADE = :surface_grade
-                           AND METALLURGICAL_GRADE = :metallurgical_grade
-                           AND THICKNESS = :thickness
-                           AND JOB_WORKPROCESS LIKE :workprocess
-                           AND JOB_RELEASEWEIGHT > JOB_PRODUCEWEIGHT
-                           AND JOB_STATUS = 'OP'
-                         ORDER BY JOB_ORDER ASC";
-
-            $stmt_job1 = $conn->prepare($sql_job1);
-            $stmt_job1->bindValue(':alloy', $row_data['ALLOY'] ?? '', PDO::PARAM_STR);
-            $stmt_job1->bindValue(':temper', $row_data['TEMPER'] ?? '', PDO::PARAM_STR);
-            $stmt_job1->bindValue(':grade', $row_data['GRADE'] ?? '', PDO::PARAM_STR);
-            $stmt_job1->bindValue(':surface_grade', $row_data['SURFACE_GRADE'] ?? '', PDO::PARAM_STR);
-            $stmt_job1->bindValue(':metallurgical_grade', $row_data['METALLURGICAL_GRADE'] ?? '', PDO::PARAM_STR);
-            $stmt_job1->bindValue(':thickness', $row_data['THICKNESS'] ?? '', PDO::PARAM_STR);
-            $stmt_job1->bindValue(':workprocess', '%' . $clean_use_forprocess . '%', PDO::PARAM_STR);
-            
-            $stmt_job1->execute();
-            $jobs1 = $stmt_job1->fetchAll(PDO::FETCH_ASSOC);
-
-            foreach ($jobs1 as $j) {
-                $found_jobs_map[$j['JOB_ORDER']] = $j;
-            }
-        }
-
-        // [B] ค้นหา Job Number จาก COIL_REMARK
-        $coil_remark = $row_data['COIL_REMARK'] ?? '';
-        preg_match_all('/JB-\d{2}-\d{4}/i', $coil_remark, $matches);
+        $master_width  = (float)($row_data['WIDTH'] ?? 0);
+        $actual_weight = (float)($row_data['COIL_ACTUALWEIGHT'] ?? 0);
+        $weight_per_mm = ($master_width > 0) ? ($actual_weight / $master_width) : 0;
         
-        if (!empty($matches[0])) {
-            $found_job_nos = array_unique($matches[0]);
-            
-            $in_placeholders = [];
-            $params_job2 = [];
-            foreach (array_values($found_job_nos) as $idx => $j_no) {
-                $ph = ":job" . $idx;
-                $in_placeholders[] = $ph;
-                $params_job2[$ph] = $j_no;
-            }
+        // คำนวณค่าน้ำหนักเกณฑ์ที่ใช้ทำ Scrap อัตโนมัติ (WeightPerMM * ScrapLimitWidth)
+        $scrap_limit_weight = round($weight_per_mm * $scrap_limit_width, 2);
 
-            $sql_job2 = "SELECT JOB_ORDER, ALLOY, TEMPER, PRODUCE_TEMPER1, PRODUCE_TEMPER2, 
-                                GRADE, PRODUCE_GRADE1, PRODUCE_GRADE2, SURFACE_GRADE, METALLURGICAL_GRADE, 
-                                THICKNESS, WIDTH, JOB_WORKPROCESS, JOB_RELEASEWEIGHT, JOB_PRODUCEWEIGHT, JOB_STATUS 
-                         FROM JOBORDER1
-                         WHERE JOB_ORDER IN (" . implode(',', $in_placeholders) . ")
-                         ORDER BY JOB_ORDER ASC";
-
-            $stmt_job2 = $conn->prepare($sql_job2);
-            $stmt_job2->execute($params_job2);
-            $jobs2 = $stmt_job2->fetchAll(PDO::FETCH_ASSOC);
-
-            foreach ($jobs2 as $j) {
-                if (!isset($found_jobs_map[$j['JOB_ORDER']])) {
-                    $found_jobs_map[$j['JOB_ORDER']] = $j;
-                }
-            }
+        $balance_weight = (float)($row_data['COIL_BALANCEWEIGHT'] ?? 0);
+        
+        // เช็คว่าถ้าน้ำหนักคงเหลือ < ค่าน้ำหนักเกณฑ์ทำ Scrap อัตโนมัติ ให้ถือว่าน้ำหนักน้อยเกินไปจนไม่สามารถแบ่งได้
+        if ($balance_weight <= $scrap_limit_weight) {
+            $is_weight_too_low = true;
         }
 
-        $job_list = array_values($found_jobs_map);
-
-        // -------------------------------------------------------------------
-        // 3. Query ดึงข้อมูล Coil Swiss Slitter Tree Details (Recursive CTE)
-        // -------------------------------------------------------------------
+        // Query Genealogy Tree
         $sql_tree = "WITH CoilTree AS (
                         SELECT 
                             c.COIL_NO, c.PRODUCT_REFERENCE, c.JOB_PROCESS, c.JOB_ORDER, c.LINE_PROCESS, c.COIL_ENDDATE, 
@@ -155,287 +101,42 @@ if (!empty($coil_no)) {
 <head>
     <title>Meyer Aluminium Thailand Co.,LTD.</title>
     <?php include 'include/header.php';?>
-    
     <link href="assets-graph/styles.css" rel="stylesheet" />
-
     <style>
-        body { 
-            font-family: 'Segoe UI', 'Tahoma', 'Sarabun', sans-serif;
-            background-color: #f8fafc;
-            color: #334155;
-            -webkit-font-smoothing: antialiased;
-        }
+        body { font-family: 'Segoe UI', 'Sarabun', sans-serif; background-color: #f8fafc; color: #334155; }
         .main-panel { background-color: #f8fafc !important; }
-        .main-panel .content { padding: 20px 20px !important; }
-
-        /* Dashboard Card Container */
-        .dashboard-card {
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
-            padding: 24px;
-            margin-bottom: 24px;
-            border: 1px solid #e2e8f0;
-        }
-
-        /* Detail Group Header */
-        .card-title-g1 { 
-            color: #1e40af; 
-            border-bottom: 2px solid #bfdbfe; 
-            padding-bottom: 10px; 
-            font-weight: 700; 
-            font-size: 17px;
-            margin-top: 0;
-            margin-bottom: 20px; 
-        }
-
-        .card-title-g2 { 
-            color: #0369a1; 
-            border-bottom: 2px solid #bae6fd; 
-            padding-bottom: 10px; 
-            font-weight: 700; 
-            font-size: 17px;
-            margin-top: 0;
-            margin-bottom: 20px; 
-        }
-
-        .card-title-g3 { 
-            color: #047857; 
-            border-bottom: 2px solid #a7f3d0; 
-            padding-bottom: 10px; 
-            font-weight: 700; 
-            font-size: 17px;
-            margin-top: 0;
-            margin-bottom: 20px; 
-        }
-
-        /* Label and Value Typography */
-        .info-label { 
-            font-size: 12px; 
-            font-weight: 700; 
-            color: #64748b; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px;
-            margin-bottom: 4px; 
-        }
-        .info-value { 
-            font-size: 15px; 
-            font-weight: 600; 
-            color: #0f172a; 
-            margin-bottom: 18px; 
-            word-break: break-all; 
-            background-color: #f8fafc;
-            padding: 8px 12px;
-            border-radius: 6px;
-            border: 1px solid #f1f5f9;
-            min-height: 40px;
-            display: flex;
-            align-items: center;
-        }
-
-        /* Form Input Styling */
-        .form-group label {
-            font-size: 13px;
-            font-weight: 700;
-            color: #475569;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-        }
-        .form-control-custom {
-            width: 100%;
-            height: 42px;
-            padding: 8px 12px;
-            font-size: 14px;
-            border-radius: 8px;
-            border: 1px solid #cbd5e1;
-            background-color: #ffffff;
-            transition: all 0.2s;
-        }
-        .form-control-custom:focus {
-            border-color: #10b981;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
-        }
-
-        /* Modern Table Styles */
-        .table-responsive {
-            border: none !important;
-            margin-top: 15px;
-        }
-        .custom-job-table {
-            border-collapse: separate;
-            border-spacing: 0;
-            width: 100% !important;
-        }
-        .custom-job-table thead th {
-            background-color: #f1f5f9;
-            color: #475569;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 13px;
-            letter-spacing: 0.5px;
-            padding: 12px 10px;
-            border-bottom: 2px solid #e2e8f0;
-            white-space: nowrap;
-        }
-        .custom-job-table tbody td {
-            padding: 10px;
-            vertical-align: middle;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 14px;
-            line-height: 1.5;
-            color: #334155;
-            white-space: nowrap;
-        }
-        .custom-job-table tbody tr.selected-row {
-            background-color: #ecfdf5 !important;
-        }
-
-        .status-badge-op {
-            color: #0284c7;
-            font-weight: 700;
-            background-color: #e0f2fe;
-            padding: 4px 8px;
-            border-radius: 6px;
-            border: 1px solid #bae6fd;
-            display: inline-block;
-        }
-
-        /* Buttons & Dynamic States */
-        .btn-select-job {
-            background-color: #0284c7;
-            color: #ffffff !important;
-            border: none;
-            border-radius: 6px;
-            padding: 5px 12px;
-            font-weight: 600;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-select-job:hover {
-            background-color: #0369a1;
-            transform: translateY(-1px);
-        }
-
-        /* ปุ่ม Save Data (สีเขียวชัดเจน) */
-        .btn-save {
-            background-color: #10b981 !important;
-            color: #ffffff !important;
-            font-weight: 700;
-            font-size: 15px;
-            padding: 10px 24px;
-            height: 44px;
-            border-radius: 8px;
-            border: none !important;
-            transition: all 0.2s;
-            cursor: pointer;
-            display: inline-block;
-        }
-        .btn-save:hover, .btn-save:focus, .btn-save:active {
-            background-color: #059669 !important;
-            color: #ffffff !important;
-            box-shadow: none !important;
-        }
-
-        /* ปุ่ม Save เมื่ออยู่ในสถานะ Disabled */
-        .btn-save:disabled, .btn-save[disabled] {
-            background-color: #94a3b8 !important; /* สีเทา */
-            color: #ffffff !important;
-            opacity: 0.65;
-            cursor: not-allowed !important;
-            pointer-events: none;
-        }
-
-        /* ปุ่ม Cancel (สีแดงชัดเจน) */
-        .btn-cancel {
-            background-color: #ef4444 !important;
-            color: #ffffff !important;
-            font-weight: 700;
-            font-size: 15px;
-            padding: 10px 24px;
-            height: 44px;
-            border-radius: 8px;
-            border: none !important;
-            transition: all 0.2s;
-            cursor: pointer;
-            margin-left: 10px;
-            display: inline-block;
-        }
-        .btn-cancel:hover, .btn-cancel:focus, .btn-cancel:active {
-            background-color: #dc2626 !important;
-            color: #ffffff !important;
-            box-shadow: none !important;
-        }
-
-        /* ปุ่ม Cancel เมื่ออยู่ในสถานะ Disabled */
-        .btn-cancel:disabled, .btn-cancel[disabled] {
-            background-color: #cbd5e1 !important; /* สีเทาอ่อน */
-            color: #64748b !important;
-            opacity: 0.65;
-            cursor: not-allowed !important;
-            pointer-events: none;
-        }
-
-        .btn-back {
-            background-color: #64748b;
-            color: #ffffff;
-            font-weight: 700;
-            font-size: 16px;
-            padding: 10px 24px;
-            height: 44px;
-            border-radius: 8px;
-            border: none;
-            transition: all 0.2s;
-        }
-        .btn-back:hover { background-color: #475569; color: #ffffff; }
+        .dashboard-card { background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0; }
+        .card-title-g1 { color: #1e40af; border-bottom: 2px solid #bfdbfe; padding-bottom: 10px; font-weight: 700; font-size: 17px; margin-top: 0; margin-bottom: 20px; }
+        .card-title-g3 { color: #047857; border-bottom: 2px solid #a7f3d0; padding-bottom: 10px; font-weight: 700; font-size: 17px; margin-top: 0; margin-bottom: 20px; }
+        .info-label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }
+        .info-value { font-size: 15px; font-weight: 600; color: #0f172a; margin-bottom: 18px; background-color: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #f1f5f9; min-height: 40px; display: flex; align-items: center; }
+        .form-control-custom { width: 100%; height: 42px; padding: 8px 12px; font-size: 14px; border-radius: 8px; border: 1px solid #cbd5e1; transition: all 0.2s; }
+        .form-control-custom:focus { border-color: #10b981; outline: none; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2); }
+        .form-control-custom:disabled, .form-control-custom[disabled] { background-color: #f1f5f9 !important; color: #94a3b8 !important; cursor: not-allowed; border-color: #e2e8f0; }
+        .custom-job-table { width: 100% !important; border-collapse: separate; border-spacing: 0; }
+        .custom-job-table thead th { background-color: #f1f5f9; color: #475569; font-weight: 700; font-size: 13px; padding: 12px 10px; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+        .custom-job-table tbody td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 14px; white-space: nowrap; }
+        .btn-save { background-color: #10b981 !important; color: #ffffff !important; font-weight: 700; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; }
+        .btn-save:hover { background-color: #059669 !important; }
+        .btn-save:disabled, .btn-save[disabled] { background-color: #cbd5e1 !important; color: #94a3b8 !important; opacity: 0.65; cursor: not-allowed !important; pointer-events: none; }
+        .btn-cancel { background-color: #ef4444 !important; color: #ffffff !important; font-weight: 700; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; margin-left: 10px; }
+        .btn-cancel:disabled, .btn-cancel[disabled] { background-color: #cbd5e1 !important; color: #94a3b8 !important; opacity: 0.65; cursor: not-allowed !important; pointer-events: none; }
+        .btn-back { background-color: #64748b; color: #ffffff; font-weight: 700; padding: 10px 24px; border-radius: 8px; border: none; }
+        .btn-print-legacy { background-color: #0284c7; color: #ffffff !important; border-radius: 6px; padding: 3px 10px; font-size: 12px; text-decoration: none !important; }
+        .childNode, .clickable-coil-node { cursor: pointer !important; }
     </style>
-    <!-- CSS บังคับให้ Node สีเหลืองแสดง Pointer รูปมือ -->
-    <style>
-        .childNode, .clickable-coil-node {
-            cursor: pointer !important;
-        }
-        .childNode:hover rect, .childNode:hover polygon {
-            fill: #fde047 !important;
-            stroke: #854d0e !important;
-        }
-    </style>
-    <!-- Mermaid.js สำหรับวาด Genealogy Tree Chart -->
     <script src="assets/js/mermaid.min.js"></script>
-    <script>
-        mermaid.initialize({ 
-            startOnLoad: true, 
-            theme: 'neutral',
-            flowchart: { 
-                useMaxWidth: false, 
-                htmlLabels: true,
-                curve: 'basis'
-            } 
-        });
-    </script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { useMaxWidth: false, htmlLabels: true, curve: 'basis' } });</script>
 </head>
 <body>
 
 <div class="wrapper">
-
-<?php $menu = 'A4';?>
-
-    <?php 
-    if (!empty($folder_func) && !empty($group_func)) {
-        include 'include/'.$folder_func.'/navigation.php'; 
-    }
-    ?>
+    <?php $menu = 'A4'; include 'include/'.$folder_func.'/navigation.php'; ?>
 
     <div class="main-panel">
         <nav class="navbar navbar-default navbar-fixed">
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navigation-example-2">
-                        <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
                     <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="swiss_slitter_process_mats.php?func=<?php echo $folder_func ?>">Swiss Slitter Process</a>
                 </div>
                 <?php include 'include/navbar.php';?>
@@ -443,16 +144,11 @@ if (!empty($coil_no)) {
         </nav>
         
         <div class="container-fluid" style="padding-top: 20px;">
-            
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3 style="margin:0; font-weight:700; color:#1e293b; font-size: 24px;">
-                    📦 Swiss Slitter Coil Details: <span style="color:#2563eb;"><a href="swiss_sitter_coil_production_detail_mats.php?func=<?php echo $folder_func ?>&COIL=<?php echo $coil_no?>"><?php echo htmlspecialchars($coil_no); ?></a></span>
+                    📦 Swiss Slitter Coil Details: <span style="color:#2563eb;"><a href="swiss_slitter_process_mats.php?func=<?php echo $folder_func ?>&cno=<?php echo $coil_no?>"><?php echo htmlspecialchars($coil_no); ?></a></span>
                 </h3>
-                <div>
-                    <button type="button" class="btn btn-back" onclick="back_home_coil()">
-                       ⬅️ Back
-                    </button>
-                </div>
+                <button type="button" class="btn btn-back" onclick="back_home_coil()">⬅️ Back</button>
             </div>
 
             <?php if (!$row_data): ?>
@@ -463,9 +159,9 @@ if (!empty($coil_no)) {
                 </div>
             <?php else: ?>
 
-                <!-- GROUP 1: Product Information -->
+                <!-- GROUP 1: Product Information (นำ ACC_SLITWIDTH และ BLN_SLITWIDTH ออกแล้ว) -->
                 <div class="dashboard-card">
-                    <h4 class="card-title-g1">📦 Group 1: Coil Product Details</h4>
+                    <h4 class="card-title-g1">📦 Group 1: Master Coil Details</h4>
                     <div class="row">
                         <div class="col-md-3 col-sm-6"><div class="info-label">PRODUCT NO.</div><div class="info-value" style="color:#2563eb; font-weight:700;"><?php echo htmlspecialchars($row_data['COIL_NO'] ?? '-'); ?></div></div>
                         <div class="col-md-3 col-sm-6"><div class="info-label">PRODUCT REF</div><div class="info-value"><?php echo htmlspecialchars($row_data['PRODUCT_REFERENCE'] ?? '-'); ?></div></div>
@@ -479,23 +175,8 @@ if (!empty($coil_no)) {
 
                         <div class="col-md-3 col-sm-6"><div class="info-label">THICKNESS</div><div class="info-value"><?php echo function_exists('fmt3') ? fmt3($row_data['THICKNESS']) : number_format((float)($row_data['THICKNESS'] ?? 0), 3); ?></div></div>
                         <div class="col-md-3 col-sm-6"><div class="info-label">WIDTH</div><div class="info-value"><?php echo function_exists('fmt3') ? fmt3($row_data['WIDTH']) : number_format((float)($row_data['WIDTH'] ?? 0), 3); ?></div></div>
-                        
                         <div class="col-md-3 col-sm-6"><div class="info-label">COIL ACTUALWEIGHT (KG)</div><div class="info-value"><?php echo function_exists('fmt2') ? fmt2($row_data['COIL_ACTUALWEIGHT']) : number_format((float)($row_data['COIL_ACTUALWEIGHT'] ?? 0), 2); ?></div></div>
-                        <div class="col-md-3 col-sm-6"><div class="info-label">COIL BALANCEWEIGHT (KG)</div><div class="info-value"><?php echo function_exists('fmt2') ? fmt2($row_data['COIL_BALANCEWEIGHT']) : number_format((float)($row_data['COIL_BALANCEWEIGHT'] ?? 0), 2); ?></div></div>
-
-                        <!-- เพิ่มแสดงผล ACC_SLITWIDTH และ BLN_SLITWIDTH -->
-                        <div class="col-md-12 col-sm-12">
-                            <div class="info-label">ACCUMULATE SLIT WIDTH (MM)</div>
-                            <div class="info-value" style="color: #0284c7; font-weight:700;">
-                                <?php echo function_exists('fmt2') ? fmt2($row_data['ACC_SLITWIDTH']) : number_format((float)($row_data['ACC_SLITWIDTH'] ?? 0), 2); ?>
-                            </div>
-                        </div>
-                        <div class="col-md-12 col-sm-12">
-                            <div class="info-label">BALANCE SLIT WIDTH (MM)</div>
-                            <div class="info-value" style="color: #059669; font-weight:700;">
-                                <?php echo function_exists('fmt2') ? fmt2($row_data['BLN_SLITWIDTH']) : number_format((float)($row_data['BLN_SLITWIDTH'] ?? 0), 2); ?>
-                            </div>
-                        </div>                        
+                        <div class="col-md-3 col-sm-6"><div class="info-label">COIL BALANCEWEIGHT (KG)</div><div class="info-value" style="color: <?php echo $is_weight_too_low ? '#ef4444' : '#0284c7'; ?>; font-weight:700;"><?php echo function_exists('fmt2') ? fmt2($row_data['COIL_BALANCEWEIGHT']) : number_format((float)($row_data['COIL_BALANCEWEIGHT'] ?? 0), 2); ?></div></div>
 
                         <div class="col-md-12 col-sm-12">
                             <div class="info-label">COIL REMARK</div>
@@ -513,11 +194,10 @@ if (!empty($coil_no)) {
                             📋 Graph Coil Traceability Genealogy Tree
                         </h4>
                         <div style="font-size: 12px; color: #0284c7; background-color: #e0f2fe; padding: 4px 10px; border-radius: 6px; border: 1px solid #bae6fd;">
-                            💡 <b>Instructions:</b>  Click the <b>Coil (yellow)</b> box to print the product label.
+                            💡 <b>Instructions:</b> Click the <b>Coil (yellow)</b> box to print the product label.
                         </div>
                     </div>
 
-                    <!-- กล่องแจ้งเตือนข้อมูล / วิธีใช้งาน -->
                     <div class="alert alert-info" style="background-color: #f0fdf4; border-color: #bbf7d0; color: #166534; font-size: 13px; margin-bottom: 15px; border-radius: 8px;">
                         <strong>🖨️ Instructions for printing Coil Labels :</strong>
                         <ul style="margin-bottom: 0; padding-left: 20px; margin-top: 5px;">
@@ -529,10 +209,7 @@ if (!empty($coil_no)) {
                         <?php if (empty($coil_tree_list)): ?>
                             <div style="color: #64748b; padding: 20px;">No genealogy tree data available.</div>
                         <?php else: 
-                            // สร้างโครงสร้าง Mermaid Flowchart Diagram จาก $coil_tree_list
                             $mermaid_syntax = "graph TD\n";
-                            
-                            // Style สำหรับกล่อง Node (เพิ่ม cursor:pointer)
                             $mermaid_syntax .= "    classDef parentNode fill:#f1f5f9,stroke:#94a3b8,stroke-width:1px,color:#1e293b,font-weight:bold;\n";
                             $mermaid_syntax .= "    classDef childNode fill:#fef08a,stroke:#ca8a04,stroke-width:2px,color:#1e293b,font-weight:bold;\n";
 
@@ -543,16 +220,13 @@ if (!empty($coil_no)) {
                                 $width = function_exists('fmt2') ? fmt2($node['WIDTH']) : number_format((float)($node['WIDTH'] ?? 0), 2);
                                 $level = (int)($node['Level'] ?? 0);
 
-                                // รหัส Node ID
                                 $node_id = preg_replace('/[^a-zA-Z0-9_]/', '_', $c_no);
 
-                                // ข้อความในกล่อง Node
                                 if ($level === 0 && empty($p_ref)) {
                                     $label = "<b>{$c_no}</b>";
                                     $mermaid_syntax .= "    {$node_id}[\"{$label}\"]:::parentNode\n";
                                 } else {
                                     if ($level > 0) {
-                                        // ใส่ data-coilno เข้าไปใน HTML Label เพื่อให้ JS ดึงไปใช้ได้ง่ายและถูกต้อง 100%
                                         $label = "<div class='clickable-coil-node' data-coilno='{$c_no}'><b>{$c_no}</b><br/><span style='font-size:11px; font-weight:normal;'>{$thick} x {$width}</span></div>";
                                     } else {
                                         $label = "<b>{$c_no}</b><br/><span style='font-size:11px; font-weight:normal;'>{$thick} x {$width}</span>";
@@ -575,94 +249,88 @@ if (!empty($coil_no)) {
                     </div>
                 </div>
 
-                <!-- GROUP 2: Job Order Information -->
+                <!-- GROUP 2: Coil Swiss Slitter Product Details -->
                 <div class="dashboard-card">
-                    <h4 class="card-title-g2">📋 Group 2: Job Order Matching Records (Click to select a job to process the data)</h4>
+                    <h4 class="card-title-g-tree">📦 Group 2: Coil Swiss Slitter Product Details</h4>
                     <div class="table-responsive">
-                        <table class="table custom-job-table" id="job_order_table">
+                        <table class="table custom-job-table">
                             <thead>
                                 <tr>
-                                    <th style="text-align: center;">Action</th>
                                     <th style="text-align: center;">#</th>
-                                    <th>Job Order</th>
-                                    <th>Alloy</th>
-                                    <th>Temper</th>
-                                    <th>Grade</th>
-                                    <th>Surface Grade</th>
-                                    <th>Metallurgical Grade</th>
-                                    <th style="text-align: center;">Thickness</th>
-                                    <th style="text-align: center;">Width</th>
-                                    <th>Job Work Process</th>
-                                    <th style="text-align: right;">Release Weight</th>
-                                    <th style="text-align: right;">Produce Weight</th>
-                                    <th style="text-align: center;">Status</th>
+                                    <th style="text-align: center;">PRINT LABEL</th>
+                                    <th>COIL NO</th>
+                                    <th>PRODUCT REFERENCE</th>
+                                    <th>JOB PROCESS</th>
+                                    <th>JOB ORDER</th>
+                                    <th style="text-align: center;">LINE PROCESS</th>
+                                    <th style="text-align: center;">OPERATE DATE</th>
+                                    <th style="text-align: center;">END DATE</th>
+                                    <th style="text-align: center;">ALLOY</th>
+                                    <th style="text-align: right;">THICKNESS</th>
+                                    <th style="text-align: right;">WIDTH</th>
+                                    <th style="text-align: right;">ACTUAL WEIGHT</th>
+                                    <th style="text-align: center;">STATUS</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php if (empty($job_list)): ?>
+                                <?php 
+                                $filtered_table_list = array_values(array_filter($coil_tree_list, function($item) {
+                                    return ((int)($item['Level'] ?? 0)) > 0;
+                                }));
+                                ?>
+
+                                <?php if (empty($filtered_table_list)): ?>
                                     <tr>
                                         <td colspan="14" align="center" style="color: #64748b; padding: 20px;">
-                                            No matching Job Order records found.
+                                            No product details found.
                                         </td>
                                     </tr>
                                 <?php else: ?>
-                                    <?php foreach ($job_list as $index => $job): 
-                                        $display_temper = implode(' / ', array_filter([
-                                            trim($job['TEMPER'] ?? ''),
-                                            trim($job['PRODUCE_TEMPER1'] ?? ''),
-                                            trim($job['PRODUCE_TEMPER2'] ?? '')
-                                        ]));
-                                        if (empty($display_temper)) { $display_temper = '-'; }
-
-                                        $display_grade = implode(' / ', array_filter([
-                                            trim($job['GRADE'] ?? ''),
-                                            trim($job['PRODUCE_GRADE1'] ?? ''),
-                                            trim($job['PRODUCE_GRADE2'] ?? '')
-                                        ]));
-                                        if (empty($display_grade)) { $display_grade = '-'; }
-
-                                        $job_no_val = htmlspecialchars($job['JOB_ORDER'] ?? '-', ENT_QUOTES, 'UTF-8');
-                                        $width_val  = function_exists('fmt2') ? fmt2($job['WIDTH']) : number_format((float)($job['WIDTH'] ?? 0), 2);
+                                    <?php foreach ($filtered_table_list as $t_index => $tree_item): 
+                                        $tree_coil_no = trim($tree_item['COIL_NO'] ?? '');
+                                        $tree_status  = strtoupper(trim($tree_item['COIL_STATUS'] ?? ''));
                                         
-                                        // เช็กสถานะว่าใช่ OP หรือ HL หรือไม่
-                                        $job_status = strtoupper(trim($job['JOB_STATUS'] ?? ''));
-                                        $can_select = in_array($job_status, ['OP', 'HL']);
+                                        $status_class = 'status-cl';
+                                        if ($tree_status === 'AC') {
+                                            $status_class = 'status-ac';
+                                        } else if ($tree_status === 'SS') {
+                                            $status_class = 'status-ss';
+                                        }
                                     ?>
-                                        <tr id="job_row_<?php echo $index; ?>">
-                                            <td align="center">
-                                                <?php if ($can_select): ?>
-                                                    <!-- แสดงปุ่มปกติสำหรับ Status OP, HL -->
-                                                    <button type="button" class="btn-select-job" onclick="select_job_order('<?php echo $job_no_val; ?>', '<?php echo $width_val; ?>', 'job_row_<?php echo $index; ?>')">
-                                                        SELECT
-                                                    </button>
+                                        <tr>
+                                            <td align="center"><?php echo $t_index + 1; ?></td>
+                                            
+                                            <td align="center" style="width: 100px;">
+                                                <?php if (!empty($tree_coil_no)): ?>
+                                                    <a href="print_coil_product_label_mats.php?coilno=<?php echo urlencode($tree_coil_no); ?>" 
+                                                    target="_blank" 
+                                                    class="btn-print-legacy"
+                                                    title="Print Label for <?php echo htmlspecialchars($tree_coil_no); ?>">
+                                                        🖨️ Print
+                                                    </a>
                                                 <?php else: ?>
-                                                    <!-- ปิดการใช้งานปุ่ม (Disabled) สำหรับ Status อื่นๆ -->
-                                                    <button type="button" class="btn-select-job" style="background-color: #cbd5e1; color: #64748b !important; cursor: not-allowed; opacity: 0.65;" disabled>
-                                                        SELECT
-                                                    </button>
+                                                    -
                                                 <?php endif; ?>
                                             </td>
-                                            <td align="center"><?php echo $index + 1; ?></td>
-                                            <td style="font-weight: 700; color: #0284c7;"><?php echo $job_no_val; ?></td>
-                                            <td><?php echo htmlspecialchars($job['ALLOY'] ?? '-'); ?></td>
-                                            <td style="font-weight: 600; color: #1e293b;"><?php echo htmlspecialchars($display_temper); ?></td>
-                                            <td style="font-weight: 600; color: #1e293b;"><?php echo htmlspecialchars($display_grade); ?></td>
-                                            <td><?php echo htmlspecialchars($job['SURFACE_GRADE'] ?? '-'); ?></td>
-                                            <td><?php echo htmlspecialchars($job['METALLURGICAL_GRADE'] ?? '-'); ?></td>
-                                            <td align="center"><?php echo function_exists('fmt3') ? fmt3($job['THICKNESS']) : number_format((float)($job['THICKNESS'] ?? 0), 3); ?></td>
-                                            <td align="center"><?php echo $width_val; ?></td>
-                                            <td style="font-weight: 600; color: #334155;"><?php echo htmlspecialchars($job['JOB_WORKPROCESS'] ?? '-'); ?></td>
-                                            <td align="right"><?php echo function_exists('fmt2') ? fmt2($job['JOB_RELEASEWEIGHT']) : number_format((float)($job['JOB_RELEASEWEIGHT'] ?? 0), 2); ?></td>
-                                            <td align="right"><?php echo function_exists('fmt2') ? fmt2($job['JOB_PRODUCEWEIGHT']) : number_format((float)($job['JOB_PRODUCEWEIGHT'] ?? 0), 2); ?></td>
+
+                                            <td style="font-weight: 700; color: #2563eb;">
+                                                <a href="swiss_sitter_coil_production_detail_mats.php?func=<?php echo $folder_func ?>&COIL=<?php echo htmlspecialchars($tree_coil_no); ?>">
+                                                    <?php echo htmlspecialchars($tree_coil_no !== '' ? $tree_coil_no : '-'); ?>
+                                                </a>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($tree_item['PRODUCT_REFERENCE'] ?? '-'); ?></td>
+                                            <td><?php echo htmlspecialchars($tree_item['JOB_PROCESS'] ?? '-'); ?></td>
+                                            <td><?php echo htmlspecialchars($tree_item['JOB_ORDER'] ?? '-'); ?></td>
+                                            <td align="center"><?php echo htmlspecialchars($tree_item['LINE_PROCESS'] ?? '-'); ?></td>
+                                            <td align="center"><?php echo !empty($tree_item['COIL_OPERATEDATE']) ? date('Y-m-d H:i:s', strtotime($tree_item['COIL_OPERATEDATE'])) : '-'; ?></td>
+                                            <td align="center"><?php echo !empty($tree_item['COIL_ENDDATE']) ? date('Y-m-d H:i:s', strtotime($tree_item['COIL_ENDDATE'])) : '-'; ?></td>
+                                            <td align="center"><?php echo htmlspecialchars($tree_item['ALLOY'] ?? '-'); ?></td>
+                                            <td align="right"><?php echo function_exists('fmt3') ? fmt3($tree_item['THICKNESS']) : number_format((float)($tree_item['THICKNESS'] ?? 0), 3); ?></td>
+                                            <td align="right"><?php echo function_exists('fmt2') ? fmt2($tree_item['WIDTH']) : number_format((float)($tree_item['WIDTH'] ?? 0), 2); ?></td>
+                                            <td align="right"><?php echo function_exists('fmt2') ? fmt2($tree_item['COIL_ACTUALWEIGHT']) : number_format((float)($tree_item['COIL_ACTUALWEIGHT'] ?? 0), 2); ?></td>
                                             <td align="center">
-                                                <span class="status-badge-op" style="<?php 
-                                                    if ($job_status === 'HL') {
-                                                        echo 'background-color:#fef3c7; color:#d97706; border-color:#fde68a;';
-                                                    } else if ($job_status !== 'OP') {
-                                                        echo 'background-color:#f1f5f9; color:#64748b; border-color:#cbd5e1;';
-                                                    }
-                                                ?>">
-                                                    <?php echo htmlspecialchars($job_status); ?>
+                                                <span class="status-badge-tree <?php echo $status_class; ?>">
+                                                    <?php echo htmlspecialchars($tree_status); ?>
                                                 </span>
                                             </td>
                                         </tr>
@@ -673,34 +341,40 @@ if (!empty($coil_no)) {
                     </div>
                 </div>
 
-                <!-- GROUP 3: Slitter Process Input Data -->
+                <!-- GROUP 3: Slitter Process Data Entry -->
                 <div class="dashboard-card">
                     <h4 class="card-title-g3">⚙️ Group 3: Slitter Process Data Entry</h4>
+                    
+                    <?php if ($is_weight_too_low): ?>
+                        <div class="alert alert-danger" style="background-color: #fef2f2; border-color: #fecaca; color: #991b1b; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-weight: 600;">
+                            ⚠️ <b>Warning:</b> This coil balance weight (<?php echo number_format((float)($row_data['COIL_BALANCEWEIGHT'] ?? 0), 2); ?> KG) is less than the automatic scrap threshold (<?php echo number_format($scrap_limit_weight, 2); ?> KG). The slitter process for this coil has been disabled.
+                        </div>
+                    <?php endif; ?>
+
                     <form id="form_slitter_process" action="model/save_swiss_slitter_process.php" method="POST" onsubmit="return validate_form();">
                         
                         <!-- Hidden Inputs -->
                         <input type="hidden" name="coil_no" value="<?php echo htmlspecialchars($coil_no); ?>" />
                         <input type="hidden" name="func" value="<?php echo htmlspecialchars($folder_func); ?>" />
-                        <input type="hidden" id="selected_job_order" name="job_order" value="" />
 
-                        <!-- Line 1: Job Order, Number of Coil, Width -->
+                        <!-- Line 1: Number of Coil, Width, Actual Weight -->
                         <div class="row">
-                            <div class="col-md-4 col-sm-12">
+                            <div class="col-md-4 col-sm-4">
                                 <div class="form-group" style="margin-bottom: 20px;">
-                                    <label>Selected Job Order</label>
-                                    <input type="text" id="display_job_order" class="form-control-custom" style="background-color: #f1f5f9; font-weight:700; color:#0284c7;" placeholder="Please choose from Group 2" readonly />
+                                    <label for="num_coil_slit">Number of Coil Slit (Stands) <span style="color:red;">*</span></label>
+                                    <input type="number" step="1" min="1" class="form-control-custom" id="num_coil_slit" name="num_coil_slit" value="1" oninput="calculate_default_weight()" required <?php echo $is_weight_too_low ? 'disabled' : ''; ?> />
                                 </div>
                             </div>
-                            <div class="col-md-4 col-sm-6">
-                                <div class="form-group" style="margin-bottom: 20px;">
-                                    <label for="num_coil_slit">Number of Coil Slit (Stand) <span style="color:red;">*</span></label>
-                                    <input type="number" step="1" min="1" class="form-control-custom slitter-input" id="num_coil_slit" name="num_coil_slit" placeholder="Enter the number of coils...." required disabled />
-                                </div>
-                            </div>
-                            <div class="col-md-4 col-sm-6">
+                            <div class="col-md-4 col-sm-4">
                                 <div class="form-group" style="margin-bottom: 20px;">
                                     <label for="coil_slit_width">Coil Slit Width (mm) <span style="color:red;">*</span></label>
-                                    <input type="number" step="0.01" min="0" class="form-control-custom slitter-input" id="coil_slit_width" name="coil_slit_width" placeholder="Enter width (mm)..." required disabled />
+                                    <input type="number" step="0.01" min="0" class="form-control-custom" id="coil_slit_width" name="coil_slit_width" placeholder="Enter width (mm)..." oninput="calculate_default_weight()" required <?php echo $is_weight_too_low ? 'disabled' : ''; ?> />
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-4">
+                                <div class="form-group" style="margin-bottom: 20px;">
+                                    <label for="actual_weight">Actual Weight per Piece (KG) <span style="color:red;">*</span></label>
+                                    <input type="number" step="0.01" min="0" class="form-control-custom" id="actual_weight" name="actual_weight" placeholder="Auto-calculated or enter scale weight..." required <?php echo $is_weight_too_low ? 'disabled' : ''; ?> />
                                 </div>
                             </div>
                         </div>
@@ -710,13 +384,13 @@ if (!empty($coil_no)) {
                             <div class="col-md-6 col-sm-6">
                                 <div class="form-group" style="margin-bottom: 20px;">
                                     <label for="start_datetime_slit">Start Date time Slit <span style="color:red;">*</span></label>
-                                    <input type="datetime-local" class="form-control-custom slitter-input" id="start_datetime_slit" name="start_datetime_slit" required disabled />
+                                    <input type="datetime-local" class="form-control-custom" id="start_datetime_slit" name="start_datetime_slit" required <?php echo $is_weight_too_low ? 'disabled' : ''; ?> />
                                 </div>
                             </div>
                             <div class="col-md-6 col-sm-6">
                                 <div class="form-group" style="margin-bottom: 20px;">
                                     <label for="end_datetime_slit">End Date time Slit <span style="color:red;">*</span></label>
-                                    <input type="datetime-local" class="form-control-custom slitter-input" id="end_datetime_slit" name="end_datetime_slit" required disabled />
+                                    <input type="datetime-local" class="form-control-custom" id="end_datetime_slit" name="end_datetime_slit" required <?php echo $is_weight_too_low ? 'disabled' : ''; ?> />
                                 </div>
                             </div>
                         </div>
@@ -726,17 +400,17 @@ if (!empty($coil_no)) {
                             <div class="col-md-12">
                                 <div class="form-group" style="margin-bottom: 20px;">
                                     <label for="coil_remark">Coil Remark (Note / Edit text)</label>
-                                    <textarea class="form-control-custom slitter-input" id="coil_remark" name="coil_remark" rows="3" style="height: auto; padding: 10px 12px; resize: vertical;" placeholder="Enter additional notes or correct the information..." disabled><?php echo htmlspecialchars($row_data['COIL_REMARK'] ?? ''); ?></textarea>
+                                    <textarea class="form-control-custom" id="coil_remark" name="coil_remark" rows="3" style="height: auto; padding: 10px 12px; resize: vertical;" placeholder="Enter additional notes or correct the information..." <?php echo $is_weight_too_low ? 'disabled' : ''; ?>><?php echo htmlspecialchars($row_data['COIL_REMARK'] ?? ''); ?></textarea>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Action Buttons -->
                         <div style="margin-top: 15px; text-align: right; border-top: 1px dashed #e2e8f0; padding-top: 20px;">
-                            <button type="submit" id="btn_save_slitter" class="btn btn-save" disabled="disabled">
+                            <button type="submit" id="btn_save_slitter" class="btn btn-save" <?php echo $is_weight_too_low ? 'disabled="disabled"' : ''; ?>>
                                 💾 Save Data
                             </button>
-                            <button type="button" id="btn_cancel_slitter" class="btn btn-cancel" onclick="clear_input_form()" disabled="disabled">
+                            <button type="button" class="btn btn-cancel" onclick="back_home_coil()" <?php echo $is_weight_too_low ? 'disabled="disabled"' : ''; ?>>
                                 ❌ Cancel
                             </button>
                         </div>
@@ -755,17 +429,18 @@ if (!empty($coil_no)) {
 <?php include 'include/footer.php';?>
 
 <script type="text/javascript">
-// ดึงค่า จาก PHP
-var coilWidth = parseFloat(<?php echo json_encode((float)($row_data['WIDTH'] ?? 0)); ?>);
+var masterWidth = parseFloat(<?php echo json_encode((float)($row_data['WIDTH'] ?? 0)); ?>);
+var masterActualWeight = parseFloat(<?php echo json_encode((float)($row_data['COIL_ACTUALWEIGHT'] ?? 0)); ?>);
+var masterBalanceWeight = parseFloat(<?php echo json_encode((float)($row_data['COIL_BALANCEWEIGHT'] ?? 0)); ?>);
 var blnSlitWidth = parseFloat(<?php echo json_encode((float)($row_data['BLN_SLITWIDTH'] ?? 0)); ?>);
-var initialCoilRemark = <?php echo json_encode($row_data['COIL_REMARK'] ?? ''); ?>;
+var isWeightTooLow = <?php echo json_encode($is_weight_too_low); ?>;
+var scrapLimitWeight = parseFloat(<?php echo json_encode($scrap_limit_weight); ?>);
 
 function back_home_coil(){   
     var data_fun = document.getElementById("func").value;
     window.location.assign('swiss_slitter_process_mats.php?func='+encodeURIComponent(data_fun)); 
 }
 
-// ฟังก์ชันดึงค่า วัน-เวลา ปัจจุบันในรูปแบบ YYYY-MM-DDTHH:mm
 function getCurrentDateTimeLocal() {
     var now = new Date();
     var year = now.getFullYear();
@@ -777,141 +452,102 @@ function getCurrentDateTimeLocal() {
     return year + '-' + month + '-' + day + 'T' + hours + ':' + minutes;
 }
 
-// ฟังก์ชันเมื่อคลิกเลือก Job Order จาก Group 2
-function select_job_order(jobOrder, widthVal, rowId) {
-    document.getElementById('selected_job_order').value = jobOrder;
-    document.getElementById('display_job_order').value = jobOrder;
-    
-    // ปลดล็อก (Enable) อินพุตทั้งหมด
-    var inputs = document.querySelectorAll('.slitter-input');
-    inputs.forEach(function(input) {
-        input.disabled = false;
-    });
+function calculate_default_weight() {
+    if (isWeightTooLow) return;
 
-    // ปลดล็อก (Enable) ปุ่มกด
-    document.getElementById('btn_save_slitter').disabled = false;
-    document.getElementById('btn_cancel_slitter').disabled = false;
-
-    // Set Default Values
-    document.getElementById('num_coil_slit').value = 1;
-    var cleanWidth = widthVal.replace(/,/g, '');
-    document.getElementById('coil_slit_width').value = cleanWidth;
-
-    var currentNow = getCurrentDateTimeLocal();
-    document.getElementById('start_datetime_slit').value = currentNow;
-    document.getElementById('end_datetime_slit').value = currentNow;
-
-    // Hilight แถวที่เลือก
-    var rows = document.querySelectorAll('#job_order_table tbody tr');
-    rows.forEach(function(r) { r.classList.remove('selected-row'); });
-    if (document.getElementById(rowId)) {
-        document.getElementById(rowId).classList.add('selected-row');
+    var slitWidth = parseFloat(document.getElementById('coil_slit_width').value) || 0;
+    if (slitWidth > 0 && masterWidth > 0) {
+        var weightPerMM = masterActualWeight / masterWidth;
+        var defaultWeight = weightPerMM * slitWidth;
+        document.getElementById('actual_weight').value = defaultWeight.toFixed(2);
+    } else {
+        document.getElementById('actual_weight').value = '';
     }
-
-    document.getElementById('form_slitter_process').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-// ฟังก์ชันล้างค่า/ยกเลิก (Cancel)
-function clear_input_form() {
-    document.getElementById('selected_job_order').value = '';
-    document.getElementById('display_job_order').value = '';
-    document.getElementById('num_coil_slit').value = '';
-    document.getElementById('coil_slit_width').value = '';
-    document.getElementById('start_datetime_slit').value = '';
-    document.getElementById('end_datetime_slit').value = '';
-    document.getElementById('coil_remark').value = initialCoilRemark;
+document.addEventListener("DOMContentLoaded", function() {
+    if (!isWeightTooLow) {
+        var currentNow = getCurrentDateTimeLocal();
+        document.getElementById('start_datetime_slit').value = currentNow;
+        document.getElementById('end_datetime_slit').value = currentNow;
+    }
+});
 
-    // ล็อก (Disable) อินพุตทั้งหมดกลับตามเดิม
-    var inputs = document.querySelectorAll('.slitter-input');
-    inputs.forEach(function(input) {
-        input.disabled = true;
-    });
-
-    // ล็อก (Disable) ปุ่มกดกลับเป็นสีเทา
-    document.getElementById('btn_save_slitter').disabled = true;
-    document.getElementById('btn_cancel_slitter').disabled = true;
-
-    // ล้าง Hilight แถวในตาราง
-    var rows = document.querySelectorAll('#job_order_table tbody tr');
-    rows.forEach(function(r) { r.classList.remove('selected-row'); });
-}
-
-// ฟังก์ชันตรวจสอบความถูกต้องก่อนบันทึก
 function validate_form() {
-    var jobOrder = document.getElementById('selected_job_order').value;
-    if (!jobOrder) {
-        alert('Please select the Job Order from Group 2 before saving the data.');
+    if (isWeightTooLow || masterBalanceWeight <= scrapLimitWeight) {
+        alert('⚠️ ไม่สามารถดำเนินการได้! น้ำหนักคงเหลือคอยล์แม่ (' + masterBalanceWeight.toFixed(2) + ' KG) น้อยกว่าค่าน้ำหนักเกณฑ์เกิด Scrap อัตโนมัติ (' + scrapLimitWeight.toFixed(2) + ' KG)');
         return false;
     }
 
     var numStand = parseFloat(document.getElementById('num_coil_slit').value) || 0;
     var slitWidth = parseFloat(document.getElementById('coil_slit_width').value) || 0;
+    var actualWeightPiece = parseFloat(document.getElementById('actual_weight').value) || 0;
 
-    if (numStand <= 0 || slitWidth <= 0) {
-        alert('Please enter the correct Number of Coil Slits and Coil Slit Width.');
+    if (numStand <= 0 || slitWidth <= 0 || actualWeightPiece <= 0) {
+        alert('⚠️ กรุณาระบุ จำนวนม้วนซอย, ความกว้าง และ น้ำหนักจริง ให้ถูกต้อง');
         return false;
     }
 
-    // คำนวณความกว้างรวมของการซอย
     var totalSlitWidth = slitWidth * numStand;
-    var maxAllowedWidth = (blnSlitWidth > 0) ? blnSlitWidth : coilWidth;
-    var widthTypeLabel = (blnSlitWidth > 0) ? 'Balance Slit Width' : 'Coil Width';
+    var maxAllowedWidth = (blnSlitWidth > 0) ? blnSlitWidth : masterWidth;
 
     if (totalSlitWidth > maxAllowedWidth) {
-        alert('⚠️ The data could not be saved!\n\n' +
-              'Total width after slicing (' + slitWidth.toFixed(2) + ' mm x ' + numStand + ' Stand = ' + totalSlitWidth.toFixed(2) + ' mm)\n' +
-              'It is worth more' + widthTypeLabel + ' as specified (' + maxAllowedWidth.toFixed(2) + ' mm)');
+        alert('⚠️ ไม่สามารถบันทึกข้อมูลได้!\n\n' +
+              'ความกว้างรวมในการซอย (' + totalSlitWidth.toFixed(2) + ' mm x ' + numStand + ' Stand = ' + totalSlitWidth.toFixed(2) + ' mm)\n' +
+              'มีค่ามากกว่า Balance Slit Width ที่กำหนดไว้ (' + maxAllowedWidth.toFixed(2) + ' mm)');
         return false;
     }
 
-    // ตรวจสอบวันที่
-    var startDt = document.getElementById('start_datetime_slit').value;
-    var endDt = document.getElementById('end_datetime_slit').value;
-
-    if (startDt && endDt && new Date(startDt) > new Date(endDt)) {
-        alert('The start time (Start Date time Slit) cannot be greater than the end time (End Date time Slit)');
+    var totalSlitWeight = actualWeightPiece * numStand;
+    if (totalSlitWeight > masterBalanceWeight) {
+        alert('⚠️ ไม่สามารถดำเนินการได้! เนื่องจากน้ำหนักรวมในการซอยครั้งนี้ (' + totalSlitWeight.toFixed(2) + ' KG) เกินกว่าน้ำหนักม้วนคงเหลือ (' + masterBalanceWeight.toFixed(2) + ' KG)');
         return false;
     }
 
-    return confirm('Confirm that the Slitter Process data has been saved?');
-}
+    var startDtVal = document.getElementById('start_datetime_slit').value;
+    var endDtVal   = document.getElementById('end_datetime_slit').value;
 
-// ฟังก์ชันสำหรับเรียกหน้า Print Coil Product Label
-function printCoilLabel(nodeId) {
-    // ดึงรหัส Coil จาก ID ของ Node (แปลงตัวขีดล่าง _ กลับเป็นขีด - หากมี)
-    // หรือแปลงแบบยืดหยุ่นรองรับรูปแบบ COIL NO
-    var rawCoilNo = nodeId.replace(/_/g, '-'); 
-    
-    // ยืนยันการสั่งพิมพ์
-    if (confirm("🖨️ You want to open the label printing page for Coil No: " + rawCoilNo + " Is it right?")) {
-        var url = "print_coil_product_label_mats.php?coilno=" + encodeURIComponent(rawCoilNo);
-        window.open(url, '_blank'); // เปิดใน Tab ใหม่
+    if (!startDtVal || !endDtVal) {
+        alert('⚠️ กรุณาระบุ Start Date time และ End Date time ให้ครบถ้วน');
+        return false;
     }
+
+    var startDt = new Date(startDtVal);
+    var endDt   = new Date(endDtVal);
+
+    if (endDt < startDt) {
+        alert('⚠️ เวลาสิ้นสุดการซอย (End Date time Slit) น้อยกว่า วัน-เวลาเริ่มต้น (Start Date time Slit)');
+        return false;
+    }
+
+    if (confirm('ยืนยันการบันทึกข้อมูล Slitter Process หรือไม่?')) {
+        var btnSave = document.getElementById('btn_save_slitter');
+        btnSave.disabled = true;
+        btnSave.innerHTML = '⏳ Saving...';
+        return true;
+    }
+
+    return false;
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-    // ดักจับการคลิกบนแผนภูมิ Genealogy Tree
     var treeContainer = document.getElementById("genealogy_tree_container");
     if (treeContainer) {
         treeContainer.addEventListener("click", function(e) {
-            // ค้นหา Element ที่ถูกคลิก ว่าอยู่ใน Node ที่มี data-coilno หรือไม่
             var targetNode = e.target.closest(".clickable-coil-node") || e.target.closest(".childNode");
             
             if (targetNode) {
                 var coilNo = "";
                 
-                // กรณีคลิกโดน div ที่มี data-coilno
                 if (targetNode.dataset && targetNode.dataset.coilno) {
                     coilNo = targetNode.dataset.coilno;
                 } else {
-                    // กรณีกดโดนพื้นที่ขอบกล่อง SVG ให้หา element ข้างในที่มี data-coilno
                     var innerData = targetNode.querySelector("[data-coilno]");
                     if (innerData) {
                         coilNo = innerData.dataset.coilno;
                     }
                 }
 
-                // ถ้าพบรหัส Coil ให้เปิดหน้า Print Label
                 if (coilNo) {
                     if (confirm("🖨️ You want to open the label printing page for Coil No: " + coilNo + " Is it right?")) {
                         var url = "print_coil_product_label_mats.php?coilno=" + encodeURIComponent(coilNo);

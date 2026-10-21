@@ -169,60 +169,91 @@ if (!empty($coil_no)) {
             outline: none;
             box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
         }
+        
+        /* ปุ่ม Print Label สไตล์ตามหน้าจอตัวอย่าง */
+        .btn-print-legacy {
+            background-color: #0284c7;
+            color: #ffffff !important;
+            border: none;
+            border-radius: 6px;
+            padding: 3px 10px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none !important;
+            line-height: 1.4;
+        }
 
-        /* ปุ่ม Save Data */
+        .btn-print-legacy:hover {
+            background-color: #0369a1;
+            color: #ffffff !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }    
+
+        /* ==========================================
+        สไตล์ปุ่ม Save Data
+        ========================================== */
         .btn-save {
-            background-color: #10b981 !important;
+            background-color: #34d399 !important; /* สีเขียว Active สดใสแบบในรูป */
             color: #ffffff !important;
             font-weight: 700;
             font-size: 15px;
             padding: 10px 24px;
             height: 44px;
-            border-radius: 8px;
+            border-radius: 10px;
             border: none !important;
-            transition: all 0.2s;
+            transition: all 0.2s ease-in-out;
             cursor: pointer;
             display: inline-block;
         }
-        .btn-save:hover, .btn-save:focus, .btn-save:active {
-            background-color: #059669 !important;
+
+        .btn-save:hover {
+            background-color: #10b981 !important; /* เขียวเข้มขึ้นเล็กน้อยเมื่อชี้ */
             color: #ffffff !important;
+        }
+
+        /* สถานะ Disabled (ก่อนใส่น้ำหนัก) */
+        .btn-save:disabled, .btn-save[disabled] {
+            background-color: #b0bec5 !important; /* สีเทาฟ้าอ่อนตามรูปก่อนหน้า */
+            color: #ffffff !important;
+            cursor: not-allowed !important;
+            opacity: 1;
             box-shadow: none !important;
         }
 
-        /* ปุ่ม Cancel */
+        /* ==========================================
+        สไตล์ปุ่ม Cancel
+        ========================================== */
         .btn-cancel {
-            background-color: #ef4444 !important;
+            background-color: #f87171 !important; /* สีแดงส้ม Active แบบในรูป */
             color: #ffffff !important;
             font-weight: 700;
             font-size: 15px;
             padding: 10px 24px;
             height: 44px;
-            border-radius: 8px;
+            border-radius: 10px;
             border: none !important;
-            transition: all 0.2s;
+            transition: all 0.2s ease-in-out;
             cursor: pointer;
             margin-left: 10px;
             display: inline-block;
         }
-        .btn-cancel:hover, .btn-cancel:focus, .btn-cancel:active {
-            background-color: #dc2626 !important;
+
+        .btn-cancel:hover {
+            background-color: #ef4444 !important; /* แดงเข้มขึ้นเล็กน้อยเมื่อชี้ */
             color: #ffffff !important;
-            box-shadow: none !important;
         }
 
-        .btn-back {
-            background-color: #64748b;
-            color: #ffffff;
-            font-weight: 700;
-            font-size: 16px;
-            padding: 10px 24px;
-            height: 44px;
-            border-radius: 8px;
-            border: none;
-            transition: all 0.2s;
+        /* สถานะเมื่อยังไม่ได้ใส่น้ำหนัก (สไตล์เทาอ่อนตามรูปแรก) */
+        .btn-cancel.is-inactive {
+            background-color: #e2e8f0 !important;
+            color: #64748b !important;
         }
-        .btn-back:hover { background-color: #475569; color: #ffffff; }
+
     </style>
     <style>
         .childNode, .clickable-coil-node {
@@ -278,7 +309,7 @@ if (!empty($coil_no)) {
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3 style="margin:0; font-weight:700; color:#1e293b; font-size: 24px;">
-                    📦 Coil Details: <span style="color:#2563eb;"><a href="split_coil_production_detail_mats.php?func=<?php echo $folder_func ?>&COIL=<?php echo $coil_no?>"><?php echo htmlspecialchars($coil_no); ?></a></span>
+                    📦 Coil Details: <span style="color:#2563eb;"><a href="split_process_mats.php?func=<?php echo $folder_func ?>&jno=<?php echo $coil_no?>"><?php echo htmlspecialchars($coil_no); ?></a></span>
                 </h3>
                 <div>
                     <button type="button" class="btn btn-back" onclick="back_home_coil()">
@@ -332,6 +363,82 @@ if (!empty($coil_no)) {
                     </div>
                 </div>
 
+                <!-- GROUP 2: Coil Split Product Details -->
+                <div class="dashboard-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; margin-bottom: 20px;">
+                        <h4 style="color: #1d4ed8; font-weight: 700; font-size: 17px; margin: 0;">
+                            ✂️ Group 2: Coil Split Product Details
+                        </h4>
+                        <span class="badge" style="background-color: #dbeafe; color: #1e40af; font-size: 13px; padding: 6px 12px; border-radius: 6px;">
+                            Total Split: <?php echo count(array_filter($coil_tree_list, function($item) { return (int)($item['Level'] ?? 0) > 0; })); ?> Items
+                        </span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                            <thead>
+                                <tr style="background-color: #f1f5f9; color: #475569; font-size: 13px; text-transform: uppercase;">
+                                    <th style="padding: 12px; border-bottom: 2px solid #cbd5e1; text-align: center;">#</th>
+                                    <th style="padding: 12px; border-bottom: 2px solid #cbd5e1;">Split Coil No.</th>
+                                    <th style="padding: 12px; border-bottom: 2px solid #cbd5e1;">Product Ref.</th>
+                                    <th style="padding: 12px; border-bottom: 2px solid #cbd5e1; text-align: right;">Thickness (mm)</th>
+                                    <th style="padding: 12px; border-bottom: 2px solid #cbd5e1; text-align: right;">Width (mm)</th>
+                                    <th style="padding: 12px; border-bottom: 2px solid #cbd5e1; text-align: right;">Actual Weight (kg)</th>
+                                    <th style="padding: 12px; border-bottom: 2px solid #cbd5e1; text-align: center;">Operate Date</th>
+                                    <th style="padding: 12px; border-bottom: 2px solid #cbd5e1; text-align: center;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php 
+                                $split_items = array_filter($coil_tree_list, function($item) {
+                                    return (int)($item['Level'] ?? 0) > 0;
+                                });
+
+                                if (empty($split_items)): 
+                                ?>
+                                    <tr>
+                                        <td colspan="8" style="text-align: center; color: #94a3b8; padding: 20px;">
+                                            ยังไม่มีข้อมูลการแบ่ง Coil (No Split Coil Details Available)
+                                        </td>
+                                    </tr>
+                                <?php 
+                                else: 
+                                    $seq = 1;
+                                    foreach ($split_items as $split_row):
+                                        $split_coil_no = htmlspecialchars($split_row['COIL_NO'] ?? '');
+                                        $split_ref     = htmlspecialchars($split_row['PRODUCT_REFERENCE'] ?? '-');
+                                        $split_thick   = function_exists('fmt3') ? fmt3($split_row['THICKNESS']) : number_format((float)($split_row['THICKNESS'] ?? 0), 3);
+                                        $split_width   = function_exists('fmt2') ? fmt2($split_row['WIDTH']) : number_format((float)($split_row['WIDTH'] ?? 0), 2);
+                                        $split_weight  = function_exists('fmt2') ? fmt2($split_row['COIL_ACTUALWEIGHT']) : number_format((float)($split_row['COIL_ACTUALWEIGHT'] ?? 0), 2);
+                                        $split_date    = !empty($split_row['COIL_OPERATEDATE']) ? date('Y-m-d H:i', strtotime($split_row['COIL_OPERATEDATE'])) : '-';
+                                ?>
+                                    <tr style="font-size: 14px; color: #334155;">
+                                        <td style="text-align: center; vertical-align: middle; font-weight: 600; color: #64748b;"><?php echo $seq++; ?></td>
+                                        <td style="vertical-align: middle; font-weight: 700; color: #2563eb;">
+                                            <?php echo $split_coil_no; ?>
+                        </td>
+                        <td style="vertical-align: middle; color: #64748b;"><?php echo $split_ref; ?></td>
+                        <td style="text-align: right; vertical-align: middle; font-weight: 600;"><?php echo $split_thick; ?></td>
+                        <td style="text-align: right; vertical-align: middle; font-weight: 600;"><?php echo $split_width; ?></td>
+                        <td style="text-align: right; vertical-align: middle; font-weight: 700; color: #059669;"><?php echo $split_weight; ?></td>
+                        <td style="text-align: center; vertical-align: middle; color: #64748b; font-size: 13px;"><?php echo $split_date; ?></td>
+                        <td style="text-align: center; vertical-align: middle;">
+                            <a href="print_coil_product_label_mats.php?coilno=<?php echo urlencode($split_coil_no); ?>" 
+                               target="_blank" 
+                               class="btn btn-xs" 
+                               style="background-color: #0284c7; color: #ffffff; font-weight: 600; padding: 5px 10px; border-radius: 6px; text-decoration: none; display: inline-block;">
+                                🖨️ Print Label
+                            </a>
+                        </td>
+                    </tr>
+                <?php 
+                    endforeach; 
+                endif; 
+                ?>
+            </tbody>
+        </table>
+    </div>
+</div>                
                 <!-- Graph Coil Traceability Genealogy Tree -->
                 <div class="dashboard-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #cbd5e1; padding-bottom: 10px; margin-bottom: 15px;">
@@ -394,42 +501,45 @@ if (!empty($coil_no)) {
                     </div>
                 </div>
 
-                <!-- GROUP 3: Split Process Data Entry -->
-                <div class="dashboard-card">
-                    <h4 class="card-title-g3">⚙️ Group 3: Split Process Data Entry</h4>
-                    <form id="form_slitter_process" action="model/save_split_process_mats.php" method="POST" onsubmit="return validate_form();">
-                        
-                        <!-- Hidden Inputs -->
-                        <input type="hidden" name="coil_no" value="<?php echo htmlspecialchars($coil_no); ?>" />
-                        <input type="hidden" name="func" value="<?php echo htmlspecialchars($folder_func); ?>" />
+            <!-- GROUP 3: Split Process Data Entry -->
+            <div class="dashboard-card">
+                <h4 class="card-title-g3">⚙️ Group 3: Split Process Data Entry</h4>
+                <form id="form_slitter_process" action="model/save_split_process_mats.php" method="POST" onsubmit="return validate_form();">
+                    
+                    <!-- Hidden Inputs -->
+                    <input type="hidden" name="coil_no" value="<?php echo htmlspecialchars($coil_no); ?>" />
+                    <input type="hidden" name="func" value="<?php echo htmlspecialchars($folder_func); ?>" />
 
-                        <!-- Line 1: Thickness & Weight -->
-                        <div class="row">
-                            <div class="col-md-6 col-sm-6">
-                                <div class="form-group" style="margin-bottom: 20px;">
-                                    <label for="split_thickness">Input Thickness (mm) <span style="color:red;">*</span></label>
-                                    <input type="number" step="0.001" min="0" class="form-control-custom" id="split_thickness" name="split_thickness" value="<?php echo (float)($row_data['THICKNESS'] ?? 0); ?>" placeholder="Enter thickness..." required />
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-sm-6">
-                                <div class="form-group" style="margin-bottom: 20px;">
-                                    <label for="split_weight">Input Weight (kg) <span style="color:red;">*</span></label>
-                                    <input type="number" step="0.01" min="0" class="form-control-custom" id="split_weight" name="split_weight" placeholder="Enter weight..." required />
-                                </div>
+                    <!-- Line 1: Thickness & Weight -->
+                    <div class="row">
+                        <div class="col-md-6 col-sm-6">
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <label for="split_thickness">Input Thickness (mm) <span style="color:red;">*</span></label>
+                                <input type="number" step="0.001" min="0" class="form-control-custom" id="split_thickness" name="split_thickness" 
+                                    value="<?php echo number_format((float)($row_data['THICKNESS'] ?? 0), 3, '.', ''); ?>" 
+                                    placeholder="0.000" required />
                             </div>
                         </div>
-
-                        <!-- Action Buttons -->
-                        <div style="margin-top: 15px; text-align: right; border-top: 1px dashed #e2e8f0; padding-top: 20px;">
-                            <button type="submit" id="btn_save_slitter" class="btn btn-save">
-                                💾 Save Data
-                            </button>
-                            <button type="button" id="btn_cancel_slitter" class="btn btn-cancel" onclick="clear_input_form()">
-                                ❌ Cancel
-                            </button>
+                        <div class="col-md-6 col-sm-6">
+<div class="form-group" style="margin-bottom: 20px;">
+    <label for="split_weight">Input Weight (kg) <span style="color:red;">*</span></label>
+    <input type="number" step="0.01" min="0" class="form-control-custom" id="split_weight" name="split_weight" 
+           placeholder="Enter weight..." required oninput="check_input_weight()" />
+</div>
                         </div>
-                    </form>
-                </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+<div style="margin-top: 15px; text-align: right; border-top: 1px dashed #cbd5e1; padding-top: 20px;">
+    <button type="submit" id="btn_save_slitter" class="btn btn-save" disabled>
+        💾 Save Data
+    </button>
+    <button type="button" id="btn_cancel_slitter" class="btn btn-cancel is-inactive" onclick="clear_input_form()">
+        ❌ Cancel
+    </button>
+</div>
+                </form>
+            </div>
 
             <?php endif; ?>
 
@@ -529,5 +639,39 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
+
+// ฟังก์ชันตรวจสอบน้ำหนักเพื่อเปิด/ปิดปุ่ม Save และสลับสีปุ่ม Cancel
+function check_input_weight() {
+    var weightInput = document.getElementById('split_weight').value.trim();
+    var btnSave = document.getElementById('btn_save_slitter');
+    var btnCancel = document.getElementById('btn_cancel_slitter');
+    
+    var weightVal = parseFloat(weightInput);
+
+    if (weightInput !== '' && !isNaN(weightVal) && weightVal > 0) {
+        // เมื่อกรอกน้ำหนักแล้ว (Active State)
+        btnSave.disabled = false;
+        btnCancel.classList.remove('is-inactive'); // เปลี่ยนเป็นสีแดงสด
+    } else {
+        // ก่อนกรอกน้ำหนัก (Disabled / Inactive State)
+        btnSave.disabled = true;
+        btnCancel.classList.add('is-inactive'); // เปลี่ยนเป็นสีเทาอ่อน
+    }
+}
+
+// ฟังก์ชัน Cancel ล้างค่า
+function clear_input_form() {
+    document.getElementById('split_thickness').value = defaultThickness > 0 ? defaultThickness.toFixed(3) : '';
+    document.getElementById('split_weight').value = '';
+    
+    // เรียกเช็กเพื่อคืนค่าสภาวะเริ่มต้น (Disabled + ปุ่ม Cancel เทา)
+    check_input_weight();
+}
+
+// เรียกใช้ฟังก์ชันทันทีที่โหลดหน้าเว็บ เพื่อตั้งค่าเริ่มต้นให้ถูกต้อง
+document.addEventListener("DOMContentLoaded", function() {
+    check_input_weight();
+});
+
 </script>
 </html>

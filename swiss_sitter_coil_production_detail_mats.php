@@ -311,6 +311,29 @@ if (!empty($coil_no)) {
             transition: all 0.2s;
         }
         .btn-back:hover { background-color: #475569; color: #ffffff; }
+        /* ปุ่ม Print Label สไตล์ตามหน้าจอตัวอย่าง */
+        .btn-print-legacy {
+            background-color: #0284c7;
+            color: #ffffff !important;
+            border: none;
+            border-radius: 6px;
+            padding: 3px 10px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none !important;
+            line-height: 1.4;
+        }
+
+        .btn-print-legacy:hover {
+            background-color: #0369a1;
+            color: #ffffff !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }        
     </style>
 
     <!-- Mermaid.js สำหรับวาด Genealogy Tree Chart -->
@@ -359,7 +382,7 @@ if (!empty($coil_no)) {
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3 style="margin:0; font-weight:700; color:#1e293b; font-size: 24px;">
-                    📦 Coil Details: <span style="color:#2563eb;"><a href="swiss_slitter_process_mats.php?func=<?php echo $folder_func ?>&jno=<?php echo $coil_no?>"><?php echo htmlspecialchars($coil_no); ?></a></span>
+                    📦 Coil Details: <span style="color:#2563eb;"><a href="swiss_slitter_process_mats.php?func=<?php echo $folder_func ?>&cno=<?php echo $coil_no?>"><?php echo htmlspecialchars($coil_no); ?></a></span>
                 </h3>
                 <div>
                     <button type="button" class="btn btn-back" onclick="back_home_coil()">
@@ -501,56 +524,93 @@ if (!empty($coil_no)) {
                     </div>
                 </div>
 
-                <!-- GROUP 3: Product Information (Coil Swiss Slitter Tree Details) -->
+                <!-- GROUP 3: Coil Swiss Slitter Product Details -->
                 <div class="dashboard-card">
-                    <h4 class="card-title-g3">📦 Group 3: Coil Swiss Slitter Product Details</h4>
+                    <h4 class="card-title-g-tree">📦 Group 3: Coil Swiss Slitter Product Details</h4>
                     <div class="table-responsive">
                         <table class="table custom-job-table">
                             <thead>
                                 <tr>
                                     <th style="text-align: center;">#</th>
-                                    <th style="text-align: center;">Tree Level</th>
-                                    <th>Coil No</th>
-                                    <th>Product Reference</th>
-                                    <th>Job Process</th>
-                                    <th>Job Order</th>
-                                    <th style="text-align: center;">Line Process</th>
-                                    <th>Operate Date</th>
-                                    <th>End Date</th>
-                                    <th>Alloy</th>
-                                    <th style="text-align: center;">Thickness</th>
-                                    <th style="text-align: center;">Width</th>
-                                    <th style="text-align: right;">Actual Weight</th>
-                                    <th style="text-align: center;">Status</th>
+                                    <th style="text-align: center;">PRINT LABEL</th>
+                                    <th>COIL NO</th>
+                                    <th>PRODUCT REFERENCE</th>
+                                    <th>JOB PROCESS</th>
+                                    <th>JOB ORDER</th>
+                                    <th style="text-align: center;">LINE PROCESS</th>
+                                    <th style="text-align: center;">OPERATE DATE</th>
+                                    <th style="text-align: center;">END DATE</th>
+                                    <th style="text-align: center;">ALLOY</th>
+                                    <th style="text-align: right;">THICKNESS</th>
+                                    <th style="text-align: right;">WIDTH</th>
+                                    <th style="text-align: right;">ACTUAL WEIGHT</th>
+                                    <th style="text-align: center;">STATUS</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php if (empty($coil_tree_list)): ?>
+                                <?php 
+                                // กรองเฉพาะรายการที่ไม่ใช่ Level 0 (Level > 0) เพื่อแสดงในตาราง
+                                $filtered_table_list = array_values(array_filter($coil_tree_list, function($item) {
+                                    return ((int)($item['Level'] ?? 0)) > 0;
+                                }));
+                                ?>
+
+                                <?php if (empty($filtered_table_list)): ?>
                                     <tr>
                                         <td colspan="14" align="center" style="color: #64748b; padding: 20px;">
-                                            No Swiss Slitter product tree records found.
+                                            No product details found.
                                         </td>
                                     </tr>
                                 <?php else: ?>
-                                    <?php foreach ($coil_tree_list as $index => $tree_item): ?>
+                                    <?php foreach ($filtered_table_list as $t_index => $tree_item): 
+                                        $tree_coil_no = trim($tree_item['COIL_NO'] ?? '');
+                                        $tree_status  = strtoupper(trim($tree_item['COIL_STATUS'] ?? ''));
+                                        
+                                        // กำหนดสี Class ของ Status Badge
+                                        $status_class = 'status-cl';
+                                        if ($tree_status === 'AC') {
+                                            $status_class = 'status-ac';
+                                        } else if ($tree_status === 'SS') {
+                                            $status_class = 'status-ss';
+                                        }
+                                    ?>
                                         <tr>
-                                            <td align="center"><?php echo $index + 1; ?></td>
-                                            <td align="center">
-                                                <span class="level-badge">Level <?php echo htmlspecialchars($tree_item['Level'] ?? '0'); ?></span>
+                                            <!-- ลำดับที่ (#) รันนับเริ่มจาก 1 สำหรับรายการย่อยตัวแรก -->
+                                            <td align="center"><?php echo $t_index + 1; ?></td>
+                                            
+                                            <!-- ปุ่ม Print Label -->
+                                            <td align="center" style="width: 100px;">
+                                                <?php if (!empty($tree_coil_no)): ?>
+                                                    <a href="print_coil_product_label_mats.php?coilno=<?php echo urlencode($tree_coil_no); ?>" 
+                                                    target="_blank" 
+                                                    class="btn-print-legacy"
+                                                    title="Print Label for <?php echo htmlspecialchars($tree_coil_no); ?>">
+                                                        🖨️ Print
+                                                    </a>
+                                                <?php else: ?>
+                                                    -
+                                                <?php endif; ?>
                                             </td>
-                                            <td style="font-weight: 700; color: #2563eb;"><?php echo htmlspecialchars($tree_item['COIL_NO'] ?? '-'); ?></td>
+
+                                            <td style="font-weight: 700; color: #2563eb;">
+                                                <a href="swiss_sitter_coil_production_detail_mats.php?func=<?php echo $folder_func ?>&COIL=<?php echo htmlspecialchars($tree_coil_no); ?>">
+                                                    <?php echo htmlspecialchars($tree_coil_no !== '' ? $tree_coil_no : '-'); ?>
+                                                </a>
+                                            </td>
                                             <td><?php echo htmlspecialchars($tree_item['PRODUCT_REFERENCE'] ?? '-'); ?></td>
                                             <td><?php echo htmlspecialchars($tree_item['JOB_PROCESS'] ?? '-'); ?></td>
-                                            <td style="font-weight: 600; color: #0284c7;"><?php echo htmlspecialchars($tree_item['JOB_ORDER'] ?? '-'); ?></td>
+                                            <td><?php echo htmlspecialchars($tree_item['JOB_ORDER'] ?? '-'); ?></td>
                                             <td align="center"><?php echo htmlspecialchars($tree_item['LINE_PROCESS'] ?? '-'); ?></td>
-                                            <td><?php echo htmlspecialchars($tree_item['COIL_OPERATEDATE'] ?? '-'); ?></td>
-                                            <td><?php echo htmlspecialchars($tree_item['COIL_ENDDATE'] ?? '-'); ?></td>
-                                            <td><?php echo htmlspecialchars($tree_item['ALLOY'] ?? '-'); ?></td>
-                                            <td align="center"><?php echo function_exists('fmt3') ? fmt3($tree_item['THICKNESS']) : number_format((float)($tree_item['THICKNESS'] ?? 0), 3); ?></td>
-                                            <td align="center"><?php echo function_exists('fmt2') ? fmt2($tree_item['WIDTH']) : number_format((float)($tree_item['WIDTH'] ?? 0), 2); ?></td>
+                                            <td align="center"><?php echo !empty($tree_item['COIL_OPERATEDATE']) ? date('Y-m-d H:i:s', strtotime($tree_item['COIL_OPERATEDATE'])) : '-'; ?></td>
+                                            <td align="center"><?php echo !empty($tree_item['COIL_ENDDATE']) ? date('Y-m-d H:i:s', strtotime($tree_item['COIL_ENDDATE'])) : '-'; ?></td>
+                                            <td align="center"><?php echo htmlspecialchars($tree_item['ALLOY'] ?? '-'); ?></td>
+                                            <td align="right"><?php echo function_exists('fmt3') ? fmt3($tree_item['THICKNESS']) : number_format((float)($tree_item['THICKNESS'] ?? 0), 3); ?></td>
+                                            <td align="right"><?php echo function_exists('fmt2') ? fmt2($tree_item['WIDTH']) : number_format((float)($tree_item['WIDTH'] ?? 0), 2); ?></td>
                                             <td align="right"><?php echo function_exists('fmt2') ? fmt2($tree_item['COIL_ACTUALWEIGHT']) : number_format((float)($tree_item['COIL_ACTUALWEIGHT'] ?? 0), 2); ?></td>
                                             <td align="center">
-                                                <span class="status-badge-ac"><?php echo htmlspecialchars($tree_item['COIL_STATUS'] ?? '-'); ?></span>
+                                                <span class="status-badge-tree <?php echo $status_class; ?>">
+                                                    <?php echo htmlspecialchars($tree_status); ?>
+                                                </span>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

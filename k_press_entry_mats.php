@@ -24,7 +24,7 @@ $wt_piece_to_use = 0;
 $wt_type_label   = '';
 
 if (!empty($job_order) && !empty($coil_no)) {
-    // 1. ดึงข้อมูล Job Order (ตัด j.DIESET_NO ออก)
+    // 1. ดึงข้อมูล Job Order
     $sql_job = "SELECT 
                     j.JOB_ORDER, j.JOB_STATUS, j.SALEORDER_NO, j.SALEORDER_ITEM, 
                     c.CSTMSPPL_ID, c.CONFIRM_DATE, j.ALLOY, j.TEMPER, j.PRODUCE_TEMPER1, j.PRODUCE_TEMPER2, 
@@ -32,7 +32,7 @@ if (!empty($job_order) && !empty($coil_no)) {
                     j.T5_TEMPERATURE, j.THICKNESS, j.WIDTH, j.LENGTH, j.WEIGHT_PIECE, 
                     j.CUT_WIDTH, j.CUT_LENGTH, j.CUT_WEIGHTPIECE, j.JOB_WORKPROCESS, 
                     j.JOB_RELEASEWEIGHT, j.JOB_RELEASEPIECE, j.JOB_PRODUCEWEIGHT, j.JOB_PRODUCEPIECE,
-                    j.MATERIAL_IN, j.JOB_REMARK, j.PRODUCT_ID
+                    j.JOB_MAXTOLERANCE, j.JOB_MINTOLERANCE, j.MATERIAL_IN, j.JOB_REMARK, j.PRODUCT_ID
                 FROM JOBORDER1 j
                 LEFT JOIN CSTMORDR2 c ON j.SALEORDER_NO = c.SALEORDER_NO AND j.SALEORDER_ITEM = c.SALEORDER_ITEM
                 WHERE j.JOB_ORDER = :job_order";
@@ -85,7 +85,7 @@ if (!empty($job_order) && !empty($coil_no)) {
     $stmt_coil->execute();
     $coil_data = $stmt_coil->fetch(PDO::FETCH_ASSOC);
 
-    // 3. ดึงประวัติ Pallet จาก CRSHPROD1 แทน KP01PROD1
+    // 3. ดึงประวัติ Pallet จาก CRSHPROD1
     $sql_hist = "SELECT 
                     PRODUCT_NO, COIL_NO, CRSH_PRODUCEPIECE, CRSH_PRODUCEWEIGHT, CRSH_BOTTOMWEIGHT,
                     CRSH_STARTTIME, CRSH_ENDTIME, CRSH_OPERATOR1, CRSH_OPERATEDATE
@@ -119,24 +119,36 @@ function format_dim4($value) { return number_format((float)($value ?? 0), 4); }
         .clean-info-table td, .clean-info-table th { padding: 8px 12px !important; font-size: 13.5px; border: 1px solid #e2e8f0 !important; }
         .clean-info-table .lbl-col { background-color: #f8fafc; color: #64748b; font-weight: 700; font-size: 12px; text-transform: uppercase; width: 35%; }
         .form-control-custom { width: 100%; border-radius: 8px; border: 1px solid #cbd5e1; padding: 8px 12px; font-size: 14px; font-weight: 600; height: 38px; }
-        .btn-action { font-weight: 700; font-size: 14px; padding: 10px 22px; border-radius: 8px; border: none; cursor: pointer; }
+        
+        .action-button-group { display: flex; gap: 12px; justify-content: flex-end; align-items: center; margin-top: 20px; flex-wrap: wrap; }
+        .btn-action { font-weight: 700; font-size: 14px; padding: 10px 22px; border-radius: 8px; border: none; transition: all 0.2s; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        
         .btn-save { background-color: #059669; color: #ffffff; }
+        .btn-save:hover { background-color: #047857; transform: translateY(-1px); box-shadow: 0 4px 6px rgba(5, 150, 105, 0.2); }
+        .btn-save:disabled { background-color: #cbd5e1 !important; color: #94a3b8 !important; cursor: not-allowed; box-shadow: none !important; transform: none !important; }
+        
         .btn-keep { background-color: #d97706; color: #ffffff; }
+        .btn-keep:hover { background-color: #b45309; transform: translateY(-1px); }
+
         .btn-print { background-color: #0284c7; color: #ffffff; }
+        .btn-print:hover { background-color: #0369a1; transform: translateY(-1px); }
+        .btn-print:disabled { background-color: #cbd5e1 !important; color: #94a3b8 !important; cursor: not-allowed; transform: none !important; }
+
         .btn-back { background-color: #64748b; color: #ffffff; font-weight: 700; padding: 10px 20px; border-radius: 8px; border: none; }
+        .btn-back:hover { background-color: #475569; }
     </style>
 </head>
 <body>
 
 <div class="wrapper">
-<?php $menu = 'A4';?>
+<?php $menu = 'K1';?>
     <?php if (!empty($folder_func) && !empty($group_func)) { include 'include/'.$folder_func.'/navigation.php'; } ?>
 
     <div class="main-panel">
         <nav class="navbar navbar-default navbar-fixed">
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="k_press_mats.php?func=<?php echo $folder_func ?>">K Press Process (Line <?php echo $line_func; ?>)</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="k_press_mats.php?func=<?php echo $folder_func ?>">Circle Press Entry (Line <?php echo $line_func; ?>)</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -243,7 +255,7 @@ function format_dim4($value) { return number_format((float)($value ?? 0), 4); }
                     </div>
                 </div>
 
-                <!-- 3. Pallet History (ดึงจาก CRSHPROD1) -->
+                <!-- 3. Pallet History -->
                 <div class="dashboard-card">
                     <h4 style="color:#0284c7; font-size:18px; font-weight:700; margin-top:0; margin-bottom:15px;">📋 Job Order Pallet History</h4>
                     <div class="table-responsive">
@@ -383,10 +395,17 @@ function format_dim4($value) { return number_format((float)($value ?? 0), 4); }
                             </div>
                         </div>
 
-                        <div class="action-button-group" style="display:flex; gap:12px; justify-content:flex-end; margin-top:20px;">
-                            <button type="button" class="btn-action btn-keep" onclick="process_keep_coil()">📦 Keep Coil</button>
-                            <button type="button" class="btn-action btn-print" id="btn_print_label" disabled onclick="print_product_label()">🖨️ Print Label</button>
-                            <button type="submit" class="btn-action btn-save" id="btn_submit_entry" disabled>💾 Save Product</button>
+                        <!-- ปรับสถานะปุ่มตอนโหลดหน้าแรกให้ disabled ไว้ เหมือน Cut to Length -->
+                        <div class="action-button-group">
+                            <button type="button" class="btn-action btn-keep" onclick="process_keep_coil()">
+                                📦 Keep Coil
+                            </button>
+                            <button type="button" class="btn-action btn-print" id="btn_print_label" disabled onclick="print_product_label()">
+                                🖨️ Print Label
+                            </button>
+                            <button type="submit" class="btn-action btn-save" id="btn_submit_entry" disabled>
+                                💾 Save Product
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -404,6 +423,7 @@ function format_dim4($value) { return number_format((float)($value ?? 0), 4); }
 <?php include 'include/footer.php';?>
 
 <script>
+// === 1. กรณี PRODUCT_ID = 'SH': กรอก ชิ้น -> คำนวณ น้ำหนัก (Auto) ===
 function calculate_sh_mode() {
     var pcsInput = document.getElementById('txt_produce_piece');
     var pcs = parseFloat(pcsInput.value) || 0;
@@ -419,19 +439,27 @@ function calculate_sh_mode() {
     var produceWt = Math.round(pcs * wtPerPiece);
     document.getElementById('txt_produce_weight').value = produceWt;
 
-    if (pcs <= 0) { btnSave.disabled = true; return; }
+    // ถ้าจำนวนชิ้น <= 0 บล็อกปุ่ม Save
+    if (pcs <= 0) { 
+        btnSave.disabled = true; 
+        return; 
+    }
 
     var totalNewProdWt = currentProdWt + produceWt;
 
     if (coilBalanceWt > 0 && produceWt > coilBalanceWt) {
         alert('❌ ไม่สามารถบันทึกได้: น้ำหนักผลิตรวม (' + produceWt + ' kg.) เกินกว่าน้ำหนักคงเหลือของ Coil (' + coilBalanceWt.toFixed(2) + ' kg.)');
-        pcsInput.value = ''; document.getElementById('txt_produce_weight').value = '0';
-        btnSave.disabled = true; return false;
+        pcsInput.value = ''; 
+        document.getElementById('txt_produce_weight').value = '0';
+        btnSave.disabled = true; 
+        return false;
     } else if (maxAllowedWt > 0 && totalNewProdWt > maxAllowedWt) {
         var overMax = (totalNewProdWt - maxAllowedWt).toFixed(2);
         alert('❌ ไม่สามารถบันทึกได้: ยอดผลิตสะสมรวม (' + totalNewProdWt + ' kg.) เกินพิกัดสูงสุดที่อนุญาต (' + maxAllowedWt.toFixed(2) + ' kg. [+' + maxTolPct + '%]) อยู่ ' + overMax + ' kg.');
-        pcsInput.value = ''; document.getElementById('txt_produce_weight').value = '0';
-        btnSave.disabled = true; return false;
+        pcsInput.value = ''; 
+        document.getElementById('txt_produce_weight').value = '0';
+        btnSave.disabled = true; 
+        return false;
     } else {
         btnSave.disabled = false;
     }
@@ -458,19 +486,27 @@ function calculate_cc_nc_mode() {
         document.getElementById('txt_produce_piece').value = '0';
     }
 
-    if (produceWt <= 0) { btnSave.disabled = true; return; }
+    // ถ้าน้ำหนักผลิต <= 0 บล็อกปุ่ม Save
+    if (produceWt <= 0) { 
+        btnSave.disabled = true; 
+        return; 
+    }
 
     var totalNewProdWt = currentProdWt + produceWt;
 
     if (coilBalanceWt > 0 && produceWt > coilBalanceWt) {
         alert('❌ ไม่สามารถบันทึกได้: น้ำหนักผลิต (' + produceWt + ' kg.) เกินกว่าน้ำหนักคงเหลือของ Coil (' + coilBalanceWt.toFixed(2) + ' kg.)');
-        wtInput.value = ''; document.getElementById('txt_produce_piece').value = '0';
-        btnSave.disabled = true; return false;
+        wtInput.value = ''; 
+        document.getElementById('txt_produce_piece').value = '0';
+        btnSave.disabled = true; 
+        return false;
     } else if (maxAllowedWt > 0 && totalNewProdWt > maxAllowedWt) {
         var overMax = (totalNewProdWt - maxAllowedWt).toFixed(2);
         alert('❌ ไม่สามารถบันทึกได้: ยอดผลิตสะสมรวม (' + totalNewProdWt + ' kg.) เกินพิกัดสูงสุดที่อนุญาต (' + maxAllowedWt.toFixed(2) + ' kg. [+' + maxTolPct + '%]) อยู่ ' + overMax + ' kg.');
-        wtInput.value = ''; document.getElementById('txt_produce_piece').value = '0';
-        btnSave.disabled = true; return false;
+        wtInput.value = ''; 
+        document.getElementById('txt_produce_piece').value = '0';
+        btnSave.disabled = true; 
+        return false;
     } else {
         btnSave.disabled = false;
     }
@@ -536,17 +572,13 @@ function save_entry_product(e) {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            // เก็บค่า Product No ล่าสุดไว้ที่ Hidden Input เพื่อให้ปุ่ม Print Label ทำงานได้
             document.getElementById('txt_last_product_no').value = data.pno;
-            
-            // เปิดใช้งานปุ่ม Print Label เผื่อช่างต้องการกดพิมพ์ซ้ำ
             var btnPrint = document.getElementById('btn_print_label');
             if (btnPrint) btnPrint.disabled = false;
 
             if (data.auto_closed) {
                 alert('✅ บันทึก Pallet ผลผลิตสำเร็จ (Product No: ' + data.pno + ')\n\n🔒 เนื่องจากน้ำหนักคงเหลือของ Coil น้อยกว่าเกณฑ์ (< 50 kg.) ระบบได้ทำการ Close Coil และ Auto Scrap เศษวัตถุดิบให้อัตโนมัติเรียบร้อยแล้ว');
                 
-                // เปิดหน้าต่างพิมพ์ Label อัตโนมัติก่อนเด้งกลับหน้าหลัก
                 var jno = "<?php echo $job_order; ?>";
                 var printUrl = 'print_circle_sheet_product_label_mats.php?productno=' + encodeURIComponent(data.pno) + '&joborder=' + encodeURIComponent(jno);
                 window.open(printUrl, '_blank');
@@ -555,12 +587,10 @@ function save_entry_product(e) {
             } else {
                 alert('✅ บันทึก Pallet ผลผลิตสำเร็จ (Product No: ' + data.pno + ')');
                 
-                // สั่งเปิดหน้าต่างพิมพ์ Label อัตโนมัติใน Tab ใหม่
                 var jno = "<?php echo $job_order; ?>";
                 var printUrl = 'print_circle_sheet_product_label_mats.php?productno=' + encodeURIComponent(data.pno) + '&joborder=' + encodeURIComponent(jno);
                 window.open(printUrl, '_blank');
 
-                // รีโหลดหน้าจอเพื่ออัปเดตยอดคงเหลือและตารางประวัติ
                 window.location.reload();
             }
         } else {
@@ -601,6 +631,19 @@ function process_keep_coil() {
             }
         });
     }
+}
+
+function print_product_label() {
+    var pno = document.getElementById('txt_last_product_no').value;
+    var jno = "<?php echo $job_order; ?>";
+    
+    if (!pno) {
+        alert('ไม่พบรหัส Product No สำหรับพิมพ์สติ๊กเกอร์');
+        return;
+    }
+
+    var url = 'print_circle_sheet_product_label_mats.php?productno=' + encodeURIComponent(pno) + '&joborder=' + encodeURIComponent(jno);
+    window.open(url, '_blank');
 }
 
 function print_history_label(pno) {
