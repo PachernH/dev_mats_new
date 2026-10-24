@@ -18,7 +18,7 @@ if (empty($iduser_func)) {
 $allowed_lines_ctl = ['A', 'B'];
 if (!in_array(strtoupper($line_func), $allowed_lines_ctl)) {
     echo "<script>
-            alert('เตือน: Line การทำงานของคุณ (" . $line_func . ") ไม่ตรงกับกระบวนการ Cut to Length Process (Line A, B)');
+            alert('เตือน: Line การทำงานของคุณ ไม่ตรงกับกระบวนการ Cut to Length Process (Line A)');
             window.location.href = 'dashboard_mats.php';
           </script>";
     exit();
@@ -447,10 +447,16 @@ function format_dim4($value) { return number_format((float)($value ?? 0), 4); }
                                         <input type="text" class="form-control-custom" id="txt_produce_weight" name="produce_weight" readonly placeholder="0" style="background-color:#eff6ff; color:#2563eb; font-weight:700;" />
                                     </div>
 
-                                    <div class="col-md-12 col-sm-12" style="margin-bottom:12px;">
-                                        <label class="info-label">Pallet Weight (น้ำหนัก Pallet kg.) *</label>
-                                        <input type="number" step="0.01" class="form-control-custom" id="txt_pallet_weight" name="pallet_weight" required placeholder="0.00" />
+                                    <div class="col-md-6 col-sm-6" style="margin-bottom:12px;">
+                                        <label class="info-label">Pallet Weight (kg) [Max 200kg] *</label>
+                                        <input type="number" step="0.01" class="form-control-custom" id="txt_pallet_weight" name="pallet_weight" required max="200" placeholder="0.00" oninput="validate_bottom_weight(this)" />
                                     </div>
+
+                                    <div class="col-md-6 col-sm-6" style="margin-bottom:12px;">
+                                        <label class="info-label">Scrap Weight (kg)</label>
+                                        <input type="number" step="0.01" class="form-control-custom" id="txt_skeleton_scrap" name="skeleton_scrap_weight" placeholder="0.00" />
+                                    </div>
+
 
                                     <div class="col-md-6 col-sm-6" style="margin-bottom:12px;">
                                         <label class="info-label">Start Date - Time *</label>
@@ -493,6 +499,15 @@ function format_dim4($value) { return number_format((float)($value ?? 0), 4); }
 <?php include 'include/footer.php';?>
 
 <script>
+// === ตรวจสอบน้ำหนักก้นคอยล์ (Bottom Weight) ตาม f7 (ห้ามเกิน 200 kg) ===
+function validate_bottom_weight(elem) {
+    var val = parseFloat(elem.value) || 0;
+    if (val > 200) {
+        alert('❌ ระบบไม่อนุญาต: น้ำหนักก้นคอยล์ (Bottom Weight) ต้องไม่เกิน 200 kg.');
+        elem.value = '200';
+    }
+}
+    
 // คำนวณน้ำหนักผลิตอัตโนมัติ พร้อมเช็ก Tolerance & Balance
 function calculate_entry_weight() {
     var pcsInput = document.getElementById('txt_produce_piece');

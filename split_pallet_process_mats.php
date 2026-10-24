@@ -1,11 +1,42 @@
 <?php
 // เริ่ม session ก่อน ANY output
 session_start();
-// ถ้าไม่มี Session หรือไม่ได้ Login ให้กลับไปหน้า index.php
-if (!isset($_SESSION['ID'])) {
+
+// ดึงค่า Session ต่างๆ
+$iduser_func     = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
+$folder_func     = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
+$line_func       = isset($_SESSION['LINE']) ? strtoupper(htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8')) : 'M'; // Default Line M
+$group_func      = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$process_func    = isset($_SESSION['PROCESS_GROUP']) ? htmlspecialchars($_SESSION['PROCESS_GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$position_func   = isset($_SESSION['POSITION']) ? strtoupper(trim($_SESSION['POSITION'])) : '';
+$department_func = isset($_SESSION['DEPARTMENT']) ? strtoupper(trim($_SESSION['DEPARTMENT'])) : '';
+
+// ถ้าไม่มี Session ให้กลับไปหน้า index.php
+if (empty($iduser_func)) {
     header("Location: index.php");
     exit();
 }
+
+// =========================================================================
+// สิทธิ์พิเศษ: ต้องเป็น CEO, MANAGER, SUPERVISOR และต้องอยู่แผนก PD, IT, TC, MG
+// =========================================================================
+$bypass_positions    = ['CEO', 'MANAGER', 'SUPERVISOR'];
+$allowed_departments = ['PD', 'IT', 'TC', 'MG'];
+
+$is_supervisor_up = in_array($position_func, $bypass_positions) && in_array($department_func, $allowed_departments);
+
+// ตรวจสอบ Line Process (Maintain Product Split Pallet เชื่อมกับ Cold Mill: Line M)
+$allowed_lines_kp = ['M'];
+if (!$is_supervisor_up && !in_array($line_func, $allowed_lines_kp)) {
+    echo "<script>
+            alert('เตือน: Line การทำงานของคุณ ไม่ตรงกับกระบวนการ Cold Mill Process (Line M)');
+            window.location.href = 'dashboard_mats.php';
+          </script>";
+    exit();
+}
+
+// เช็กว่า Line ที่ล็อกอินตรงกับสายการผลิตนี้หรือไม่ สำหรับคุมการกดปุ่ม Action
+$is_correct_line = in_array($line_func, $allowed_lines_kp);
 
 // ดึงค่าและตรวจสอบข้อมูลนำเข้าเพื่อความปลอดภัย (Sanitize Input)
 if(!isset($_GET['d'])){
@@ -16,15 +47,11 @@ if(!isset($_GET['d'])){
 
 // รับค่า pno (ใช้รองรับ PRODUCT_NO) และกำหนดตัวแปรให้ตรงกัน
 $pno = !isset($_GET['pno']) ? '' : htmlspecialchars(trim($_GET['pno']), ENT_QUOTES, 'UTF-8');
-
-// ป้องกันกรณีไม่มี Session เพื่อไม่ให้เกิด Undefined array key Warning
-$folder_func = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
-$group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
 ?>
 <!doctype html>
 <html lang="en">
 <head>
-    <title>Meyer Aluminium Thailand Co.,LTD.</title>
+    <title>Meyer Aluminium Thailand Co.,LTD. - Product Split Pallet (Line <?php echo $line_func; ?>)</title>
     <?php include 'include/header.php';?>
     
     <link href="assets-graph/styles.css" rel="stylesheet" />
@@ -219,13 +246,14 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
             color: #ffffff !important;
             border: none;
             border-radius: 6px;
-            padding: 6px 12px;
+            padding: 6px 14px;
             font-weight: 700;
             font-size: 13px;
             transition: all 0.2s;
             cursor: pointer;
             display: inline-block;
             text-decoration: none !important;
+            min-width: 140px;
         }
         .btn-split-pallet:hover {
             background-color: #059669 !important;
@@ -238,19 +266,35 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
             color: #ffffff !important;
             border: none;
             border-radius: 6px;
-            padding: 6px 12px;
+            padding: 6px 14px;
             font-weight: 700;
             font-size: 13px;
             transition: all 0.2s;
             cursor: pointer;
             display: inline-block;
             text-decoration: none !important;
+            min-width: 140px;
         }
         .btn-update-pallet:hover {
             background-color: #1d4ed8 !important;
             color: #ffffff !important;
             transform: translateY(-1px);
-        }     
+        }
+
+        .btn-slitter-disabled {
+            background-color: #94a3b8 !important;
+            color: #ffffff !important;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: not-allowed !important;
+            opacity: 0.75;
+            display: inline-block;
+            text-decoration: none !important;
+            min-width: 140px;
+        }
         
         .btn-tab-item {
             padding: 10px 20px;
@@ -462,7 +506,14 @@ include 'include/'.$folder_func.'/navigation.php';
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="split_pallet_process_mats.php?func=<?php echo $folder_func ?>">Maintain Product Split Pallet</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="split_pallet_process_mats.php?func=<?php echo $folder_func ?>">
+                        Maintain Product Split Pallet (Line <?php echo $line_func; ?>)
+                        <?php if ($is_supervisor_up && !$is_correct_line): ?>
+                            <span class="badge" style="background-color:#64748b; font-size:11px; margin-left:8px;">VIEW ONLY (LINE <?php echo $line_func; ?>)</span>
+                        <?php elseif ($is_supervisor_up): ?>
+                            <span class="badge" style="background-color:#d97706; font-size:11px; margin-left:8px;">AUTHORIZED ACCESS</span>
+                        <?php endif; ?>
+                    </a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -496,7 +547,7 @@ include 'include/'.$folder_func.'/navigation.php';
                     <div class="dashboard-card">
                         
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Product Split Pallet Records</h4>
+                            <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Product Split Pallet Records (Line <?php echo $line_func; ?>)</h4>
                         </div>
                         
                         <div class="table-responsive table-full-width">
@@ -517,7 +568,7 @@ include 'include/'.$folder_func.'/navigation.php';
                                         <th>Actual Weight</th>
                                         <th>Actual Piece</th>
                                         <th>Status</th>
-                                        <th style="text-align: center;">Action</th>
+                                        <th style="text-align: center; width: 160px;">Action</th>
                                     </tr>
                                 </thead>
                                 
@@ -576,6 +627,15 @@ include 'include/'.$folder_func.'/navigation.php';
                                         $btn_class = 'btn-split-pallet';  
                                         $mode      = 'SPLIT';
                                     }
+
+                                    // =========================================================================
+                                    // ควบคุมปุ่ม Action: ต้องเป็น Line M จึงจะกด Split / Update Pallet ได้
+                                    // =========================================================================
+                                    if (!$is_correct_line) {
+                                        $btn_action_html = '<button type="button" class="btn-slitter-disabled" disabled title="Line ที่ล็อกอิน (' . $line_func . ') ไม่ตรงกับสายการผลิตนี้ ไม่สามารถแก้ไขข้อมูลได้">🔒 LOCKED (LINE ' . $line_func . ')</button>';
+                                    } else {
+                                        $btn_action_html = '<button type="button" class="' . $btn_class . '" onclick="open_split_modal(\'' . addslashes($prod_no) . '\', \'' . addslashes($prod_ref) . '\', ' . $act_weight . ', ' . $act_piece . ', ' . $weight_pc . ', ' . $bottom_wt . ', \'' . $mode . '\')">' . $btn_label . '</button>';
+                                    }
                                 ?>
                                     <tr>
                                         <td align="center"><?php echo $index + 1; ?></td>
@@ -598,10 +658,7 @@ include 'include/'.$folder_func.'/navigation.php';
                                         <td><span class="status-badge"><?php echo htmlspecialchars($status !== '' ? $status : '-', ENT_QUOTES, 'UTF-8'); ?></span></td>
                                         
                                         <td align="center">
-                                            <button type="button" class="<?php echo $btn_class; ?>" 
-                                                    onclick="open_split_modal('<?php echo addslashes($prod_no); ?>', '<?php echo addslashes($prod_ref); ?>', <?php echo $act_weight; ?>, <?php echo $act_piece; ?>, <?php echo $weight_pc; ?>, <?php echo $bottom_wt; ?>, '<?php echo $mode; ?>')">
-                                                <?php echo $btn_label; ?>
-                                            </button>
+                                            <?php echo $btn_action_html; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -742,10 +799,10 @@ $("#user_table").DataTable({
     buttons: []
 });
 
-function search_batch_no(){   
+function search_batch_no(){    
     var data_fun = document.getElementById("func").value;
-    var data_pno = document.getElementById("pd_no").value; 
-    window.location.assign('split_pallet_process_mats.php?func='+encodeURIComponent(data_fun)+'&pno='+encodeURIComponent(data_pno)); 
+    var data_pno = document.getElementById("pd_no").value;  
+    window.location.assign('split_pallet_process_mats.php?func='+encodeURIComponent(data_fun)+'&pno='+encodeURIComponent(data_pno));  
 }    
 
 function show_detail_product(prod_no) {

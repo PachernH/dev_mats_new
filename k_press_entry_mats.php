@@ -141,14 +141,14 @@ function format_dim4($value) { return number_format((float)($value ?? 0), 4); }
 <body>
 
 <div class="wrapper">
-<?php $menu = 'K1';?>
+<?php $menu = 'A4';?>
     <?php if (!empty($folder_func) && !empty($group_func)) { include 'include/'.$folder_func.'/navigation.php'; } ?>
 
     <div class="main-panel">
         <nav class="navbar navbar-default navbar-fixed">
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="k_press_mats.php?func=<?php echo $folder_func ?>">Circle Press Entry (Line <?php echo $line_func; ?>)</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="k_press_mats.php?func=<?php echo $folder_func ?>">K Press Process (Line <?php echo $line_func; ?>)</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -373,12 +373,12 @@ function format_dim4($value) { return number_format((float)($value ?? 0), 4); }
                                     <?php endif; ?>
 
                                     <div class="col-md-6 col-sm-6" style="margin-bottom:12px;">
-                                        <label class="info-label">Pallet Weight (น้ำหนัก Pallet kg.) *</label>
-                                        <input type="number" step="0.01" class="form-control-custom" id="txt_pallet_weight" name="pallet_weight" required placeholder="0.00" />
+                                        <label class="info-label">Pallet Weight (kg) [Max 200kg] *</label>
+                                        <input type="number" step="0.01" class="form-control-custom" id="txt_pallet_weight" name="pallet_weight" required placeholder="0.00" oninput="validate_bottom_weight(this)"/>
                                     </div>
 
                                     <div class="col-md-6 col-sm-6" style="margin-bottom:12px;">
-                                        <label class="info-label">Skeleton Scrap Weight (น้ำหนักโครงปั๊ม kg.)</label>
+                                        <label class="info-label">Scrap Weight (kg)</label>
                                         <input type="number" step="0.01" class="form-control-custom" id="txt_skeleton_scrap" name="skeleton_scrap_weight" placeholder="0.00" />
                                     </div>
 
@@ -423,6 +423,15 @@ function format_dim4($value) { return number_format((float)($value ?? 0), 4); }
 <?php include 'include/footer.php';?>
 
 <script>
+// === ตรวจสอบน้ำหนักก้นคอยล์ (Bottom Weight) ตาม f7 (ห้ามเกิน 200 kg) ===
+function validate_bottom_weight(elem) {
+    var val = parseFloat(elem.value) || 0;
+    if (val > 200) {
+        alert('❌ ระบบไม่อนุญาต: น้ำหนักก้นคอยล์ (Bottom Weight) ต้องไม่เกิน 200 kg.');
+        elem.value = '200';
+    }
+}
+
 // === 1. กรณี PRODUCT_ID = 'SH': กรอก ชิ้น -> คำนวณ น้ำหนัก (Auto) ===
 function calculate_sh_mode() {
     var pcsInput = document.getElementById('txt_produce_piece');

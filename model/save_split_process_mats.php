@@ -21,9 +21,6 @@ if (empty($main_coil_no) || $split_weight <= 0) {
 $current_user     = $_SESSION['ID'] ?? 'SYSTEM';
 $now_dt           = new DateTime();
 $current_datetime = $now_dt->format('Y-m-d H:i:s');
-$current_date     = $now_dt->format('Y-m-d');
-
-// 1. Format CYYMMDD (เช่น C260909)
 $yymmdd          = $now_dt->format('ymd'); 
 
 try {
@@ -54,7 +51,7 @@ try {
     }
 
     // ==========================================
-    // 2. สร้าง New Coil NO (Format: CYYMMDD-S-RUNNING(2หลัก) Running รายวัน)
+    // 2. สร้าง New Coil NO (Format: CYYMMDD-S-RUNNING(2หลัก))
     // ==========================================
     $prefix = "C" . $yymmdd . "-S-";
     $sql_running = "SELECT MAX(COIL_NO) AS max_coil FROM COILPROD1 WHERE COIL_NO LIKE :prefix";
@@ -77,30 +74,29 @@ try {
     $is_batchanneal_valid = ($main_batchanneal_wt > 0);
 
     // ==========================================
-    // 3. เตรียมข้อมูลสำหรับ New Coil
+    // 3. เตรียมข้อมูลสำหรับ New Coil (คอยล์ลูก)
     // ==========================================
     $newData = $mainData;
     $newData['COIL_NO']           = $new_coil_no;
     $newData['PRODUCT_REFERENCE'] = $main_coil_no;
 
-    // น้ำหนัก Coil ใหม่ = split_weight
+    // น้ำหนัก Coil ใหม่ = split_weight[cite: 1, 5]
     $newData['COIL_COLDMILLWEIGHT']    = $is_coldmill_valid ? $split_weight : 0;
     $newData['COIL_BATCHANNEALWEIGHT'] = $is_batchanneal_valid ? $split_weight : 0;
     $newData['COIL_ACTUALWEIGHT']      = $split_weight;
     $newData['COIL_FIRSTWEIGHT']       = $split_weight;
     $newData['COIL_BALANCEWEIGHT']     = $split_weight;
 
-    // กำหนดสถานะและคุณสมบัติต่าง ๆ
     $newData['LINE_PROCESS'] = 'S';
     $newData['SUBCONTACT']   = 'N';
     $newData['LOCATION_ID']  = 'NONE';
     $newData['CDML_STATUS']  = 'O';
     $newData['COIL_STATUS']  = 'AC';
-    $newData['F_THICKNESS']    = $split_thickness > 0 ? $split_thickness : $mainData['F_THICKNESS'];
+    $newData['F_THICKNESS']  = $split_thickness > 0 ? $split_thickness : $mainData['F_THICKNESS'];
     $newData['THICKNESS']    = $split_thickness > 0 ? $split_thickness : $mainData['THICKNESS'];
 
     // ==========================================
-    // 4. INSERT ข้อมูลสร้าง New Coil ลง COILPROD1
+    // 4. INSERT ข้อมูลสร้าง New Coil ลง COILPROD1[cite: 1, 5]
     // ==========================================
     $sql_insert_coilprod1 = "INSERT INTO COILPROD1 (
         COIL_NO, PRODUCT_REFERENCE, BATCH_NO, PRIMARY_SMELT, SECONDARY_SMELT, COUNTRY_MELT, 
@@ -132,7 +128,22 @@ try {
     ]);
 
     // ==========================================
-    // 5. COPY/INSERT CDMLPROD1 (กรณี COIL_COLDMILLWEIGHT > 0)
+    // คำนวณน้ำหนักคงเหลือของคอยล์แม่ (น้ำหนักแม่ - น้ำหนักที่แบ่งออกไป)[cite: 1, 5]
+    // ==========================================
+    $main_act_wt = (float)($mainData['COIL_ACTUALWEIGHT'] ?? 0);
+    $main_fst_wt = (float)($mainData['COIL_FIRSTWEIGHT'] ?? 0);
+    $main_bal_wt = (float)($mainData['COIL_BALANCEWEIGHT'] ?? 0);
+
+    $updated_actual      = max(0, $main_act_wt - $split_weight);
+    $updated_first       = max(0, $main_fst_wt - $split_weight);
+    $updated_coldmill    = max(0, $main_coldmill_wt - $split_weight);
+    $updated_batchanneal = max(0, $main_batchanneal_wt - $split_weight);
+
+    $base_balance_wt     = ($main_bal_wt > 0) ? $main_bal_wt : $main_act_wt;
+    $updated_balance     = max(0, $base_balance_wt - $split_weight);
+
+    // ==========================================
+    // 5. COPY/INSERT & UPDATE CDMLPROD1 (กรณี COIL_COLDMILLWEIGHT > 0)[cite: 1, 5]
     // ==========================================
     if ($is_coldmill_valid) {
         $sql_cdml_src = "SELECT PASS_NO, TEMPER, THICKNESS, CDML_STARTDATE, CDML_STARTTIME, CDML_ENDDATE, CDML_ENDTIME, CDML_REJECTWEIGHT 
@@ -141,6 +152,7 @@ try {
         $stmt_cdml_src->execute([':coil_no' => $main_coil_no]);
         $cdmlRows = $stmt_cdml_src->fetchAll(PDO::FETCH_ASSOC);
 
+        // 5.1 INSERT สร้างเรคคอร์ดให้คอยล์ลูก[cite: 1, 5]
         $sql_ins_cdml = "INSERT INTO CDMLPROD1 (COIL_NO, PASS_NO, TEMPER, THICKNESS, CDML_STARTDATE, CDML_STARTTIME, CDML_ENDDATE, CDML_ENDTIME, 
                                                 CDML_ACCEPTWEIGHT, CDML_REJECTWEIGHT, CDML_OPERATOR1, CDML_OPERATEDATE, CDML_UPDATE, CDML_UPDATEDATE) 
                          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
@@ -151,16 +163,26 @@ try {
             $stmt_ins_cdml->execute([
                 $new_coil_no, $cRow['PASS_NO'], $cRow['TEMPER'], $new_cdml_thick,
                 $cRow['CDML_STARTDATE'], $cRow['CDML_STARTTIME'], $cRow['CDML_ENDDATE'], $cRow['CDML_ENDTIME'],
-                $split_weight,
+                $split_weight, // ค่าน้ำหนักคอยล์ลูก
                 $cRow['CDML_REJECTWEIGHT'], $current_user, $current_datetime, 
-                $current_user, // CDML_UPDATE = current user
+                $current_user,
                 $current_datetime
             ]);
         }
+
+        // 5.2 UPDATE อัปเดตค่าน้ำหนักคงเหลือกลับไปยังคอยล์แม่ (อ้างอิง Command8 ใน f6)[cite: 1]
+        $sql_upd_cdml_main = "UPDATE CDMLPROD1 SET CDML_ACCEPTWEIGHT = :updated_wt, CDML_UPDATE = :user_op, CDML_UPDATEDATE = :dt WHERE COIL_NO = :main_no";
+        $stmt_upd_cdml_main = $conn->prepare($sql_upd_cdml_main);
+        $stmt_upd_cdml_main->execute([
+            ':updated_wt' => $updated_actual, // ค่าน้ำหนักแม่คงเหลือหลังหักลูกออก[cite: 1]
+            ':user_op'    => $current_user,
+            ':dt'         => $current_datetime,
+            ':main_no'    => $main_coil_no
+        ]);
     }
 
     // ==========================================
-    // 6. COPY/INSERT BTCHPROD1 (กรณี BATCHANNEALWEIGHT > 0)
+    // 6. COPY/INSERT & UPDATE BTCHPROD1 (กรณี BATCHANNEALWEIGHT > 0)[cite: 1, 5]
     // ==========================================
     if ($is_batchanneal_valid) {
         $sql_btch_src = "SELECT LINE_PROCESS, PRODUCT_ID, TEMPER, BTCH_TIME, BTCH_STARTDATE, BTCH_STARTTIME, BTCH_ENDDATE, BTCH_ENDTIME, BTCH_REJECTWEIGHT 
@@ -169,6 +191,7 @@ try {
         $stmt_btch_src->execute([':coil_no' => $main_coil_no]);
         $btchRows = $stmt_btch_src->fetchAll(PDO::FETCH_ASSOC);
 
+        // 6.1 INSERT สร้างเรคคอร์ดให้คอยล์ลูก[cite: 1, 5]
         $sql_ins_btch = "INSERT INTO BTCHPROD1 (PRODUCT_NO, LINE_PROCESS, PRODUCT_ID, TEMPER, BTCH_TIME, BTCH_STARTDATE, BTCH_STARTTIME, BTCH_ENDDATE, BTCH_ENDTIME, 
                                                 BTCH_ACCEPTWEIGHT, BTCH_REJECTWEIGHT, BTCH_OPERATOR1, BTCH_OPERATEDATE, BTCH_UPDATE, BTCH_UPDATEDATE) 
                          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
@@ -178,31 +201,27 @@ try {
             $stmt_ins_btch->execute([
                 $new_coil_no, $bRow['LINE_PROCESS'], $bRow['PRODUCT_ID'], $bRow['TEMPER'], $bRow['BTCH_TIME'],
                 $bRow['BTCH_STARTDATE'], $bRow['BTCH_STARTTIME'], $bRow['BTCH_ENDDATE'], $bRow['BTCH_ENDTIME'],
-                $split_weight,
+                $split_weight, // ค่าน้ำหนักคอยล์ลูก
                 $bRow['BTCH_REJECTWEIGHT'], $current_user, $current_datetime, 
-                $current_user, // BTCH_UPDATE = current user
+                $current_user,
                 $current_datetime
             ]);
         }
+
+        // 6.2 UPDATE อัปเดตค่าน้ำหนักคงเหลือกลับไปยังคอยล์แม่ (อ้างอิง Command10 ใน f6)[cite: 1]
+        $sql_upd_btch_main = "UPDATE BTCHPROD1 SET BTCH_ACCEPTWEIGHT = :updated_wt, BTCH_UPDATE = :user_op, BTCH_UPDATEDATE = :dt WHERE PRODUCT_NO = :main_no";
+        $stmt_upd_btch_main = $conn->prepare($sql_upd_btch_main);
+        $stmt_upd_btch_main->execute([
+            ':updated_wt' => $updated_actual, // ค่าน้ำหนักแม่คงเหลือหลังหักลูกออก[cite: 1]
+            ':user_op'    => $current_user,
+            ':dt'         => $current_datetime,
+            ':main_no'    => $main_coil_no
+        ]);
     }
 
     // ==========================================
-    // 7. คำนวณหักลบน้ำหนัก และ UPDATE กลับไปยัง Coil หลัก
+    // 7. UPDATE ค่าน้ำหนักคงเหลือกลับไปยัง Coil หลัก ใน COILPROD1[cite: 1, 5]
     // ==========================================
-    $main_act_wt = (float)($mainData['COIL_ACTUALWEIGHT'] ?? 0);
-    $main_fst_wt = (float)($mainData['COIL_FIRSTWEIGHT'] ?? 0);
-    $main_bal_wt = (float)($mainData['COIL_BALANCEWEIGHT'] ?? 0);
-
-    // คำนวณน้ำหนักคงเหลือ
-    $updated_actual     = max(0, $main_act_wt - $split_weight);
-    $updated_first      = max(0, $main_fst_wt - $split_weight);
-    $updated_coldmill   = max(0, $main_coldmill_wt - $split_weight);
-    $updated_batchanneal= max(0, $main_batchanneal_wt - $split_weight);
-
-    // ตรวจสอบ COIL_BALANCEWEIGHT: ถ้าเดิมเป็น 0 หรือ NULL ให้ใช้น้ำหนัก ACTUALWEIGHT เป็นฐานคำนวณแทน
-    $base_balance_wt    = ($main_bal_wt > 0) ? $main_bal_wt : $main_act_wt;
-    $updated_balance    = max(0, $base_balance_wt - $split_weight);
-
     if ($is_coldmill_valid || $is_batchanneal_valid) {
         $sql_upd_main = "UPDATE COILPROD1 SET 
                             COIL_NEXTPROCESS = ?, 
@@ -222,7 +241,7 @@ try {
             $updated_coldmill, 
             $updated_batchanneal, 
             $updated_balance,
-            $current_datetime, 
+            $current_user, 
             $current_datetime, 
             $main_coil_no
         ]);
@@ -245,16 +264,16 @@ try {
             $updated_coldmill, 
             $updated_batchanneal, 
             $updated_balance,
-            $current_datetime, 
+            $current_user, 
             $current_datetime, 
             $main_coil_no
         ]);
     }
 
     // ==========================================
-    // 8. COPY/INSERT COILINSP1, COILINSP3, COILINSP5
+    // 8. COPY/INSERT COILINSP1, COILINSP3, COILINSP5[cite: 1, 5]
     // ==========================================
-    // 8.1 COILINSP1
+    // 8.1 COILINSP1[cite: 1, 5]
     $sql_insp1_src = "SELECT INSPECTION_DATE, LINE_PROCESS, CHECK_AL, CHECK_FE, CHECK_SI, CHECK_CR, CHECK_CU, CHECK_MN, CHECK_MG, CHECK_ZN, CHECK_PB, CHECK_TI, GRAIN_SIZE, DELTA_TI, SCD_OS, SCD_DS, MDF_UPPER, MDF_LOWER, YIELD_STRENGTH, UTS, ELONGATION, EARING, PROFILE, ACTUAL_THICKNESS, MINIMUM_THICKNESS, MAXIMUM_THICKNESS, BEGIN_THICKNESS, END_THICKNESS, CS_YIELDSTRENGTH, CS_UTS, CS_ELONGATION, CS_EARING, CS_PROFILE, CS_ACTUALTHICKNESS, CS_MINIMUMTHICKNESS, CS_MAXIMUMTHICKNESS, CS_BEGINTHICKNESS, CS_ENDTHICKNESS, OIN1_REMARK, OIN1_OPERATOR, OIN1_OPERATEDATE, OIN1_STATUS, OIN1_APPEARANCE, OIN1_DIMENSION FROM COILINSP1 WHERE COIL_NO = :coil_no";
     $stmt_i1 = $conn->prepare($sql_insp1_src);
     $stmt_i1->execute([':coil_no' => $main_coil_no]);
@@ -267,12 +286,12 @@ try {
         $stmt_ins_i1->execute([
             $new_coil_no, 
             $row['INSPECTION_DATE'], 
-            'S', // LINE_PROCESS = 'S' สำหรับ COILINSP1
-            $row['CHECK_AL'], $row['CHECK_FE'], $row['CHECK_SI'], $row['CHECK_CR'], $row['CHECK_CU'], $row['CHECK_MN'], $row['CHECK_MG'], $row['CHECK_ZN'], $row['CHECK_PB'], $row['CHECK_TI'], $row['GRAIN_SIZE'], $row['DELTA_TI'], $row['SCD_OS'], $row['SCD_DS'], $row['MDF_UPPER'], $row['MDF_LOWER'], $row['YIELD_STRENGTH'], $row['UTS'], $row['ELONGATION'], $row['EARING'], $row['PROFILE'], $row['ACTUAL_THICKNESS'], $row['MINIMUM_THICKNESS'], $row['MAXIMUM_THICKNESS'], $row['BEGIN_THICKNESS'], $row['END_THICKNESS'], $row['CS_YIELDSTRENGTH'], $row['CS_UTS'], $row['CS_ELONGATION'], $row['CS_EARING'], $row['CS_PROFILE'], $row['CS_ACTUALTHICKNESS'], $row['CS_MINIMUMTHICKNESS'], $row['CS_MAXIMUMTHICKNESS'], $row['CS_BEGINTHICKNESS'], $row['CS_ENDTHICKNESS'], $row['OIN1_REMARK'], $row['OIN1_OPERATOR'], $row['OIN1_OPERATEDATE'], $current_datetime, $current_datetime, $row['OIN1_STATUS'], $row['OIN1_APPEARANCE'], $row['OIN1_DIMENSION']
+            'S',
+            $row['CHECK_AL'], $row['CHECK_FE'], $row['CHECK_SI'], $row['CHECK_CR'], $row['CHECK_CU'], $row['CHECK_MN'], $row['CHECK_MG'], $row['CHECK_ZN'], $row['CHECK_PB'], $row['CHECK_TI'], $row['GRAIN_SIZE'], $row['DELTA_TI'], $row['SCD_OS'], $row['SCD_DS'], $row['MDF_UPPER'], $row['MDF_LOWER'], $row['YIELD_STRENGTH'], $row['UTS'], $row['ELONGATION'], $row['EARING'], $row['PROFILE'], $row['ACTUAL_THICKNESS'], $row['MINIMUM_THICKNESS'], $row['MAXIMUM_THICKNESS'], $row['BEGIN_THICKNESS'], $row['END_THICKNESS'], $row['CS_YIELDSTRENGTH'], $row['CS_UTS'], $row['CS_ELONGATION'], $row['CS_EARING'], $row['CS_PROFILE'], $row['CS_ACTUALTHICKNESS'], $row['CS_MINIMUMTHICKNESS'], $row['CS_MAXIMUMTHICKNESS'], $row['CS_BEGINTHICKNESS'], $row['CS_ENDTHICKNESS'], $row['OIN1_REMARK'], $row['OIN1_OPERATOR'], $row['OIN1_OPERATEDATE'], $current_user, $current_datetime, $row['OIN1_STATUS'], $row['OIN1_APPEARANCE'], $row['OIN1_DIMENSION']
         ]);
     }
 
-    // 8.2 COILINSP3
+    // 8.2 COILINSP3[cite: 1, 5]
     $sql_insp3_src = "SELECT CS_STP_THICKNESS, CS_STP_WIDTH, CS_STP_SCD_DRS, CS_STP_SCD_OPS, CS_STP_TRL_DMT, CS_STP_BRL_DMT, CS_STP_TRL_SPD, CS_STP_BRL_SPD, CS_STP_TBR_SPD, CS_STP_BBR_SPD, CS_STP_TLM_DRS, CS_STP_TLM_OPS, CS_STP_CLR_SPD, CS_STP_MTL_LVL, CS_ACT_THICKNESS, CS_ACT_SCD_DRS, CS_ACT_SCD_OPS, CS_ACT_TRL_SPD, CS_ACT_BRL_SPD, CS_ACT_TRL_MTQ, CS_ACT_BRL_MTQ, CS_ACT_STP_SPD, CS_ACT_STP_TNS, CS_ACT_CLR_SPD, CS_ACT_TBR_SPD, CS_ACT_BBR_SPD, CS_ACT_TSP_PMF, CS_ACT_BSP_PMF, CS_ACT_TMT_TMP, CS_ACT_TTM_DS, CS_ACT_TTM_MDS, CS_ACT_TTM_OS, CS_ACT_TTS_PST, CS_ACT_TEV_PST, CS_ACT_MTL_LVL, CM_STP_WRL_RDN, CM_STP_BRL_RDN, CM_STP_RLL_FRC, CM_STP_PUP_FRC, CM_STP_RLL_GAP, CM_STP_RBD_PRS, CM_STP_BDR_PST, CM_STP_MLL_SPD, CM_STP_DLR_TNS, CM_STP_CLR_TNS, CM_STP_STR_PRS, CM_ACT_OPT_THK, CM_ACT_PUF_DRS, CM_ACT_PUF_OPS, CM_ACT_RLL_GAP, CM_ACT_RBD_PRS, CM_ACT_BDR_PST, CM_ACT_MLL_SPD, CM_ACT_DLR_MCR, CM_ACT_CLR_MC1, CM_ACT_CLR_MC2, CM_ACT_MNM_MC1, CM_ACT_MNM_MC2, CM_ACT_DLR_TNS, CM_ACT_CLR_TNS, CM_ACT_STR_PRS FROM COILINSP3 WHERE COIL_NO = :coil_no";
     $stmt_i3 = $conn->prepare($sql_insp3_src);
     $stmt_i3->execute([':coil_no' => $main_coil_no]);
@@ -286,7 +305,7 @@ try {
         $stmt_ins_i3->execute($params);
     }
 
-    // 8.3 COILINSP5
+    // 8.3 COILINSP5[cite: 1, 5]
     $sql_insp5_src = "SELECT PASS_NO, JOB_PROCESS, RECIPE_NO, RECIPE_ITEM, COOLANT_RECIPE, ALLOY, TEMPER, THICKNESS, WIDTH, COIL_WEIGHT, THICKNESS_ORIGINAL, THICKNESS_FINAL, THICKNESS_ENTRY, THICKNESS_EXIT, TOTAL_PASS, STP_WRL_RDN, STP_TWR_CMB, STP_BWR_CMB, STP_PUP_FRC, STP_RLL_GAP, STP_RBD_PRS, STP_MLL_SPD, STP_DLR_TNS, STP_CLR_TNS, STP_STR_PRS, STP_BDR_PST, ACT_OPT_THK, ACT_PUF_DRS, ACT_PUF_OPS, ACT_RLL_GAP, ACT_RBD_PRS, ACT_MLL_SPD, ACT_DLR_TNS, ACT_CLR_TNS, ACT_STR_PRS, ACT_DLR_MCR, ACT_CLR_MC1, ACT_CLR_MC2, ACT_MNM_MC1, ACT_MNM_MC2, ACT_BDR_PST, ACT_CSP_D15, ACT_CSP_D14, ACT_CSP_D13, ACT_CSP_D12, ACT_CSP_D11, ACT_CSP_D10, ACT_CSP_D09, ACT_CSP_D08, ACT_CSP_D07, ACT_CSP_D06, ACT_CSP_D05, ACT_CSP_D04, ACT_CSP_D03, ACT_CSP_D02, ACT_CSP_D01, ACT_CSP_W00, ACT_CSP_W01, ACT_CSP_W02, ACT_CSP_W03, ACT_CSP_W04, ACT_CSP_W05, ACT_CSP_W06, ACT_CSP_W07, ACT_CSP_W08, ACT_CSP_W09, ACT_CSP_W10, ACT_CSP_W11, ACT_CSP_W12, ACT_CSP_W13, ACT_CSP_W14, ACT_CSP_W15 FROM COILINSP5 WHERE COIL_NO = :coil_no";
     $stmt_i5 = $conn->prepare($sql_insp5_src);
     $stmt_i5->execute([':coil_no' => $main_coil_no]);
@@ -306,7 +325,7 @@ try {
     $conn->commit();
 
     echo "<script>
-            alert('Split coil data has been saved\\nCoil New: {$new_coil_no}');
+            alert('บันทึกข้อมูลการแบ่งคอยล์เรียบร้อยแล้ว\\nรหัสคอยล์ใหม่: {$new_coil_no}');
             window.location.href = '../split_coil_mats.php?func=" . urlencode($func) . "&COIL=" . urlencode($main_coil_no) . "';
           </script>";
     exit();

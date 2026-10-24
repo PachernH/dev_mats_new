@@ -18,7 +18,7 @@ if (empty($iduser_func)) {
 $allowed_lines_ctl = ['A', 'B'];
 if (!in_array(strtoupper($line_func), $allowed_lines_ctl)) {
     echo "<script>
-            alert('เตือน: Line การทำงานของคุณ (" . $line_func . ") ไม่ตรงกับกระบวนการ Cut to Length Process (Line A, B)');
+            alert('เตือน: Line การทำงานของคุณ ไม่ตรงกับกระบวนการ Cut to Length Process (Line A)');
             window.location.href = 'dashboard_mats.php';
           </script>";
     exit();
@@ -412,7 +412,7 @@ function format_dim($value) { return number_format((float)($value ?? 0), 3); }
                             📝 3. Selected Coil Information & Save Map
                         </h4>
                         <span style="font-weight:700; font-size:14px; color:#2563eb;">
-                            New Product No: <span id="lbl_product_no_disp" style="color:#d97706;"><?php echo $product_no; ?></span>
+                            New Product No: <span id="lbl_product_no_disp" style="color:#d97706;">AUTO GENERATE ON SAVE</span>
                         </span>
                     </div>
                     

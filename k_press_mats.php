@@ -3,11 +3,13 @@
 session_start();
 
 // ดึงค่า Session ต่างๆ
-$iduser_func  = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
-$folder_func  = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
-$line_func    = isset($_SESSION['LINE']) ? htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8') : 'K'; // Default Line K
-$group_func   = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
-$process_func = isset($_SESSION['PROCESS_GROUP']) ? htmlspecialchars($_SESSION['PROCESS_GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$iduser_func     = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
+$folder_func     = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
+$line_func       = isset($_SESSION['LINE']) ? strtoupper(htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8')) : 'K'; // Default Line K
+$group_func      = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$process_func    = isset($_SESSION['PROCESS_GROUP']) ? htmlspecialchars($_SESSION['PROCESS_GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$position_func   = isset($_SESSION['POSITION']) ? strtoupper(trim($_SESSION['POSITION'])) : '';
+$department_func = isset($_SESSION['DEPARTMENT']) ? strtoupper(trim($_SESSION['DEPARTMENT'])) : '';
 
 // ถ้าไม่มี Session ให้กลับไปหน้า index.php
 if (empty($iduser_func)) {
@@ -15,15 +17,26 @@ if (empty($iduser_func)) {
     exit();
 }
 
+// =========================================================================
+// สิทธิ์พิเศษ: ต้องเป็น CEO, MANAGER, SUPERVISOR และต้องอยู่แผนก PD, IT, TC, MG
+// =========================================================================
+$bypass_positions    = ['CEO', 'MANAGER', 'SUPERVISOR'];
+$allowed_departments = ['PD', 'IT', 'TC', 'MG'];
+
+$is_supervisor_up = in_array($position_func, $bypass_positions) && in_array($department_func, $allowed_departments);
+
 // ตรวจสอบ Line Process (Circle Press: Line K, L)
 $allowed_lines_kp = ['K', 'L'];
-if (!in_array(strtoupper($line_func), $allowed_lines_kp)) {
+if (!$is_supervisor_up && !in_array($line_func, $allowed_lines_kp)) {
     echo "<script>
-            alert('เตือน: Line การทำงานของคุณ (" . $line_func . ") ไม่ตรงกับกระบวนการ Circle Press Process (Line K, L)');
+            alert('เตือน: Line การทำงานของคุณ ไม่ตรงกับกระบวนการ Circle Press Process (Line K, L)');
             window.location.href = 'dashboard_mats.php';
           </script>";
     exit();
 }
+
+// เช็กว่า Line ที่ล็อกอินตรงกับสายการผลิตนี้หรือไม่ สำหรับคุมการกดปุ่ม Action
+$is_correct_line = in_array($line_func, $allowed_lines_kp);
 
 // ดึงค่าและตรวจสอบข้อมูลนำเข้า
 if(!isset($_GET['d'])){
@@ -132,17 +145,27 @@ $jno = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOT
         /* Action Buttons */
         .btn-action-map {
             background-color: #2563eb; color: #ffffff; font-weight: 600; font-size: 12.5px;
-            padding: 6px 14px; border-radius: 6px; border: none; min-width: 100px;
+            padding: 6px 14px; border-radius: 6px; border: none; min-width: 130px;
             box-shadow: 0 1px 2px rgba(37, 99, 235, 0.15); transition: all 0.2s;
         }
         .btn-action-map:hover { background-color: #1d4ed8; color: #ffffff; transform: translateY(-1px); }
 
         .btn-action-work {
             background-color: #059669; color: #ffffff; font-weight: 700; font-size: 12.5px;
-            padding: 6px 14px; border-radius: 6px; border: none; min-width: 100px;
+            padding: 6px 14px; border-radius: 6px; border: none; min-width: 130px;
             box-shadow: 0 1px 2px rgba(5, 150, 105, 0.2); transition: all 0.2s;
         }
         .btn-action-work:hover { background-color: #047857; color: #ffffff; transform: translateY(-1px); }
+
+        /* Lock / Busy Buttons Status Styles */
+        .btn-action-locked {
+            background-color: #d97706 !important; color: #ffffff !important; font-weight: 700; font-size: 12px;
+            padding: 6px 14px; border-radius: 6px; border: none; min-width: 130px; cursor: not-allowed; opacity: 0.85;
+        }
+        .btn-action-disabled {
+            background-color: #94a3b8 !important; color: #ffffff !important; font-weight: 600; font-size: 12px;
+            padding: 6px 14px; border-radius: 6px; border: none; min-width: 130px; cursor: not-allowed !important; opacity: 0.75;
+        }
     </style>
 </head>
 <body>
@@ -160,7 +183,14 @@ $jno = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOT
                         <span class="sr-only">Toggle navigation</span>
                         <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="k_press_mats.php?func=<?php echo $folder_func ?>">K Press Process (Line <?php echo $line_func; ?>)</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="k_press_mats.php?func=<?php echo $folder_func ?>">
+                        Circle Press Process (Line <?php echo $line_func; ?>)
+                        <?php if ($is_supervisor_up && !$is_correct_line): ?>
+                            <span class="badge" style="background-color:#64748b; font-size:11px; margin-left:8px;">VIEW ONLY (LINE <?php echo $line_func; ?>)</span>
+                        <?php elseif ($is_supervisor_up): ?>
+                            <span class="badge" style="background-color:#d97706; font-size:11px; margin-left:8px;">AUTHORIZED ACCESS</span>
+                        <?php endif; ?>
+                    </a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -206,7 +236,7 @@ $jno = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOT
                                         <th style="text-align: right;">Width / Diam.</th>
                                         <th style="text-align: center;">Workprocess</th>
                                         <th style="text-align: center;">Release Wt / Pcs</th>
-                                        <th style="text-align: center; width: 120px;">Action</th>
+                                        <th style="text-align: center; width: 160px;">Action</th>
                                     </tr>
                                 </thead>
                                 
@@ -215,13 +245,24 @@ $jno = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOT
                                     include 'function_mats.php';
                                     include("dbcon_mats-new.php");
 
+                                    // ตรวจสอบว่า Line ปัจจุบัน ($line_func) กำลังเปิดใช้งาน Coil อยู่หรือไม่
+                                    $active_job_in_current_line = '';
+                                    $sql_chk_line = "SELECT TOP 1 JOB_ORDER FROM COILWORK1 WHERE LINE_PROCESS = :line_process ORDER BY WORK_OPERATEDATE DESC";
+                                    $stmt_chk_line = $conn->prepare($sql_chk_line);
+                                    $stmt_chk_line->bindParam(':line_process', $line_func, PDO::PARAM_STR);
+                                    $stmt_chk_line->execute();
+                                    $row_chk_line = $stmt_chk_line->fetch(PDO::FETCH_ASSOC);
+                                    if ($row_chk_line) {
+                                        $active_job_in_current_line = trim($row_chk_line['JOB_ORDER'] ?? '');
+                                    }
+
                                     $y = date('Y');
                                     $date_st = $y.'-01-01 00:00:00';
                                     $date_end = $y.'-12-31 23:59:59';
 
                                     $params = [];
                                     
-                                    // เงื่อนไขสอดคล้องตาม f4 (Line K, L)
+                                    // เงื่อนไขสอดคล้องตาม Line K, L
                                     $where_base = "(j.PRODUCT_ID = 'CC' OR j.PRODUCT_ID = 'SH' OR j.PRODUCT_ID = 'NC') 
                                                    AND j.JOB_STATUS = 'OP' 
                                                    AND j.JOB_WORKPROCESS LIKE 'KP>%'";
@@ -229,17 +270,17 @@ $jno = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOT
                                     $select_fields = "SELECT j.JOB_ORDER, j.JOBORDER_DATE, j.SALEORDER_NO, j.SALEORDER_ITEM, j.PRODUCT_ID,
                                                              j.ALLOY, j.TEMPER, j.THICKNESS, j.WIDTH, j.JOB_WORKPROCESS, 
                                                              j.JOB_RELEASEWEIGHT, j.JOB_RELEASEPIECE, j.JOB_PRODUCEWEIGHT,
-                                                             cw.COIL_NO AS WORK_COIL_NO ";
+                                                             cw.COIL_NO AS WORK_COIL_NO,
+                                                             cw.LINE_PROCESS AS WORK_LINE_PROCESS ";
                                     
+                                    // JOIN เช็กสถานะการใช้งาน Coil ทั้งใน Line ปัจจุบัน และ Line อื่นๆ
                                     $from_sql = " FROM JOBORDER1 j 
                                                   OUTER APPLY (
-                                                      SELECT TOP 1 COIL_NO 
+                                                      SELECT TOP 1 COIL_NO, LINE_PROCESS 
                                                       FROM COILWORK1 
-                                                      WHERE JOB_ORDER = j.JOB_ORDER AND LINE_PROCESS = :line_process
+                                                      WHERE JOB_ORDER = j.JOB_ORDER 
                                                       ORDER BY WORK_OPERATEDATE DESC
                                                   ) cw ";
-                                    
-                                    $params[':line_process'] = $line_func;
 
                                     if($d == date('Y-m-d')){
                                         if($jno != ''){
@@ -265,18 +306,16 @@ $jno = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOT
                                     $stmt->execute($params);
 
                                     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                        $safe_job_no  = htmlspecialchars($row['JOB_ORDER'] ?? '', ENT_QUOTES, 'UTF-8');
-                                        $safe_so_no   = htmlspecialchars($row['SALEORDER_NO'] ?? '', ENT_QUOTES, 'UTF-8');
-                                        $safe_so_item = htmlspecialchars($row['SALEORDER_ITEM'] ?? '', ENT_QUOTES, 'UTF-8');
-                                        $product_id   = strtoupper(trim($row['PRODUCT_ID'] ?? 'SH'));
-                                        $work_coil_no = $row['WORK_COIL_NO'] ?? '';
+                                        $safe_job_no    = htmlspecialchars($row['JOB_ORDER'] ?? '', ENT_QUOTES, 'UTF-8');
+                                        $safe_so_no     = htmlspecialchars($row['SALEORDER_NO'] ?? '', ENT_QUOTES, 'UTF-8');
+                                        $safe_so_item   = htmlspecialchars($row['SALEORDER_ITEM'] ?? '', ENT_QUOTES, 'UTF-8');
+                                        $product_id     = strtoupper(trim($row['PRODUCT_ID'] ?? 'SH'));
+                                        $work_coil_no   = $row['WORK_COIL_NO'] ?? '';
+                                        $work_line_proc = strtoupper(trim($row['WORK_LINE_PROCESS'] ?? ''));
                                         
-                                        // ฟอร์แมตวันที่ให้กระชับ YYYY-MM-DD
                                         $job_date_fmt = !empty($row['JOBORDER_DATE']) ? date('Y-m-d', strtotime($row['JOBORDER_DATE'])) : '-';
+                                        $so_display   = $safe_so_no . ($safe_so_item !== '' ? '/' . $safe_so_item : '');
 
-                                        $so_display = $safe_so_no . ($safe_so_item !== '' ? '/' . $safe_so_item : '');
-
-                                        // Badge สไตล์ Product ID
                                         $prod_class = 'badge-prod-sh';
                                         if ($product_id === 'CC') $prod_class = 'badge-prod-cc';
                                         if ($product_id === 'NC') $prod_class = 'badge-prod-nc';
@@ -325,20 +364,43 @@ $jno = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOT
                                         // 10. Release Wt / Pcs
                                         echo "<td align='center' style='font-weight:600; color:#0f172a;'>".number_format((float)($row['JOB_RELEASEWEIGHT'] ?? 0), 0)." / ".number_format((float)($row['JOB_RELEASEPIECE'] ?? 0), 0)."</td>";
                                         
-                                        // 11. Action
-                                        if (!empty($work_coil_no)) {
-                                            echo "<td align='center'>
-                                                    <button type='button' class='btn-action-work' onclick=\"go_to_work(event, '" . addslashes($row['JOB_ORDER']) . "', '" . addslashes($work_coil_no) . "')\">
-                                                        ⚙️ WORK
-                                                    </button>
-                                                  </td>";
-                                        } else {
-                                            echo "<td align='center'>
-                                                    <button type='button' class='btn-action-map' onclick=\"map_coil_no(event, '" . addslashes($row['JOB_ORDER']) . "')\">
-                                                        🔗 MAP COIL
-                                                    </button>
-                                                  </td>";
+                                        // =========================================================================
+                                        // 11. Action: ล็อกปุ่มหาก Line ที่ล็อกอินไม่ตรงกับ Line K, L
+                                        // =========================================================================
+                                        echo "<td align='center'>";
+
+                                        // เงื่อนไขล็อก: ถ้า Line ปัจจุบันไม่ใช่ Line K หรือ L จะไม่สามารถกดแก้ไขหรือสร้างงานได้
+                                        if (!$is_correct_line) {
+                                            echo "<button type='button' class='btn-action-disabled' disabled title='Line ที่ล็อกอิน (" . $line_func . ") ไม่ตรงกับสายการผลิตนี้ ไม่สามารถแก้ไขข้อมูลได้'>
+                                                    🔒 LOCKED (LINE {$line_func})
+                                                  </button>";
                                         }
+                                        // กรณีที่ 1: กำลังถูกเปิดผลิตอยู่ที่ Line อื่น
+                                        else if (!empty($work_coil_no) && $work_line_proc !== $line_func) {
+                                            echo "<button type='button' class='btn-action-locked' disabled title='Job นี้กำลังผลิตค้างอยู่ที่ Line {$work_line_proc}'>
+                                                    🔒 IN USE (LINE {$work_line_proc})
+                                                  </button>";
+                                        } 
+                                        // กรณีที่ 2: Map ตรงกับ Line ปัจจุบัน
+                                        else if (!empty($work_coil_no) && $work_line_proc === $line_func) {
+                                            echo "<button type='button' class='btn-action-work' onclick=\"go_to_work(event, '" . addslashes($row['JOB_ORDER']) . "', '" . addslashes($work_coil_no) . "')\">
+                                                    ⚙️ WORK
+                                                  </button>";
+                                        } 
+                                        // กรณีที่ 3: Line ปัจจุบันมี Job อื่นค้างอยู่
+                                        else if (!empty($active_job_in_current_line) && $active_job_in_current_line !== $row['JOB_ORDER']) {
+                                            echo "<button type='button' class='btn-action-disabled' disabled title='Line {$line_func} กำลังใช้งาน Job {$active_job_in_current_line} อยู่ ต้อง Keep/Close Coil เดิมก่อน'>
+                                                    🔒 BUSY (LINE {$line_func})
+                                                  </button>";
+                                        } 
+                                        // กรณีที่ 4: Line ว่าง พร้อมสำหรับการ Map Coil ใหม่
+                                        else {
+                                            echo "<button type='button' class='btn-action-map' onclick=\"map_coil_no(event, '" . addslashes($row['JOB_ORDER']) . "')\">
+                                                    🔗 MAP COIL
+                                                  </button>";
+                                        }
+
+                                        echo "</td>";
 
                                         echo "</tr>";                                                         
                                     }
@@ -378,7 +440,7 @@ function search_batch_no(){
     var data_fun = document.getElementById("func").value;
     var data_cno = document.getElementById("job_no").value; 
     window.location.assign('k_press_mats.php?func='+encodeURIComponent(data_fun)+'&jno='+encodeURIComponent(data_cno)); 
-}    
+}   
 
 function show_job_detail_kp(e, do_no) {
     if (e && e.stopPropagation) e.stopPropagation();
@@ -401,7 +463,7 @@ function map_coil_no(e, do_no){
 function go_to_work(e, do_no, cno){
     if (e && e.stopPropagation) e.stopPropagation();
     var data_fun = document.getElementById("func").value;
-    window.location.assign('k_press_entry_mats.php?func='+encodeURIComponent(data_fun)+'&jno='+encodeURIComponent(do_no)+'&cno='+encodeURIComponent(cno));         
+    window.location.assign('k_press_entry_mats.php?func='+encodeURIComponent(data_fun)+'&jno='+encodeURIComponent(do_no)+'&cno='+encodeURIComponent(cno));        
 }
 </script>
 </html>

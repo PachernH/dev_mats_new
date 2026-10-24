@@ -34,6 +34,7 @@ $coil_no        = isset($_POST['coil_no']) ? trim($_POST['coil_no']) : '';
 $produce_piece  = isset($_POST['produce_piece']) ? (float)$_POST['produce_piece'] : 0;
 $produce_weight = isset($_POST['produce_weight']) ? (float)$_POST['produce_weight'] : 0;
 $pallet_weight  = isset($_POST['pallet_weight']) ? (float)$_POST['pallet_weight'] : 0;
+$skeleton_scrap_weight = isset($_POST['skeleton_scrap_weight']) ? (float)$_POST['skeleton_scrap_weight'] : 0;
 $start_datetime = isset($_POST['start_datetime']) ? $_POST['start_datetime'] : '';
 $end_datetime   = isset($_POST['end_datetime']) ? $_POST['end_datetime'] : '';
 
@@ -47,7 +48,7 @@ if (empty($job_order) || empty($coil_no) || $produce_piece <= 0) {
 // เพิ่ม: ตรวจสอบวันเวลาจบ ต้องไม่น้อยกว่าวันเวลาเริ่ม
 // -----------------------------------------------------------------
 if (!empty($start_datetime) && !empty($end_datetime)) {
-    if (strtotime($end_datetime) < strtotime($start_datetime)) {
+    if (strtotime($end_datetime) <= strtotime($start_datetime)) {
         ob_clean();
         echo json_encode(['status' => 'error', 'message' => 'วัน/เวลา สิ้นสุดการผลิต ต้องไม่อยู่ก่อนวัน/เวลา เริ่มต้น']);
         exit();
@@ -161,7 +162,7 @@ try {
     $location_id     = $coil['LOCATION_ID'] ?? 'NONE';
 
     // คำนวณน้ำหนักคงเหลือใหม่หลังตัด[cite: 1]
-    $new_balance_wt = $curr_balance_wt - $produce_weight;
+    $new_balance_wt = $curr_balance_wt - ($produce_weight+$skeleton_scrap_weight);
 
     // 4. บันทึกข้อมูล Pallet ผลผลิตลง CRSHPROD1 ครบทุกฟิลด์ตามโครงสร้าง f4[cite: 1]
     $sql_crsh = "INSERT INTO CRSHPROD1 (
@@ -260,6 +261,41 @@ try {
         $stmt_ctm->execute();
     }
 
+    // บันทึกเศษโครงปั๊ม (Skeleton Scrap) ลงใน SCRPPROD1 หากมีน้ำหนัก
+    if ($skeleton_scrap_weight > 0) {
+        $scrp_sk_prefix = "S" . date('ymd') . "-" . strtoupper($line_func) . "-";
+        $sql_sk_run = "SELECT COUNT(*) as run_cnt FROM SCRPPROD1 WHERE PRODUCT_NO LIKE :prefix";
+        $stmt_sk_run = $conn->prepare($sql_sk_run);
+        $search_sk_prefix = $scrp_sk_prefix . "%";
+        $stmt_sk_run->bindParam(':prefix', $search_sk_prefix, PDO::PARAM_STR);
+        $stmt_sk_run->execute();
+        $row_sk_run = $stmt_sk_run->fetch(PDO::FETCH_ASSOC);
+        $next_sk_no = ((int)($row_sk_run['run_cnt'] ?? 0)) + 1;
+        $scrap_sk_no = $scrp_sk_prefix . sprintf("%02d", $next_sk_no);
+
+        $sql_scrp_sk = "INSERT INTO SCRPPROD1 (
+                            PRODUCT_NO, SCRP_DATE, COIL_NO, MATERIAL_IN, LINE_PROCESS, PROCESS, SCRP_FROM,
+                            LOCATION_ID, ALLOY, SCRP_WIDTH, SCRP_WEIGHT, SCRP_REMARK, SCRP_LABEL, SCRP_OPERATOR,
+                            SCRP_OPERATEDATE, SCRP_STATUS
+                        ) VALUES (
+                            :product_no, :scrp_date, :coil_no, :material_in, :line_process, 'BK01', 'SK',
+                            :location_id, :alloy, 0, :scrp_weight, 'SKELETON SCRAP FROM PRESS', 0, :operator,
+                            :operatedate, 'OP'
+                        )";
+        $stmt_scrp_sk = $conn->prepare($sql_scrp_sk);
+        $stmt_scrp_sk->bindParam(':product_no', $scrap_sk_no, PDO::PARAM_STR);
+        $stmt_scrp_sk->bindParam(':scrp_date', $end_date);
+        $stmt_scrp_sk->bindParam(':coil_no', $coil_no);
+        $stmt_scrp_sk->bindParam(':material_in', $material_in);
+        $stmt_scrp_sk->bindParam(':line_process', $line_func);
+        $stmt_scrp_sk->bindParam(':location_id', $location_id);
+        $stmt_scrp_sk->bindParam(':alloy', $alloy);
+        $stmt_scrp_sk->bindParam(':scrp_weight', $skeleton_scrap_weight);
+        $stmt_scrp_sk->bindParam(':operator', $iduser_func);
+        $stmt_scrp_sk->bindParam(':operatedate', $now_time);
+        $stmt_scrp_sk->execute();
+    }
+
     // 7. ตรวจสอบเงื่อนไข AUTO CLOSE COIL & AUTO SCRAP[cite: 1]
     $is_auto_closed = false;
     if ($new_balance_wt < $wt_per_piece || $new_balance_wt < 50) {
@@ -328,10 +364,12 @@ try {
         // กรณีตัดแล้วม้วนยังเหลือมากกว่า 50 kg. อัปเดต Balance ตามปกติ[cite: 1]
         $sql_coil_up = "UPDATE COILPROD1 SET 
                             COIL_PRODUCEWEIGHT = ISNULL(COIL_PRODUCEWEIGHT, 0) + :produce_weight,
+                            COIL_SCRAPWEIGHT   = ISNULL(COIL_SCRAPWEIGHT, 0) + :sk_scrap_weight,
                             COIL_BALANCEWEIGHT = :new_balance
-                         WHERE COIL_NO = :coil_no";
+                        WHERE COIL_NO = :coil_no";
         $stmt_coil_up = $conn->prepare($sql_coil_up);
         $stmt_coil_up->bindParam(':produce_weight', $produce_weight);
+        $stmt_coil_up->bindParam(':sk_scrap_weight', $skeleton_scrap_weight);
         $stmt_coil_up->bindParam(':new_balance', $new_balance_wt);
         $stmt_coil_up->bindParam(':coil_no', $coil_no);
         $stmt_coil_up->execute();

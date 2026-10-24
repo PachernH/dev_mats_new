@@ -3,11 +3,13 @@
 session_start();
 
 // ดึงค่า Session ต่างๆ
-$iduser_func  = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
-$folder_func  = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
-$line_func    = isset($_SESSION['LINE']) ? htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8') : 'K'; // Default Line K
-$group_func   = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
-$process_func = isset($_SESSION['PROCESS_GROUP']) ? htmlspecialchars($_SESSION['PROCESS_GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$iduser_func     = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
+$folder_func     = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
+$line_func       = isset($_SESSION['LINE']) ? strtoupper(htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8')) : 'T'; // Default Line T
+$group_func      = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$process_func    = isset($_SESSION['PROCESS_GROUP']) ? htmlspecialchars($_SESSION['PROCESS_GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$position_func   = isset($_SESSION['POSITION']) ? strtoupper(trim($_SESSION['POSITION'])) : '';
+$department_func = isset($_SESSION['DEPARTMENT']) ? strtoupper(trim($_SESSION['DEPARTMENT'])) : '';
 
 // ถ้าไม่มี Session ให้กลับไปหน้า index.php
 if (empty($iduser_func)) {
@@ -15,15 +17,26 @@ if (empty($iduser_func)) {
     exit();
 }
 
+// =========================================================================
+// สิทธิ์พิเศษ: ต้องเป็น CEO, MANAGER, SUPERVISOR และต้องอยู่แผนก PD, IT, TC, MG
+// =========================================================================
+$bypass_positions    = ['CEO', 'MANAGER', 'SUPERVISOR'];
+$allowed_departments = ['PD', 'IT', 'TC', 'MG'];
+
+$is_supervisor_up = in_array($position_func, $bypass_positions) && in_array($department_func, $allowed_departments);
+
 // ตรวจสอบ Line Process (Swiss Slitter Process: Line T เท่านั้น)
-$allowed_lines_kp = ['T'];
-if (!in_array(strtoupper($line_func), $allowed_lines_kp)) {
+$allowed_lines_ss = ['T'];
+if (!$is_supervisor_up && !in_array($line_func, $allowed_lines_ss)) {
     echo "<script>
-            alert('เตือน: Line การทำงานของคุณ (" . $line_func . ") ไม่ตรงกับกระบวนการ Swiss Slitter Process (Line T)');
+            alert('เตือน: Line การทำงานของคุณ ไม่ตรงกับกระบวนการ Swiss Slitter Process (Line T)');
             window.location.href = 'dashboard_mats.php';
           </script>";
     exit();
 }
+
+// เช็กว่า Line ที่ล็อกอินตรงกับสายการผลิตนี้หรือไม่ สำหรับคุมการกดปุ่ม Action
+$is_correct_line = in_array($line_func, $allowed_lines_ss);
 
 // ดึงค่าและตรวจสอบข้อมูลนำเข้าเพื่อความปลอดภัย (Sanitize Input)
 if(!isset($_GET['d'])){
@@ -38,7 +51,7 @@ $cno = !isset($_GET['cno']) ? '' : htmlspecialchars(trim($_GET['cno']), ENT_QUOT
 <!doctype html>
 <html lang="en">
 <head>
-    <title>Meyer Aluminium Thailand Co.,LTD.</title>
+    <title>Meyer Aluminium Thailand Co.,LTD. - Swiss Slitter Process (Line <?php echo $line_func; ?>)</title>
     <?php include 'include/header.php';?>
     
     <link href="assets-graph/styles.css" rel="stylesheet" />
@@ -209,14 +222,14 @@ $cno = !isset($_GET['cno']) ? '' : htmlspecialchars(trim($_GET['cno']), ENT_QUOT
             color: #ffffff !important;
             border: none;
             border-radius: 6px;
-            padding: 6px 12px;
+            padding: 6px 14px;
             font-weight: 700;
-            font-size: 13px;
+            font-size: 12px;
             cursor: not-allowed !important;
-            opacity: 0.65;
+            opacity: 0.75;
             display: inline-block;
             text-decoration: none !important;
-            pointer-events: none;
+            min-width: 140px;
         }
 
         .btn-slitter-enabled {
@@ -224,13 +237,14 @@ $cno = !isset($_GET['cno']) ? '' : htmlspecialchars(trim($_GET['cno']), ENT_QUOT
             color: #ffffff !important;
             border: none;
             border-radius: 6px;
-            padding: 6px 12px;
+            padding: 6px 14px;
             font-weight: 700;
             font-size: 13px;
             transition: all 0.2s;
             cursor: pointer;
             display: inline-block;
             text-decoration: none !important;
+            min-width: 140px;
         }
         .btn-slitter-enabled:hover {
             background-color: #059669 !important;
@@ -249,7 +263,14 @@ $cno = !isset($_GET['cno']) ? '' : htmlspecialchars(trim($_GET['cno']), ENT_QUOT
         <nav class="navbar navbar-default navbar-fixed">
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="swiss_slitter_process_mats.php?func=<?php echo $folder_func ?>">Swiss Slitter Process</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="swiss_slitter_process_mats.php?func=<?php echo $folder_func ?>">
+                        Swiss Slitter Process (Line <?php echo $line_func; ?>)
+                        <?php if ($is_supervisor_up && !$is_correct_line): ?>
+                            <span class="badge" style="background-color:#64748b; font-size:11px; margin-left:8px;">VIEW ONLY (LINE <?php echo $line_func; ?>)</span>
+                        <?php elseif ($is_supervisor_up): ?>
+                            <span class="badge" style="background-color:#d97706; font-size:11px; margin-left:8px;">AUTHORIZED ACCESS</span>
+                        <?php endif; ?>
+                    </a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -268,7 +289,7 @@ $cno = !isset($_GET['cno']) ? '' : htmlspecialchars(trim($_GET['cno']), ENT_QUOT
                 </div>
                 <div class="filter-item">
                     <button class="btn btn-search" id="btn_search_coil" onclick="search_batch_no()">
-                        SEARCH
+                        🔍 SEARCH
                     </button>
                 </div>
             </div>
@@ -277,7 +298,7 @@ $cno = !isset($_GET['cno']) ? '' : htmlspecialchars(trim($_GET['cno']), ENT_QUOT
                 <div class="col-md-12">
                     <div class="dashboard-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Swiss Slitter Master Coils</h4>
+                            <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Swiss Slitter Master Coils (Line <?php echo $line_func; ?>)</h4>
                         </div>
                         
                         <div class="table-responsive table-full-width">
@@ -296,7 +317,7 @@ $cno = !isset($_GET['cno']) ? '' : htmlspecialchars(trim($_GET['cno']), ENT_QUOT
                                         <th>Balance Weight</th>
                                         <th>Next Process</th>
                                         <th>Status</th>
-                                        <th style="text-align: center;">Action</th>
+                                        <th style="text-align: center; width: 160px;">Action</th>
                                     </tr>
                                 </thead>
                                 
@@ -314,7 +335,7 @@ $cno = !isset($_GET['cno']) ? '' : htmlspecialchars(trim($_GET['cno']), ENT_QUOT
                                         $extra_where .= " AND COIL_NO = :cno AND COIL_STATUS IN ('AC', 'SS')";
                                         $params[':cno'] = $cno;
                                     } else {
-                                        // โหลดหน้าปกติ: ดึงคอยล์หลักตามเงื่อนไข F5 (COIL_NEXTPROCESS = 'SS' AND COIL_STATUS = 'AC')
+                                        // โหลดหน้าปกติ: ดึงคอยล์หลักตามเงื่อนไข (COIL_NEXTPROCESS = 'SS' AND COIL_STATUS = 'AC')
                                         $extra_where .= " AND COIL_NEXTPROCESS = 'SS' AND COIL_STATUS = 'AC'";
                                         
                                         if ($d != date('Y-m-d')) {
@@ -341,15 +362,24 @@ $cno = !isset($_GET['cno']) ? '' : htmlspecialchars(trim($_GET['cno']), ENT_QUOT
                                     $safe_coil = htmlspecialchars($coil['COIL_NO'] ?? '-', ENT_QUOTES, 'UTF-8');
                                     $status    = trim($coil['COIL_STATUS'] ?? '');
 
-                                    // ปุ่ม Slitter Coil: เปิดให้กดได้เฉพาะคอยล์สถานะ AC
-                                    if ($status === 'AC') {
+                                    // =========================================================================
+                                    // ควบคุมปุ่ม Action: ต้องเป็น Line T และม้วนมีสถานะ AC จึงจะกดตัดแบ่งม้วนได้
+                                    // =========================================================================
+                                    if (!$is_correct_line) {
+                                        $btn_class    = 'btn-slitter-disabled';
+                                        $btn_disabled = 'disabled="disabled"';
+                                        $btn_onclick  = '';
+                                        $btn_text     = '🔒 LOCKED (LINE ' . $line_func . ')';
+                                    } elseif ($status === 'AC') {
                                         $btn_class    = 'btn-slitter-enabled';
                                         $btn_disabled = '';
                                         $btn_onclick  = "onclick=\"show_slitter_coil('".addslashes($coil['COIL_NO'])."')\"";
+                                        $btn_text     = '✂️ SLITTER COIL';
                                     } else {
                                         $btn_class    = 'btn-slitter-disabled';
                                         $btn_disabled = 'disabled="disabled"';
                                         $btn_onclick  = '';
+                                        $btn_text     = '🔒 BUSY / NOT AC';
                                     }
                                 ?>
                                     <tr>
@@ -372,7 +402,7 @@ $cno = !isset($_GET['cno']) ? '' : htmlspecialchars(trim($_GET['cno']), ENT_QUOT
                                         
                                         <td align="center">
                                             <button type="button" class="<?php echo $btn_class; ?>" <?php echo $btn_disabled; ?> <?php echo $btn_onclick; ?>>
-                                                SLITTER COIL
+                                                <?php echo $btn_text; ?>
                                             </button>
                                         </td>
                                     </tr>
@@ -409,11 +439,11 @@ $("#user_table").DataTable({
     buttons: []
 });
 
-function search_batch_no(){   
+function search_batch_no(){    
     var data_fun = document.getElementById("func").value;
     var data_cno = document.getElementById("coil_no_input").value; 
     window.location.assign('swiss_slitter_process_mats.php?func='+encodeURIComponent(data_fun)+'&cno='+encodeURIComponent(data_cno)); 
-}    
+}   
 
 function show_swiss_detail(coil_no) {
     var data_fun = document.getElementById("func").value;

@@ -57,11 +57,11 @@ function formatLineProcess($rawProcess) {
     // กรณีข้อมูลใน DB เก็บเป็นหมายเลข Line ตรงๆ (เช่น "1", "2", "5", "A", "F", "K", "M", "T") 
     // สามารถ Map ตามโครงสร้าง Line ของหน้า Index ได้ดังนี้:
     $singleLineMapping = [
-        '1' => 'Blanking,Caster,Stretch,Packing (1)', // หรือ Caster (1) ขึ้นอยู่กับบริบท สามารถปรับแต่งเพิ่มได้
-        '2' => 'Blanking,Caster,Annealing,Stretch (2)',
-        '3' => 'Blanking,Annealing,Batch (3)',
-        '4' => 'Blanking,Batch (4)',
-        '5' => 'Blanking,XY Circle Shear (5)', // หรือ XY Circle Shear (5)
+        '1' => 'Blanking(1),Caster,Stretch,Packing (1)', // หรือ Caster (1) ขึ้นอยู่กับบริบท สามารถปรับแต่งเพิ่มได้
+        '2' => 'Blanking(2),Caster,Annealing,Stretch (2)',
+        '3' => 'Blanking(3),Annealing,Batch (3)',
+        '4' => 'Blanking(4),Batch (4)',
+        '5' => 'Blanking(5),XY Circle Shear (5)', // หรือ XY Circle Shear (5)
         'F' => 'A Press (F)',
         'G' => 'A Press (G)',
         'K' => 'K Press (K)',
@@ -211,24 +211,29 @@ function formatLineProcess($rawProcess) {
             line-height: 1.6;
             color: #334155;
         }
-        /* Style สำหรับแถวที่สามารถคลิกได้ (Clickable Row) */
-        #user_table tbody tr {
-            cursor: pointer;
-            transition: background-color 0.15s ease;
-        }
         #user_table tbody tr:hover td {
-            background-color: #e0f2fe !important;
+            background-color: #f8fafc !important;
         }
 
-        .badge-coil {
+        /* ปุ่ม Coil No */
+        .btn-badge-coil {
             display: inline-block;
-            padding: 6px 12px;
+            padding: 6px 14px;
             font-size: 14px;
             font-weight: 700;
-            border-radius: 12px;
+            border-radius: 8px;
             background-color: #eff6ff;
             color: #1d4ed8;
             border: 1px solid #bfdbfe;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        .btn-badge-coil:hover {
+            background-color: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
         }
 
         /* Modal Vertical Layout Style */
@@ -375,7 +380,7 @@ function formatLineProcess($rawProcess) {
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="#">Coil Production Working</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="coil_working_mats.php?func=<?php echo $folder_func ?>">Coil Production Working</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -461,9 +466,12 @@ function formatLineProcess($rawProcess) {
                                         // แปลงรูปแบบ LINE_PROCESS ให้แสดงผลเป็น Process (Line)
                                         $formatted_line_process = formatLineProcess($row['LINE_PROCESS']);
 
-                                        // <tr> รองรับการคลิกแถวด้วย data-coil attribute
-                                        echo "<tr class='clickable-row' data-coil='".$safe_coil_no."'>";
-                                        echo "<td style='text-align:center;'><span class='badge-coil'>".$safe_coil_no."</span></td>";
+                                        echo "<tr>";
+                                        echo "<td style='text-align:center;'>
+                                                <button type='button' class='btn-badge-coil' onclick=\"show_detail_coil('".$safe_coil_no."')\">
+                                                    ".$safe_coil_no."
+                                                </button>
+                                              </td>";
                                         echo "<td style='font-weight:600; color:#1e293b; font-size:15px;'>".htmlspecialchars($row['JOB_ORDER'], ENT_QUOTES, 'UTF-8')."</td>";
                                         echo "<td style='color:#64748b; font-size:14px;'>".htmlspecialchars($row['SALEORDER_NO'], ENT_QUOTES, 'UTF-8')."</td>";
                                         echo "<td style='color:#64748b; font-size:14px;'>".htmlspecialchars($row['SALEORDER_ITEM'], ENT_QUOTES, 'UTF-8')."</td>";
@@ -504,14 +512,6 @@ $(document).ready(function() {
         pageLength: 20,
         order: [[7, 'desc']], // เรียงตาม WORK_OPERATEDATE
         buttons: []
-    });
-
-    // Event Listener สำหรับการคลิกบรรทัด (Row Click)
-    $('#user_table tbody').on('click', 'tr.clickable-row', function () {
-        var coilNo = $(this).attr('data-coil');
-        if (coilNo) {
-            show_detail_coil(coilNo);
-        }
     });
 });
 

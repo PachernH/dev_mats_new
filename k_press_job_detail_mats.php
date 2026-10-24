@@ -253,7 +253,7 @@ function format_dim($value) {
 
 <div class="wrapper">
 
-<?php $menu = 'HI';?>
+<?php $menu = 'A4';?>
 
     <?php 
     if (!empty($folder_func) && !empty($group_func)) {

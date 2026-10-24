@@ -23,7 +23,7 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
 $allowed_lines_ctl = ['M'];
 if (!in_array(strtoupper($line_func), $allowed_lines_ctl)) {
     echo "<script>
-            alert('เตือน: Line การทำงานของคุณ (" . $line_func . ") ไม่ตรงกับกระบวนการ Cold Mill System (Line M)');
+            alert('เตือน: Line การทำงานของคุณ ไม่ตรงกับกระบวนการ Cold Mill System (Line M)');
             window.location.href = 'dashboard_mats.php';
           </script>";
 }

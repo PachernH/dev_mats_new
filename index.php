@@ -70,11 +70,24 @@
                 </video>
                 </div>
 
-                <div class="col-md-4" style="padding-right: 7%; padding-top: 12%;">
-                <br><br><br><br>
+                <div class="col-md-4" style="padding-right: 7%; padding-top: 10%;">
                 <img src="assets/img/logo-login-mats.png" style="width: 30%; height: 30%;">
                 <p>&nbsp;</p>
                 <p class="description text-center"><img src="assets/img/mobile.jpg" style="width: 5%; height: 10%">&nbsp;&nbsp;Enter username and password</p>
+                    
+                    <!-- ส่วนแสดงผลข้อความแจ้งเตือน Error -->
+                    <?php if (isset($_GET['error'])): ?>
+                        <?php if ($_GET['error'] === 'dept_access_denied'): ?>
+                            <div class="alert alert-danger" style="font-weight: 600; font-size: 13.5px; border-radius: 8px; margin-bottom: 16px; padding: 10px;">
+                                ⚠️ แผนกของคุณไม่มีสิทธิ์เข้าใช้งานระบบ Production (PD) (อนุญาตเฉพาะ PD, MG, IT, HK, TC)
+                            </div>
+                        <?php elseif ($_GET['error'] === 'invalid_credentials'): ?>
+                            <div class="alert alert-danger" style="font-weight: 600; font-size: 13.5px; border-radius: 8px; margin-bottom: 16px; padding: 10px;">
+                                ❌ รหัสผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง หรือสถานะพนักงานไม่พร้อมใช้งาน
+                            </div>
+                        <?php endif; ?>
+                    <?php endif; ?>
+
                     <form role="form" method="post" action="login_mats.php">
                         <fieldset>
                             <div class="form-group">
@@ -120,7 +133,7 @@
 
                             <!-- 3. เลือก Line เครื่องจักร (แสดงตามกลุ่มงานที่เลือก) -->
                             
-                            <!-- กลุ่ม BLANKING -->
+                            <!-- กลุ่ม BLANKING (Line 1 - 5) -->
                             <div class="form-group line-sub-group" id="line-group-BLANKING" style="display: none;">
                                 <select class="form-control" name="machine_line">
                                     <option value="" selected disabled>-- Select Line --</option>
@@ -141,7 +154,7 @@
                                 </select>
                             </div>
 
-                            <!-- กลุ่ม XY CIRCLE SHEAR -->
+                            <!-- กลุ่ม XY CIRCLE SHEAR (Line 5) -->
                             <div class="form-group line-sub-group" id="line-group-XY_SHEAR" style="display: none;">
                                 <select class="form-control" name="machine_line">
                                     <option value="" selected disabled>-- Select Line --</option>
@@ -149,32 +162,35 @@
                                 </select>
                             </div>
 
-                            <!-- กลุ่ม A PRESS -->
+                            <!-- กลุ่ม A PRESS (Line F, G, H) -->
                             <div class="form-group line-sub-group" id="line-group-A_PRESS" style="display: none;">
                                 <select class="form-control" name="machine_line">
                                     <option value="" selected disabled>-- Select Line --</option>
                                     <option value="F">Line F</option>
                                     <option value="G">Line G</option>
+                                    <option value="H">Line H</option>
                                 </select>
                             </div>
 
-                            <!-- กลุ่ม K PRESS -->
+                            <!-- กลุ่ม K PRESS (Line K, L) -->
                             <div class="form-group line-sub-group" id="line-group-K_PRESS" style="display: none;">
                                 <select class="form-control" name="machine_line">
                                     <option value="" selected disabled>-- Select Line --</option>
                                     <option value="K">Line K</option>
+                                    <option value="L">Line L</option>
                                 </select>
                             </div>
 
-                            <!-- กลุ่ม CUT TO LENGTH -->
+                            <!-- กลุ่ม CUT TO LENGTH (Line A, B) -->
                             <div class="form-group line-sub-group" id="line-group-CTL" style="display: none;">
                                 <select class="form-control" name="machine_line">
                                     <option value="" selected disabled>-- Select Line --</option>
                                     <option value="A">Line A</option>
+                                    <option value="B">Line B</option>
                                 </select>
                             </div>
 
-                            <!-- กลุ่ม COLD MILL -->
+                            <!-- กลุ่ม COLD MILL (Line M) -->
                             <div class="form-group line-sub-group" id="line-group-COLD_MILL" style="display: none;">
                                 <select class="form-control" name="machine_line">
                                     <option value="" selected disabled>-- Select Line --</option>
@@ -182,7 +198,7 @@
                                 </select>
                             </div>
 
-                            <!-- กลุ่ม SWISS SLITTER -->
+                            <!-- กลุ่ม SWISS SLITTER (Line T) -->
                             <div class="form-group line-sub-group" id="line-group-SLITTER" style="display: none;">
                                 <select class="form-control" name="machine_line">
                                     <option value="" selected disabled>-- Select Line --</option>

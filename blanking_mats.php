@@ -49,7 +49,7 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
 
 <body>
 <div class="wrapper">
-<?php $menu = 'T7';?>
+<?php $menu = 'A4';?>
 
 <?php   
     include 'include/'.$folder_func.'/navigation.php';

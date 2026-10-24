@@ -18,13 +18,34 @@ if(!isset($_GET['d'])){
 
 $bno = !isset($_GET['bno']) ? '' : htmlspecialchars(trim($_GET['bno']), ENT_QUOTES, 'UTF-8');
 
-// ป้องกันกรณีไม่มี Session เพื่อไม่ให้เกิด Undefined array key Warning
+// Session variables
 $iduser_func = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
 $position = isset($_SESSION['POSITION']) ? htmlspecialchars($_SESSION['POSITION'], ENT_QUOTES, 'UTF-8') : '';
 $folder_func = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
 $line_func = isset($_SESSION['LINE']) ? htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8') : '';
 $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$process_group = isset($_SESSION['PROCESS_GROUP']) ? htmlspecialchars($_SESSION['PROCESS_GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$position_func   = isset($_SESSION['POSITION']) ? strtoupper(trim($_SESSION['POSITION'])) : '';
+$department_func = isset($_SESSION['DEPARTMENT']) ? strtoupper(trim($_SESSION['DEPARTMENT'])) : '';
+
+
+// =========================================================================
+// สิทธิ์พิเศษ: ต้องเป็น CEO, MANAGER, SUPERVISOR และต้องอยู่แผนก PD, IT, TC, MG
+// =========================================================================
+$bypass_positions    = ['CEO', 'MANAGER', 'SUPERVISOR'];
+$allowed_departments = ['PD', 'IT', 'TC', 'MG'];
+
+$is_supervisor_up = in_array($position_func, $bypass_positions) && in_array($department_func, $allowed_departments);
+
+$allowed_lines_ctl = ['CASTER'];
+if (!in_array(strtoupper($process_group), $allowed_lines_ctl) && !$is_supervisor_up) {
+    echo "<script>
+            alert('เตือน: Line การทำงานของคุณ ไม่ตรงกับกระบวนการ Caster System (Line 1,2)');
+            window.location.href = 'dashboard_mats.php';
+          </script>";
+}
 ?>
+
 <!doctype html>
 <html lang="en">
 <head>

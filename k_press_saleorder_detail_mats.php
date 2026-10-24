@@ -266,7 +266,7 @@ function format_num($value) {
 
 <div class="wrapper">
 
-<?php $menu = 'HI';?>
+<?php $menu = 'A4';?>
 
     <?php 
     if (!empty($folder_func) && !empty($group_func)) {
@@ -294,7 +294,7 @@ function format_num($value) {
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3 style="margin:0; font-weight:700; color:#1e293b; font-size: 24px;">
-                    📋 Sale Order Details: <span style="color:#2563eb;"><a href="k_press_mats.php?func=<?php echo $folder_func ?>&sno=<?php echo $saleorder_no ?>"><?php echo htmlspecialchars($saleorder_no); ?></a></span>
+                    📋 Sale Order Details: <span style="color:#2563eb;"><a href="k_press_mats.php?func=<?php echo $folder_func ?>&jno=<?php echo $saleorder_no ?>"><?php echo htmlspecialchars($saleorder_no); ?></a></span>
                 </h3>
                 <div>
                     <button type="button" class="btn btn-back" onclick="back_home()">

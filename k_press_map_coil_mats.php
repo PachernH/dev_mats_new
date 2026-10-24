@@ -18,7 +18,7 @@ if (empty($iduser_func)) {
 $allowed_lines_kp = ['K', 'L'];
 if (!in_array(strtoupper($line_func), $allowed_lines_kp)) {
     echo "<script>
-            alert('เตือน: Line การทำงานของคุณ (" . $line_func . ") ไม่ตรงกับกระบวนการ Circle Press Process (Line K, L)');
+            alert('เตือน: Line การทำงานของคุณ ไม่ตรงกับกระบวนการ Circle Press Process (Line K)');
             window.location.href = 'dashboard_mats.php';
           </script>";
     exit();
@@ -219,14 +219,14 @@ function format_dim($value) { return number_format((float)($value ?? 0), 3); }
 <body>
 
 <div class="wrapper">
-<?php $menu = 'K1';?>
+<?php $menu = 'A4';?>
     <?php if (!empty($folder_func) && !empty($group_func)) { include 'include/'.$folder_func.'/navigation.php'; } ?>
 
     <div class="main-panel">
         <nav class="navbar navbar-default navbar-fixed">
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="k_press_mats.php?func=<?php echo $folder_func ?>">Circle Press Process (Line <?php echo $line_func; ?>)</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="k_press_mats.php?func=<?php echo $folder_func ?>">K Press Process (Line <?php echo $line_func; ?>)</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -419,7 +419,7 @@ function format_dim($value) { return number_format((float)($value ?? 0), 3); }
                             📝 3. Selected Coil Information & Save Map
                         </h4>
                         <span style="font-weight:700; font-size:14px; color:#2563eb;">
-                            New Product No: <span id="lbl_product_no_disp" style="color:#d97706;"><?php echo $product_no; ?></span>
+                            New Product No: <span id="lbl_product_no_disp" style="color:#d97706;">AUTO GENERATE ON SAVE</span>
                         </span>
                     </div>
                     

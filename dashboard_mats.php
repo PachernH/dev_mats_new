@@ -387,7 +387,7 @@ $all_working = RT_CoilWorking();
                                     </div>
 
                                     <div class="grid grid-cols-2 gap-2">
-                                        <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=coil" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
+                                        <a href="blanking_process_mats.php?func=<?php echo $folder_func; ?>&type=coil" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
                                         <div class="text-orange-600 text-bg font-bold mb-2 uppercase">Blanking</div>
                                         <div class="flex justify-center">
                                             <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
@@ -403,8 +403,8 @@ $all_working = RT_CoilWorking();
                                     </div>
 
                                     <div class="grid grid-cols-2 gap-2">
-                                        <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=coil" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
-                                        <div class="text-orange-600 text-bg font-bold mb-2 uppercase">XY-5</div>
+                                        <a href="xy_circle_shear_process_mats.php?func=<?php echo $folder_func; ?>&type=coil" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
+                                        <div class="text-orange-600 text-bg font-bold mb-2 uppercase">XY Circle Shear Process</div>
                                         <div class="flex justify-center">
                                             <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
                                         </div>
@@ -426,7 +426,7 @@ $all_working = RT_CoilWorking();
                                         </div>
                                         </a>
                                         
-                                        <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sheet" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
+                                        <a href="ap_press_process_mats.php?func=<?php echo $folder_func; ?>&type=sheet" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
                                         <div class="text-orange-600 text-bg font-bold mb-2 uppercase">A Press</div>
                                         <div class="flex justify-center">
                                             <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
