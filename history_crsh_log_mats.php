@@ -349,7 +349,7 @@ include 'include/'.$folder_func.'/navigation.php';
 
                                     $where_sql = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
 
-                                    $sql = "SELECT TOP 500 
+                                    $sql = "SELECT TOP 200 
                                                    c.PRODUCT_NO, c.PRODUCT_REFERENCE, c.CRSH_STARTDATE, c.SALEORDER_NO, 
                                                    c.SALEORDER_ITEM, c.JOB_ORDER, c.ALLOY, c.TEMPER, c.THICKNESS, 
                                                    c.WIDTH, c.LENGTH, c.CRSH_ACTUALWEIGHT, c.CRSH_ACTUALPIECE, c.CRSH_STATUS,

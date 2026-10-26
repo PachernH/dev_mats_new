@@ -610,10 +610,13 @@ function save_entry_product(e) {
         return false;
     }
 
-    // 4. แจ้งเตือน Warning ตาม f7 หากผลิตทะลุเกณฑ์ Min Target
+    // 4. แจ้งเตือน Warning หากผลิตทะลุเกณฑ์ Min Target
     if (totalNewProdWt >= minAllowedWt) {
         alert('⚠️ แจ้งเตือน: ได้ผลิตผลิตภัณฑ์ตามใบสั่งผลิตมากกว่าปริมาณต่ำสุด หรือสมบูรณ์แล้ว');
     }
+
+    // === จุดสำคัญ 1: เปิด Popup Window รอไว้ล่วงหน้าก่อน fetch เพื่อป้องกัน Browser บล็อก Popup ===
+    var printWindow = window.open('', '_blank');
 
     var formElement = document.getElementById('frm_entry');
     var formData = new FormData(formElement);
@@ -637,12 +640,26 @@ function save_entry_product(e) {
 
             alert('✅ บันทึก Pallet ผลผลิตสำเร็จ (Product No: ' + data.pno + ')');
             
+            // === จุดสำคัญ 2: ส่ง URL เข้าไปยังแท็บที่เปิดเตรียมไว้ ===
             var jno = "<?php echo $job_order; ?>";
-            var printUrl = 'print_xy_circle_shear_product_label_mats.php?productno=' + encodeURIComponent(data.pno) + '&joborder=' + encodeURIComponent(jno);
-            window.open(printUrl, '_blank');
+            var printUrl = 'print_circle_sheet_product_label_mats.php?productno=' + encodeURIComponent(data.pno) + '&joborder=' + encodeURIComponent(jno);
+            
+            if (printWindow) {
+                printWindow.location.href = printUrl;
+            } else {
+                window.open(printUrl, '_blank');
+            }
 
-            window.location.reload();
+            // หน่วงเวลาเล็กน้อยก่อนรีเฟรชหน้าหลัก เพื่อให้ส่งคำสั่งเปิดหน้าพิมพ์ได้สมบูรณ์
+            setTimeout(function() {
+                window.location.reload();
+            }, 600);
+
         } else {
+            // หากบันทึกไม่สำเร็จ ให้ปิด Window ที่เปิดคอยไว้
+            if (printWindow) {
+                printWindow.close();
+            }
             alert('เกิดข้อผิดพลาด: ' + data.message);
             btnSave.disabled = false;
             if (btnKeep) btnKeep.disabled = false;
@@ -650,6 +667,9 @@ function save_entry_product(e) {
         }
     })
     .catch(error => {
+        if (printWindow) {
+            printWindow.close();
+        }
         console.error('Error:', error);
         alert('เกิดข้อผิดพลาดในการเชื่อมต่อระบบหลังบ้าน');
         btnSave.disabled = false;
@@ -691,13 +711,13 @@ function print_product_label() {
         return;
     }
 
-    var url = 'print_xy_circle_shear_product_label_mats.php?productno=' + encodeURIComponent(pno) + '&joborder=' + encodeURIComponent(jno);
+    var url = 'print_circle_sheet_product_label_mats.php?productno=' + encodeURIComponent(pno) + '&joborder=' + encodeURIComponent(jno);
     window.open(url, '_blank');
 }
 
 function print_history_label(pno) {
     var jno = "<?php echo $job_order; ?>";
-    var url = 'print_xy_circle_shear_product_label_mats.php?productno=' + encodeURIComponent(pno) + '&joborder=' + encodeURIComponent(jno);
+    var url = 'print_circle_sheet_product_label_mats.php?productno=' + encodeURIComponent(pno) + '&joborder=' + encodeURIComponent(jno);
     window.open(url, '_blank');
 }
 

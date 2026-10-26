@@ -379,8 +379,8 @@ include 'include/'.$folder_func.'/navigation.php';
                                     // 3. รวมเงื่อนไข WHERE เข้าด้วยกัน
                                     $where_sql = "WHERE " . implode(" AND ", $where_conditions);
 
-                                    // 4. Query ดึงข้อมูล 500 รายการ
-                                    $sql = "SELECT TOP 500 
+                                    // 4. Query ดึงข้อมูล 200 รายการ
+                                    $sql = "SELECT TOP 200 
                                                 COIL_STARTTIME, COIL_ENDTIME, COIL_NO, BATCH_NO, JOB_PROCESS, 
                                                 ALLOY, TEMPER, THICKNESS, WIDTH, COIL_BALANCEWEIGHT, COIL_STATUS
                                             FROM COILPROD1

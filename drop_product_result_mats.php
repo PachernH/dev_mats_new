@@ -382,7 +382,7 @@ include 'include/'.$folder_func.'/navigation.php';
                                     $where_sql = "WHERE " . implode(" AND ", $where_conditions);
 
                                     // 4. SQL Query
-                                    $sql = "SELECT TOP 500 
+                                    $sql = "SELECT TOP 200 
                                                    c.PRODUCT_NO, c.CRSH_STARTDATE, c.ALLOY, c.TEMPER, 
                                                    c.THICKNESS, c.WIDTH, c.LENGTH, c.CRSH_ACTUALWEIGHT, 
                                                    c.CRSH_ACTUALPIECE, c.CRSH_STATUS, c.WEIGHT_PIECE, c.CRSH_BOTTOMWEIGHT

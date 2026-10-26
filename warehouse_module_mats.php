@@ -122,7 +122,7 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
                                         <div class="text-[10px] text-blue-600 uppercase">Function</div>
                                     </div>
                                 </a>  
-                                
+
                                 <div class="flex justify-center text-slate-300 py-1">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
                                 </div>
@@ -131,10 +131,12 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
                                     <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                     <div>
                                         <div class="text-bg font-bold text-blue-900">Part Borrow Record</div>
-                                        <div class="text-[10px] text-blue-600 uppercase">Function/div>
+                                        <div class="text-[10px] text-blue-600 uppercase">Function</div>
                                     </div>
-                                </a>                                   
-                                &nbsp;
+                                </a>                                 
+                                
+                               
+                                
                             </div>
                         </div>
 

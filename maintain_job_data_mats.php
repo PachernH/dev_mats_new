@@ -272,7 +272,7 @@ include 'include/'.$folder_func.'/navigation.php';
                         
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">
-                                📋 Job Order Data Records <?php echo ($d != date('Y-m-d')) ? "(Date: ".htmlspecialchars($d).")" : "(Top 500 Recent)"; ?>
+                                📋 Job Order Data Records <?php echo ($d != date('Y-m-d')) ? "(Date: ".htmlspecialchars($d).")" : "(Top 200 Recent)"; ?>
                             </h4>
                         </div>
                         
@@ -314,7 +314,7 @@ include 'include/'.$folder_func.'/navigation.php';
                                     }
 
                                     // Query 500 รายการจาก JOBORDER1
-                                    $sql = "SELECT TOP 500 JOB_ORDER, JOBORDER_DATE, SALEORDER_NO, PRODUCT_ID, 
+                                    $sql = "SELECT TOP 200 JOB_ORDER, JOBORDER_DATE, SALEORDER_NO, PRODUCT_ID, 
                                                    ALLOY, TEMPER, THICKNESS, WIDTH, LENGTH, JOB_ACTUALWEIGHT, JOB_ACTUALPIECE, JOB_STATUS 
                                             FROM JOBORDER1 
                                             {$where_sql}
