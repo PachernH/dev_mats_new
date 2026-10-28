@@ -394,8 +394,8 @@ $all_working = RT_CoilWorking();
                                         </div>
                                         </a>   
 
-                                        <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sheet" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
-                                        <div class="text-orange-600 text-bg font-bold mb-2 uppercase">Circle shear</div>
+                                        <a href="annealing_process_mats.php?func=<?php echo $folder_func; ?>&type=coil" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
+                                        <div class="text-orange-600 text-bg font-bold mb-2 uppercase">ANNEALING PROCESS</div>
                                         <div class="flex justify-center">
                                             <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
                                         </div>
@@ -419,7 +419,7 @@ $all_working = RT_CoilWorking();
                                     </div>
 
                                     <div class="grid grid-cols-2 gap-2">
-                                        <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=coil" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
+                                        <a href="stretcher_process_mats.php?func=<?php echo $folder_func; ?>&type=coil" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
                                         <div class="text-orange-600 text-bg font-bold mb-2 uppercase">Stretcher</div>
                                         <div class="flex justify-center">
                                             <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
@@ -451,7 +451,7 @@ $all_working = RT_CoilWorking();
                                     </div>
 
                                     <div class="grid grid-cols-2 gap-2">
-                                        <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=coil" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
+                                        <a href="cutsheet_process_mats.php?func=<?php echo $folder_func; ?>&type=coil" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
                                         <div class="text-orange-600 text-bg font-bold mb-2 uppercase">CUT SHEET</div>
                                         <div class="flex justify-center">
                                             <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
@@ -491,15 +491,15 @@ $all_working = RT_CoilWorking();
                                     <h4 class="text-[14px] font-bold text-slate-400 uppercase">&nbsp;</h4>
 
                                     <div class="grid grid-cols-2 gap-2">
-                                        <a href="annealing_process_mats.php?func=<?php echo $folder_func; ?>&type=coil" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
-                                        <div class="text-orange-600 text-bg font-bold mb-2 uppercase">ANNEALING PROCESS</div>
+                                        <a href="shearing_process_bk_mats.php?func=<?php echo $folder_func; ?>&type=sheet" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
+                                        <div class="text-orange-600 text-bg font-bold mb-2 uppercase">SHEARING PROCESS <br>(BK-CIRCLE)</div>
                                         <div class="flex justify-center">
                                             <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
                                         </div>
                                         </a>
                                         
                                         <a href="shearing_process_mats.php?func=<?php echo $folder_func; ?>&type=sheet" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
-                                        <div class="text-orange-600 text-bg font-bold mb-2 uppercase">SHEARING PROCESS</div>
+                                        <div class="text-orange-600 text-bg font-bold mb-2 uppercase">SHEARING PROCESS <br>(CTL-CIRCLE)</div>
                                         <div class="flex justify-center">
                                             <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
                                         </div>
@@ -507,20 +507,36 @@ $all_working = RT_CoilWorking();
                                     </div>
 
                                     <div class="grid grid-cols-2 gap-2">
+                                        <a href="punch_hole_process_bk_mats.php?func=<?php echo $folder_func; ?>&type=coil" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
+                                        <div class="text-orange-600 text-bg font-bold mb-2 uppercase">PUNCH CENTER HOLD PROCESS (BK-CIRCLE)</div>
+                                        <div class="flex justify-center">
+                                            <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
+                                        </div>
+                                        </a>
+                                        
                                         <a href="punch_hole_process_mats.php?func=<?php echo $folder_func; ?>&type=coil" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
-                                        <div class="text-orange-600 text-bg font-bold mb-2 uppercase">PUNCH CENTER HOLD PROCESS</div>
+                                        <div class="text-orange-600 text-bg font-bold mb-2 uppercase">PUNCH CENTER HOLD PROCESS (CTL-CIRCLE)</div>
+                                        <div class="flex justify-center">
+                                            <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
+                                        </div>
+                                        </a>
+                                    </div>            
+                                    
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <a href="transfer_pallet_process_bk_mats.php?func=<?php echo $folder_func; ?>&type=coil" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
+                                        <div class="text-orange-600 text-bg font-bold mb-2 uppercase">TRANSFER PRODUCT TO PALLET (BK-CIRCLE)</div>
                                         <div class="flex justify-center">
                                             <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
                                         </div>
                                         </a>
                                         
                                         <a href="transfer_pallet_process_mats.php?func=<?php echo $folder_func; ?>&type=sheet" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
-                                        <div class="text-orange-600 text-bg font-bold mb-2 uppercase">TRANSFER PRODUCT TO PALLET</div>
+                                        <div class="text-orange-600 text-bg font-bold mb-2 uppercase">TRANSFER PRODUCT TO PALLET (CTL-CIRCLE)</div>
                                         <div class="flex justify-center">
                                             <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
                                         </div>
                                         </a>
-                                    </div>                                    
+                                    </div>    
                                     
                                     <?/*****  แยก ปุ่ม  *****/ ?>
                                     

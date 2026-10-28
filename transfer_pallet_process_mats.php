@@ -37,7 +37,11 @@ $mode = isset($_GET['mode']) && $_GET['mode'] === 'history' ? 'history' : 'pendi
         .filter-wrapper { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; background: #ffffff; padding: 18px 24px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
         .filter-item { display: flex; flex-direction: column; gap: 6px; }
         .form-control-minimal { border: none !important; border-bottom: 2px solid #cbd5e1 !important; border-radius: 0 !important; background-color: transparent !important; height: 40px; font-size: 15px; font-weight: 600; color: #1e293b; outline: none; }
-        .btn-search { background-color: #1e293b; color: #ffffff; font-weight: 600; font-size: 13px; height: 40px; padding: 0 24px; border-radius: 8px; border: none; cursor: pointer; }
+        .btn-search {
+            background-color: #1e293b; color: #ffffff; font-weight: 600; font-size: 13px;
+            letter-spacing: 0.5px; height: 40px; padding: 0 24px; border-radius: 8px; border: none; transition: all 0.2s;
+        }
+        .btn-search:hover { background-color: #0f172a; color: #ffffff; transform: translateY(-1px); }
         .badge-job { background-color: #eff6ff; color: #1d4ed8; font-weight: 700; font-size: 12.5px; padding: 5px 12px; border-radius: 20px; border: 1px solid #bfdbfe; }
         .badge-prod { background-color: #fef3c7; color: #92400e; font-weight: 700; font-size: 12px; padding: 4px 8px; border-radius: 6px; }
         .btn-action-work { background-color: #0891b2; color: #ffffff; font-weight: 700; font-size: 12.5px; padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; }
@@ -185,7 +189,7 @@ $mode = isset($_GET['mode']) && $_GET['mode'] === 'history' ? 'history' : 'pendi
                                 echo "<td align='center'>";
                                 
                                 if ($mode === 'pending') {
-                                    echo "<button type='button' class='btn-action-work' onclick=\"go_to_entry('{$safe_prod}')\">📦 Transfer Pallet (TW)</button>";
+                                    echo "<button type='button' class='btn-action-work' onclick=\"go_to_entry('{$safe_prod}')\">📦 Transfer Pallet</button>";
                                 } else {
                                     echo "<button type='button' class='btn-action-edit' onclick=\"go_to_entry('{$safe_prod}')\">✏️ Edit Data</button>";
                                 }
