@@ -95,7 +95,7 @@ $search_keyword = !isset($_GET['search']) ? '' : htmlspecialchars(trim($_GET['se
 </head>
 <body>
 <div class="wrapper">
-<?php $menu = 'RC_PACK'; ?>
+<?php $menu = 'A5'; ?>
 <?php include 'include/'.$folder_func.'/navigation.php';?>
 
    <div class="main-panel">
@@ -140,7 +140,7 @@ $search_keyword = !isset($_GET['search']) ? '' : htmlspecialchars(trim($_GET['se
 
             <div class="dashboard-card">
                 <h4 style="margin:0 0 15px 0; font-weight:700; color:#1e293b;">
-                    📋 รายการใบรับสินค้าและ Packing List ที่กำลังดำเนินการ (Status: OP)
+                    📋 Packing List (Status: OP)
                 </h4>
 
                 <div class="table-responsive">

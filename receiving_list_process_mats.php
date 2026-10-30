@@ -35,12 +35,15 @@ $header_origin = "Malaysia";
 
 if (!empty($gr_no_param)) {
     try {
-        $headStmt = $conn->prepare("SELECT supplier_name, description_fg, country_of_origin FROM RECEIVING_HEADER WHERE gr_no = ?");
+        $headStmt = $conn->prepare("SELECT supplier_name, description_fg, country_of_origin, pack_list_no, container_no FROM RECEIVING_HEADER WHERE gr_no = ?");
         $headStmt->execute([$gr_no_param]);
         $headData = $headStmt->fetch(PDO::FETCH_ASSOC);
         if ($headData) {
             $header_supplier = $headData['supplier_name'];
             $header_desc     = $headData['description_fg'];
+            $header_origin   = $headData['country_of_origin'];
+            $pack_list_no   = $headData['pack_list_no'];
+            $container_no   = $headData['container_no'];
             $header_origin   = $headData['country_of_origin'];
         }
     } catch (Exception $e) {}
@@ -57,7 +60,7 @@ if (isset($_GET['delete_id'])) {
         if ($rowDel) {
             $packingNo = $rowDel['packing_no'];
             $conn->beginTransaction();
-            $delLoc = $conn->prepare("DELETE FROM yard_stock_locations WHERE packing_no = ?");
+            $delLoc = $conn->prepare("DELETE FROM STOCK_LOCATIONS WHERE packing_no = ?");
             $delLoc->execute([$packingNo]);
 
             $delRec = $conn->prepare("DELETE FROM receiving_details WHERE receive_id = ?");
@@ -81,11 +84,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
 
         $sql1 = "INSERT INTO receiving_details (
                     gr_no, material_id, supplier_name, packing_no, 
-                    cast_no, net_weight_kg, piece_count, production_date, 
+                    cast_no, net_weight_kg, gross_weight_kg, piece_count, production_date, 
                     country_of_origin, status
                 ) VALUES (
                     :gr_no, :material_id, :supplier_name, :packing_no, 
-                    :cast_no, :net_weight_kg, :piece_count, :production_date, 
+                    :cast_no, :net_weight_kg, :gross_weight_kg, :piece_count, :production_date, 
                     :country_of_origin, 'In Stock'
                 )";
         
@@ -97,12 +100,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
             ':packing_no'        => $_POST['packing_no'],
             ':cast_no'           => $_POST['cast_no'],
             ':net_weight_kg'     => $_POST['net_weight_kg'],
+            ':gross_weight_kg'     => $_POST['gross_weight_kg'],
             ':piece_count'       => $_POST['piece_count'],
             ':production_date'   => $_POST['production_date'],
             ':country_of_origin' => $_POST['country_of_origin']
         ]);
 
-        $sql2 = "INSERT INTO yard_stock_locations (packing_no, zone, row_no) 
+        $sql2 = "INSERT INTO STOCK_LOCATIONS (packing_no, zone, row_no) 
                  VALUES (:packing_no, :zone, :row_no)";
         
         $stmt2 = $conn->prepare($sql2);
@@ -114,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
 
         $conn->commit();
 
-        // **บันทึก Zone และ Row ลง Session เพื่อให้จำค่าไว้ใช้ครั้งถัดไปอัตโนมัติ**
+        // บันทึก Zone และ Row ลง Session
         $_SESSION['last_zone'] = $_POST['zone'];
         $_SESSION['last_row_no'] = $_POST['row_no'];        
 
@@ -149,9 +153,9 @@ try {
 // ดึงรายการประวัติการรับเข้า
 $logs = [];
 try {
-    $logSql = "SELECT r.receive_id, r.packing_no, r.cast_no, r.piece_count, r.net_weight_kg, l.zone, l.row_no 
+    $logSql = "SELECT r.receive_id, r.packing_no, r.cast_no, r.piece_count, r.net_weight_kg, r.gross_weight_kg, l.zone, l.row_no 
                FROM receiving_details r 
-               LEFT JOIN yard_stock_locations l ON r.packing_no = l.packing_no 
+               LEFT JOIN STOCK_LOCATIONS l ON r.packing_no = l.packing_no 
                WHERE r.gr_no = ?
                ORDER BY r.receive_id DESC";
     $logStmt = $conn->prepare($logSql);
@@ -162,7 +166,7 @@ try {
 <!doctype html>
 <html lang="th">
 <head>
-    <title>Meyer Aluminium - Material Receiving Entry (GR: <?php echo htmlspecialchars($gr_no_param); ?>)</title>
+    <title>Meyer Aluminium Thailand Co.,LTD.</title>
     <?php include 'include/header.php';?>
     <link href="assets-graph/styles.css" rel="stylesheet" />
     <style>
@@ -188,6 +192,8 @@ try {
         .tab-btn-group { display: flex; gap: 8px; margin-bottom: 15px; }
         .tab-btn { padding: 9px 20px; font-weight: 700; font-size: 14px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #64748b; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
         .tab-btn.active { background: #059669; color: #fff; border-color: #059669; box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2); }
+        .tab-btn-close { padding: 9px 20px; font-weight: 700; font-size: 14px; border-radius: 8px; border: none; background: #dc2626; color: #fff; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; margin-left: auto; transition: all 0.2s; }
+        .tab-btn-close:hover { background: #b91c1c; color: #fff; }
 
         /* การแต่งกล่องสแกนเนอร์ให้เข้ากับธีม */
         .scanner-card { border: 2px dashed #3b82f6; background-color: #f8fafc; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px; }
@@ -203,7 +209,7 @@ try {
             <div class="container-fluid">
                 <div class="navbar-header">
                     <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="#">
-                        📦 Material Receiving Process (GR No: <?php echo htmlspecialchars($gr_no_param); ?>)
+                        📦 Material Receiving Process (Pack List No: <?php echo htmlspecialchars($pack_list_no); ?>)
                     </a>
                 </div>
                 <?php include 'include/navbar.php';?>
@@ -220,6 +226,14 @@ try {
                    class="tab-btn">
                    ➕ สร้าง Header ใหม่
                 </a>
+                <?php if (!empty($gr_no_param)): ?>
+                <!-- ปุ่ม Close Scan เชื่อมโยงไป model/close_scan_receive_mats.php -->
+                <a href="model/close_scan_receive_mats.php?func=<?php echo urlencode($folder_func); ?>&gr_no=<?php echo urlencode($gr_no_param); ?>" 
+                   class="tab-btn-close"
+                   onclick="return confirm('ยืนยันที่จะปิดการสแกน (Close Scan) สำหรับ GR No. <?php echo htmlspecialchars($gr_no_param); ?> ใช่หรือไม่?\nเมื่อปิดแล้วสถานะจะถูกเปลี่ยนเป็น CL');">
+                   🔒 Close Scan
+                </a>
+                <?php endif; ?>
             </div>
 
             <?php if (!empty($message)): ?>
@@ -253,7 +267,7 @@ try {
                 <div class="col-md-8">
                     <div class="dashboard-card">
                         <h4 style="margin:0 0 15px 0; font-weight:700; color:#1e293b;">
-                            📝 บันทึกรับเข้าวัตถุดิบ (Material Entry Form)
+                            📝 บันทึกรับเข้าวัตถุดิบ (Container No: <?php echo htmlspecialchars($container_no); ?>) 
                         </h4>
 
                         <form method="POST" action="">
@@ -284,22 +298,30 @@ try {
                                 </div>
                                 <div class="col-md-6 filter-item">
                                     <label style="font-size:12px; font-weight:700; color:#64748b;">LOT / PACKING NO. *</label>
-                                    <input class="form-control-minimal" type="text" id="packing_no" name="packing_no" placeholder="คลิกพิมพ์หรือรอสแกน..." required />
+                                    <input class="form-control-minimal" type="text" id="packing_no" name="packing_no" placeholder="คลิกพิมพ์หรือรอสแกน..." required oninput="this.value = this.value.toUpperCase()" />
                                 </div>
                             </div>
 
                             <div class="row" style="margin-bottom: 16px;">
-                                <div class="col-md-4 filter-item">
+                                <div class="col-md-6 filter-item">
                                     <label style="font-size:12px; font-weight:700; color:#64748b;">CAST NO. *</label>
                                     <input class="form-control-minimal" type="text" id="cast_no" name="cast_no" placeholder="Cast No..." required />
                                 </div>
-                                <div class="col-md-4 filter-item">
+                                <div class="col-md-6 filter-item">
+                                    <label style="font-size:12px; font-weight:700; color:#64748b;">PIECES (จำนวนแท่ง) *</label>
+                                    <input class="form-control-minimal" type="number" id="piece_count" name="piece_count" value="44" required />
+                                </div>
+                            </div>
+
+
+                            <div class="row" style="margin-bottom: 16px;">
+                                <div class="col-md-6 filter-item">
                                     <label style="font-size:12px; font-weight:700; color:#64748b;">NET WEIGHT (KG) *</label>
                                     <input class="form-control-minimal" type="number" step="0.01" id="net_weight_kg" name="net_weight_kg" placeholder="0.00" required />
                                 </div>
-                                <div class="col-md-4 filter-item">
-                                    <label style="font-size:12px; font-weight:700; color:#64748b;">PIECES (จำนวนแท่ง) *</label>
-                                    <input class="form-control-minimal" type="number" id="piece_count" name="piece_count" value="44" required />
+                                <div class="col-md-6 filter-item">
+                                    <label style="font-size:12px; font-weight:700; color:#64748b;">GROSS WEIGHT (KG) *</label>
+                                    <input class="form-control-minimal" type="number" id="gross_weight_kg" name="gross_weight_kg" value="0.00" required />
                                 </div>
                             </div>
 
@@ -320,7 +342,7 @@ try {
                                     <select class="form-control-minimal" name="zone" required>
                                         <option value="">-- เลือก Zone --</option>
                                         <option value="Zone A" <?php echo (isset($_SESSION['last_zone']) && $_SESSION['last_zone'] == 'Zone A') ? 'selected' : ''; ?>>Zone A (ลานอะลูมิเนียม)</option>
-                                        option value="Zone B" <?php echo (isset($_SESSION['last_zone']) && $_SESSION['last_zone'] == 'Zone B') ? 'selected' : ''; ?>>Zone B (ลานสแครป)</option>
+                                        <option value="Zone B" <?php echo (isset($_SESSION['last_zone']) && $_SESSION['last_zone'] == 'Zone B') ? 'selected' : ''; ?>>Zone B (ลานสแครป)</option>
                                         <option value="Zone C" <?php echo (isset($_SESSION['last_zone']) && $_SESSION['last_zone'] == 'Zone C') ? 'selected' : ''; ?>>Zone C (ลานรอตรวจสอบ)</option>
                                     </select>
                                 </div>
@@ -366,7 +388,8 @@ try {
                                 $no = 1;
                                 foreach ($logs as $row) {
                                     $net_mt = (float)$row['net_weight_kg'] / 1000;
-                                    $gross_mt = ((float)$row['net_weight_kg'] + 0.5) / 1000;
+                                    $gross_mt = ((float)$row['gross_weight_kg']) / 1000;
+                                    //$gross_mt = ((float)$row['net_weight_kg'] + 0.5) / 1000;
                                     $safe_pack = htmlspecialchars($row['packing_no'] ?? '', ENT_QUOTES, 'UTF-8');
                                     ?>
                                     <tr>
@@ -379,8 +402,7 @@ try {
                                         <td align="center"><span class="badge-prod"><?php echo htmlspecialchars(($row['zone'] ?? '') . ' ' . ($row['row_no'] ?? '')); ?></span></td>
                                         <td align="center">
                                             <a href="receiving_list_process_mats.php?func=<?php echo urlencode($folder_func); ?>&gr_no=<?php echo urlencode($gr_no_param); ?>&delete_id=<?php echo $row['receive_id']; ?>" 
-                                               class="btn-search" 
-                                               style="background-color:#ef4444; padding: 6px 12px; font-size:12px; text-decoration:none; display:inline-block;"
+                                               class="tab-btn-close" 
                                                onclick="return confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?');">
                                                Delete
                                             </a>
@@ -451,7 +473,6 @@ function parseScannedData(data) {
         document.getElementById('packing_no').value = data;
     }
 
-    // --- ตรวจสอบว่ามีข้อมูลจำเป็นครบถ้วนจริงๆ ถึงค่อย Auto-Submit ---
     let packingNoVal = document.getElementById('packing_no').value.trim();
     let weightVal = document.getElementById('net_weight_kg').value.trim();
     let dateVal = document.getElementById('production_date').value.trim();
@@ -459,7 +480,6 @@ function parseScannedData(data) {
     let zoneVal = document.querySelector('select[name="zone"]').value;
     let rowVal = document.querySelector('input[name="row_no"]').value.trim();
 
-    // เช็คว่า Packing No, น้ำหนัก, และวันที่ ไม่เป็นค่าว่าง ถึงจะบันทึกอัตโนมัติ
     if (packingNoVal !== "" && weightVal !== "" && !isNaN(weightVal) && dateVal !== "" && materialVal !== "" && zoneVal !== "" && rowVal !== "") {
         setTimeout(function() {
             document.querySelector('form').submit();

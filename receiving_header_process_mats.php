@@ -67,7 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $description_fg = "";
         foreach ($materialsList as $mat) {
             if ($mat['material_id'] == ($_POST['description_fg_id'] ?? '')) {
-                $description_fg = $mat['item_code'] . ' - ' . $mat['item_name'];
+                $description_fg = $mat['item_name'];
+                $materials_no = $mat['item_code'];
                 break;
             }
         }
@@ -75,11 +76,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // บันทึกข้อมูลเข้าตาราง RECEIVING_HEADER
         $sql = "INSERT INTO RECEIVING_HEADER (
                     gr_no, pack_list_no, invoice_no, receive_date, 
-                    container_no, seal_no, description_fg, 
+                    container_no, seal_no, description_fg, materials_no, material_id, 
                     supplier_id, supplier_name, country_of_origin, country_of_secondary, po_no, receive_status
                 ) VALUES (
                     :gr_no, :pack_list_no, :invoice_no, :receive_date, 
-                    :container_no, :seal_no, :description_fg, 
+                    :container_no, :seal_no, :description_fg, :materials_no, :material_id, 
                     :supplier_id, :supplier_name, :country_of_origin, :country_of_secondary, :po_no, 'OP'
                 )";
         
@@ -92,6 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             ':container_no'         => $_POST['container_no'] ?? '',
             ':seal_no'              => $_POST['seal_no'] ?? '',
             ':description_fg'       => $description_fg,
+            ':materials_no'         => $materials_no,
+            ':material_id'          => $_POST['description_fg_id'] ?? '',
             ':supplier_id'          => $supplier_id,
             ':supplier_name'        => $supplier_name,
             ':po_no'                => $_POST['po_no'] ?? '',
@@ -181,12 +184,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <form method="POST" action="">
                     <div class="row" style="margin-bottom: 18px;">
                         <div class="col-md-6 filter-item">
-                            <label style="font-size:12px; font-weight:700; color:#64748b;">PACK LIST NO. (เลขที่แพ็คเกจลิสต์) *</label>
-                            <input class="form-control-minimal" type="text" name="pack_list_no" placeholder="กรอกเลขที่ Pack List..." required />
-                        </div>
-                        <div class="col-md-6 filter-item">
                             <label style="font-size:12px; font-weight:700; color:#64748b;">INVOICE NO. (เลขที่ใบกำกับสินค้า)</label>
                             <input class="form-control-minimal" type="text" name="invoice_no" placeholder="กรอกเลขที่ Invoice..." />
+                        </div>                        
+                        <div class="col-md-6 filter-item">
+                            <label style="font-size:12px; font-weight:700; color:#64748b;">PACK LIST NO. (เลขที่แพ็คเกจลิสต์) *</label>
+                            <input class="form-control-minimal" type="text" name="pack_list_no" placeholder="กรอกเลขที่ Pack List..." required />
                         </div>
                     </div>
 
@@ -249,9 +252,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <option value="SOUTH AFRICA">SOUTH AFRICA</option>
                             </select>
                         </div>
+
                         <div class="col-md-6 filter-item">
                             <label style="font-size:12px; font-weight:700; color:#64748b;">COUNTRY OF SECONDARY (SECONDARY SMELT) *</label>
-                            <select class="form-control-minimal" name="country_of_secondary" required>
+                            <select class="form-control-minimal" name="country_of_secondary" disabled>
                                 <option value="">-- เลือก Country --</option>
                                 <option value="MALAYSIA">MALAYSIA</option>
                                 <option value="AUSTRALIA">AUSTRALIA</option>

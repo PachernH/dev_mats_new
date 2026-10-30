@@ -96,9 +96,9 @@ $mode = isset($_GET['mode']) && $_GET['mode'] === 'history' ? 'history' : 'pendi
             <div class="dashboard-card">
                 <h4 style="margin:0 0 15px 0; font-weight:700; color:#1e293b;">
                     <?php if ($mode === 'pending'): ?>
-                        📦 รายการชิ้นงานรอถ่ายลงพาเลท (Pending: NEXTPROCESS = 'TW')
+                        📦 Pending Transfer to Pallet Products (NEXTPROCESS = 'TW')
                     <?php else: ?>
-                        📋 ประวัติบันทึกผลการถ่ายลงพาเลท (Transfer to Pallet Records: Status OP / AC)
+                        📋 Processed Transfer to Pallet Records (Status OP / AC - Edit)
                     <?php endif; ?>
                 </h4>
 

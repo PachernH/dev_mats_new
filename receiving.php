@@ -32,7 +32,7 @@ if (isset($_GET['delete_id'])) {
         if ($rowDel) {
             $packingNo = $rowDel['packing_no'];
             $conn->beginTransaction();
-            $delLoc = $conn->prepare("DELETE FROM yard_stock_locations WHERE packing_no = ?");
+            $delLoc = $conn->prepare("DELETE FROM STOCK_LOCATIONS WHERE packing_no = ?");
             $delLoc->execute([$packingNo]);
 
             $delRec = $conn->prepare("DELETE FROM receiving_details WHERE receive_id = ?");
@@ -56,11 +56,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
 
         $sql1 = "INSERT INTO receiving_details (
                     gr_no, material_id, supplier_name, packing_no, 
-                    cast_no, net_weight_kg, piece_count, production_date, 
+                    cast_no, net_weight_kg, gross_weight_kg, piece_count, production_date, 
                     country_of_origin, status
                 ) VALUES (
                     :gr_no, :material_id, :supplier_name, :packing_no, 
-                    :cast_no, :net_weight_kg, :piece_count, :production_date, 
+                    :cast_no, :net_weight_kg, :gross_weight_kg, :piece_count, :production_date, 
                     :country_of_origin, 'In Stock'
                 )";
         
@@ -72,12 +72,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
             ':packing_no'        => $_POST['packing_no'],
             ':cast_no'           => $_POST['cast_no'],
             ':net_weight_kg'     => $_POST['net_weight_kg'],
+            ':gross_weight_kg'   => $_POST['net_weight_kg'],
             ':piece_count'       => $_POST['piece_count'],
             ':production_date'   => $_POST['production_date'],
             ':country_of_origin' => $_POST['country_of_origin']
         ]);
 
-        $sql2 = "INSERT INTO yard_stock_locations (packing_no, zone, row_no) 
+        $sql2 = "INSERT INTO STOCK_LOCATIONS (packing_no, zone, row_no) 
                  VALUES (:packing_no, :zone, :row_no)";
         
         $stmt2 = $conn->prepare($sql2);
@@ -124,7 +125,7 @@ $logs = [];
 try {
     $logSql = "SELECT TOP 10 r.receive_id, r.packing_no, r.cast_no, r.piece_count, l.zone, l.row_no 
                FROM receiving_details r 
-               LEFT JOIN yard_stock_locations l ON r.packing_no = l.packing_no 
+               LEFT JOIN STOCK_LOCATIONS l ON r.packing_no = l.packing_no 
                WHERE r.gr_no = ?
                ORDER BY r.receive_id DESC";
     $logStmt = $conn->prepare($logSql);
@@ -137,7 +138,8 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบรับเข้าวัตถุดิบ (Scanner Input)</title>
+    <title>Meyer Aluminium Thailand Co.,LTD.</title>
+    <link rel="icon" type="image/png" href="assets/img/MATS.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -354,7 +356,7 @@ function parseScannedData(data) {
             let idx10 = data.indexOf("10");
             if (idx10 !== -1) {
                 let sub = data.substring(idx10 + 2);
-                let packingNo = sub.substring(0, 13);
+                let packingNo = sub.substring(0, 11);
                 packingNo = packingNo.replace(/[^A-Za-z0-9\-]/g, '');
                 document.getElementById('packing_no').value = packingNo;
             }
@@ -365,7 +367,7 @@ function parseScannedData(data) {
             if(castMatch) { document.getElementById('cast_no').value = castMatch[1]; }
             
             let packMatch = data.match(/(PBIG-[0-9]+|BIG-[0-9]+)/);
-            if(packMatch) { document.getElementById('packing_no').value = packMatch[1].replace('P', ''); }
+            if(packMatch) { document.getElementById('packing_no').value = (packMatch[1].replace('P', '')).substring(0, 11); }
 
             let dateMatch = data.match(/([0-9]{2})-([0-9]{2})-([0-9]{2})/);
             if(dateMatch) {

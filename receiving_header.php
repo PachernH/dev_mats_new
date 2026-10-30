@@ -40,37 +40,40 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         $description_fg = "";
         foreach ($materialsList as $mat) {
-            if ($mat['material_id'] == $_POST['description_fg_id']) {
-                $description_fg = $mat['item_code'] . ' - ' . $mat['item_name'];
+            if ($mat['material_id'] == ($_POST['description_fg_id'] ?? '')) {
+                $description_fg = $mat['item_name'];
+                $materials_no = $mat['item_code'];
                 break;
             }
-        }
+        }        
 
-        // บันทึกข้อมูลพร้อมกำหนด receive_status เป็น 'OP'
+        // บันทึกข้อมูลเข้าตาราง RECEIVING_HEADER
         $sql = "INSERT INTO RECEIVING_HEADER (
                     gr_no, pack_list_no, invoice_no, receive_date, 
-                    container_no, seal_no, description_fg, 
+                    container_no, seal_no, description_fg, materials_no, material_id, 
                     supplier_id, supplier_name, country_of_origin, country_of_secondary, po_no, receive_status
                 ) VALUES (
                     :gr_no, :pack_list_no, :invoice_no, :receive_date, 
-                    :container_no, :seal_no, :description_fg, 
-                    :supplier_id, :supplier_name, :country_of_origin, :country_of_secondary, :po_no ,'OP'
+                    :container_no, :seal_no, :description_fg, :materials_no, :material_id, 
+                    :supplier_id, :supplier_name, :country_of_origin, :country_of_secondary, :po_no, 'OP'
                 )";
         
         $stmt = $conn->prepare($sql);
         $stmt->execute([
-            ':gr_no'             => $grNo,
-            ':pack_list_no'      => $_POST['pack_list_no'],
-            ':invoice_no'        => $_POST['invoice_no'],
-            ':receive_date'      => $_POST['receive_date'],
-            ':container_no'      => $_POST['container_no'],
-            ':seal_no'           => $_POST['seal_no'],
-            ':description_fg'    => $description_fg,
-            ':supplier_id'       => $supplier_id,
-            ':supplier_name'     => $supplier_name,
-            ':po_no'             => $_POST['po_no'],
-            ':country_of_secondary' => $_POST['country_of_secondary'],
-            ':country_of_origin' => $_POST['country_of_origin']
+            ':gr_no'                => $grNo,
+            ':pack_list_no'         => $_POST['pack_list_no'] ?? '',
+            ':invoice_no'           => $_POST['invoice_no'] ?? '',
+            ':receive_date'         => $_POST['receive_date'] ?? date('Y-m-d'),
+            ':container_no'         => $_POST['container_no'] ?? '',
+            ':seal_no'              => $_POST['seal_no'] ?? '',
+            ':description_fg'       => $description_fg,
+            ':materials_no'         => $materials_no,
+            ':material_id'          => $_POST['description_fg_id'] ?? '',
+            ':supplier_id'          => $supplier_id,
+            ':supplier_name'        => $supplier_name,
+            ':po_no'                => $_POST['po_no'] ?? '',
+            ':country_of_secondary' => $_POST['country_of_secondary'] ?? '',
+            ':country_of_origin'    => $_POST['country_of_origin'] ?? ''
         ]);
 
         // บันทึกเสร็จ ไปที่หน้า Packing List ทันที
@@ -88,7 +91,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สร้าง Packing List Header</title>
+    <title>Meyer Aluminium Thailand Co.,LTD.</title>
+    <link rel="icon" type="image/png" href="assets/img/MATS.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -131,12 +135,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <label class="form-label">Pack List No. (เลขที่แพ็คเกจลิสต์)</label>
-                                <input type="text" class="form-control" name="pack_list_no" onfocus="if(this.value==this.defaultValue)this.value='';" required>
-                            </div>
-                            <div class="col-md-6">
                                 <label class="form-label">Invoice No. (เลขที่ใบกำกับสินค้า)</label>
                                 <input type="text" class="form-control" name="invoice_no" onfocus="if(this.value==this.defaultValue)this.value='';">
+                            </div>                            
+                            <div class="col-md-6">
+                                <label class="form-label">Pack List No. (เลขที่แพ็คเกจลิสต์)</label>
+                                <input type="text" class="form-control" name="pack_list_no" onfocus="if(this.value==this.defaultValue)this.value='';" required>
                             </div>
                         </div>
 
@@ -204,7 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                             <div class="col-md-6">
                                 <label class="form-label">Country of Secondary (SECONDARY_SMELT)</label>
-                                <select class="form-select" name="country_of_secondary" required>
+                                <select class="form-select" name="country_of_secondary" required disabled>
                                     <option value="">-- เลือก Country --</option>
                                     <option value="MALAYSIA">MALAYSIA</option>
                                     <option value="AUSTRALIA">AUSTRALIA</option>

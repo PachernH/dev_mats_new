@@ -8,8 +8,6 @@ if (!isset($_SESSION['ID'])) {
 }
 
 // ดึงค่าและตรวจสอบข้อมูลนำเข้าเพื่อความปลอดภัย (Sanitize Input)
-//$d = !isset($_GET['d']) ? date('Y-m-d') : htmlspecialchars($_GET['d'], ENT_QUOTES, 'UTF-8');
-
 if(!isset($_GET['d'])){
     $d = date('Y-m-d');
 } else {
@@ -19,15 +17,14 @@ if(!isset($_GET['d'])){
 $bno = !isset($_GET['bno']) ? '' : htmlspecialchars(trim($_GET['bno']), ENT_QUOTES, 'UTF-8');
 
 // Session variables
-$iduser_func = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
-$position = isset($_SESSION['POSITION']) ? htmlspecialchars($_SESSION['POSITION'], ENT_QUOTES, 'UTF-8') : '';
-$folder_func = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
-$line_func = isset($_SESSION['LINE']) ? htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8') : '';
-$group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
-$process_group = isset($_SESSION['PROCESS_GROUP']) ? htmlspecialchars($_SESSION['PROCESS_GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$iduser_func     = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
+$position        = isset($_SESSION['POSITION']) ? htmlspecialchars($_SESSION['POSITION'], ENT_QUOTES, 'UTF-8') : '';
+$folder_func     = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
+$line_func       = isset($_SESSION['LINE']) ? trim($_SESSION['LINE']) : '';
+$group_func      = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$process_group   = isset($_SESSION['PROCESS_GROUP']) ? strtoupper(trim($_SESSION['PROCESS_GROUP'])) : '';
 $position_func   = isset($_SESSION['POSITION']) ? strtoupper(trim($_SESSION['POSITION'])) : '';
 $department_func = isset($_SESSION['DEPARTMENT']) ? strtoupper(trim($_SESSION['DEPARTMENT'])) : '';
-
 
 // =========================================================================
 // สิทธิ์พิเศษ: ต้องเป็น CEO, MANAGER, SUPERVISOR และต้องอยู่แผนก PD, IT, TC, MG
@@ -37,12 +34,24 @@ $allowed_departments = ['PD', 'IT', 'TC', 'MG'];
 
 $is_supervisor_up = in_array($position_func, $bypass_positions) && in_array($department_func, $allowed_departments);
 
-$allowed_lines_ctl = ['CASTER'];
-if (!in_array(strtoupper($process_group), $allowed_lines_ctl) && !$is_supervisor_up) {
-    echo "<script>
-            alert('เตือน: Line การทำงานของคุณ ไม่ตรงกับกระบวนการ Caster System (Line 1,2)');
-            window.location.href = 'dashboard_mats.php';
-          </script>";
+// กำหนด Line ที่อนุญาตสำหรับสายการผลิต CASTER
+$allowed_lines_caster = ['1', '2'];
+$is_caster_valid_line = ($process_group === 'CASTER') && in_array($line_func, $allowed_lines_caster);
+
+// สิทธิ์ในการกดปุ่มสร้าง Batch (CREATE BATCH)
+$can_create_batch = $is_supervisor_up || $is_caster_valid_line;
+
+// =========================================================================
+// ตรวจสอบการเข้าถึงหน้าเว็บ (ถ้าไม่ใช่สิทธิ์พิเศษ และ Line ไม่ถูกต้อง จะไม่อนุญาตให้ดำเนินการ)
+// =========================================================================
+if (!$is_supervisor_up) {
+    if ($process_group !== 'CASTER' || !in_array($line_func, $allowed_lines_caster)) {
+        echo "<script>
+                alert('เตือน: Line การทำงานของคุณไม่ถูกต้อง ระบบ Caster อนุญาตเฉพาะ Line 1 และ Line 2 เท่านั้น');
+                window.location.href = 'dashboard_mats.php';
+              </script>";
+        exit();
+    }
 }
 ?>
 
@@ -169,10 +178,18 @@ if (!in_array(strtoupper($process_group), $allowed_lines_ctl) && !$is_supervisor
             box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
             transition: all 0.2s;
         }
-        .btn-create-batch:hover {
+        .btn-create-batch:hover:not(:disabled) {
             background-color: #1d4ed8;
             color: #ffffff;
             transform: translateY(-1px);
+        }
+        /* สถานะล็อกปุ่ม Create Batch */
+        .btn-create-batch:disabled {
+            background-color: #cbd5e1 !important;
+            color: #64748b !important;
+            cursor: not-allowed !important;
+            box-shadow: none !important;
+            transform: none !important;
         }
 
         /* Modern Table Styles */
@@ -254,7 +271,6 @@ if (!in_array(strtoupper($process_group), $allowed_lines_ctl) && !$is_supervisor
             transform: translateY(-1px);
         }
 
-        /* ✨ [ปรับแต่งใหม่] Styling ปุ่ม Delete ทั่วไป และ ปุ่ม Disabled (สีเทา กดไม่ได้) */
         .btn-action-del {
             padding: 6px 12px;
             font-size: 13px;
@@ -272,7 +288,6 @@ if (!in_array(strtoupper($process_group), $allowed_lines_ctl) && !$is_supervisor
             box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
         }
         
-        /* สไตล์ปุ่มกดไม่ได้ (Disabled - สีเทาเรียบหรู) */
         .btn-action-del:disabled,
         .btn-action-del[disabled] {
             background-color: #e2e8f0 !important;
@@ -386,7 +401,12 @@ include 'include/'.$folder_func.'/navigation.php';
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="furnance_mats.php?func=<?php echo $folder_func ?>">Furanace Charging Material</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="furnance_mats.php?func=<?php echo $folder_func ?>">
+                        Furanace Charging Material (Line <?php echo htmlspecialchars($line_func, ENT_QUOTES, 'UTF-8'); ?>)
+                        <?php if ($is_supervisor_up && !$is_caster_valid_line): ?>
+                            <span class="badge" style="background-color:#64748b; font-size:11px; margin-left:8px;">CEO / MANAGER / SUPERVISOR ACCESS</span>
+                        <?php endif; ?>
+                    </a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -416,9 +436,18 @@ include 'include/'.$folder_func.'/navigation.php';
                         
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                             <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Charging Records</h4>
-                            <button class='btn btn-create-batch' id='btn_create_kanban' onclick='open_batch_no()'>
-                                Charging Material (CREATE BATCH)
-                            </button>
+                            
+                            <!-- ตรวจสอบสิทธิ์และควบคุมการกดปุ่มสร้าง Batch -->
+                            <?php if ($can_create_batch): ?>
+                                <button class='btn btn-create-batch' id='btn_create_kanban' onclick='open_batch_no()'>
+                                    Charging Material (CREATE BATCH)
+                                </button>
+                            <?php else: ?>
+                                <button class='btn btn-create-batch' id='btn_create_kanban' disabled 
+                                        title='สิทธิ์เฉพาะกลุ่ม CASTER (Line 1, 2) หรือระดับหัวหน้างานที่ได้รับอนุญาตเท่านั้น'>
+                                    🔒 Charging Material (CREATE BATCH)
+                                </button>
+                            <?php endif; ?>
                         </div>
                         
                         <div class="table-responsive table-full-width">
@@ -444,7 +473,7 @@ include 'include/'.$folder_func.'/navigation.php';
                                     include("dbcon_mats-new.php");
                                     ini_set('max_execution_time', 300);
 
-                                    $y=date('Y');
+                                    $y = date('Y');
 
                                     $date_st = $y.'-01-01';
                                     $date_st = date('Y-m-01',strtotime($date_st))." 00:00:00";
@@ -455,7 +484,6 @@ include 'include/'.$folder_func.'/navigation.php';
                                     $params = [];
 
                                     if($d == date('Y-m-d')){
-
                                         if($bno != ''){
                                             $sql = "SELECT TOP(50) A.BATCH_NO, A.BATCH_DATE, A.MATERIAL_IN, A.ALLOY, A.LINE_PROCESS, A.AL_INGOT, A.COIL_REMELT, A.CAST_SCRAP, A.OTHER_SCRAP, A.SCRAP_WIRE, A.RECYCLE_SCRAP, A.MASTER_ALLOY, A.AL_REMAIN, A.TOTAL_CHARGE, A.TOTAL_TRANSFER, A.TOTAL_CASTSCRAP, A.TOTAL_DROSS, A.TOTAL_PRODUCE, A.BALANCE_BATCH, 
                                             B.CAR_CHARGE, B.TRANSFER_DEGREE, B.CTRN_REMARK FROM FRNCPRCS1 AS A INNER JOIN CHRGTRNS1 AS B ON A.BATCH_NO = B.BATCH_NO WHERE A.BATCH_NO LIKE :bno ORDER BY A.BATCH_DATE DESC";
@@ -466,9 +494,7 @@ include 'include/'.$folder_func.'/navigation.php';
                                             $params[':date_st'] = $date_st;
                                             $params[':date_end'] = $date_end;
                                         }                                    
-
                                     } else {
-
                                         if($bno != ''){
                                             $sql = "SELECT TOP(0) A.BATCH_NO, A.BATCH_DATE, A.MATERIAL_IN, A.ALLOY, A.LINE_PROCESS, A.AL_INGOT, A.COIL_REMELT, A.CAST_SCRAP, A.OTHER_SCRAP, A.SCRAP_WIRE, A.RECYCLE_SCRAP, A.MASTER_ALLOY, A.AL_REMAIN, A.TOTAL_CHARGE, A.TOTAL_TRANSFER, A.TOTAL_CASTSCRAP, A.TOTAL_DROSS, A.TOTAL_PRODUCE, A.BALANCE_BATCH, 
                                             B.CAR_CHARGE, B.TRANSFER_DEGREE, B.CTRN_REMARK FROM FRNCPRCS1 AS A INNER JOIN CHRGTRNS1 AS B ON A.BATCH_NO = B.BATCH_NO WHERE A.BATCH_NO LIKE :bno ORDER BY A.BATCH_DATE DESC";
@@ -479,55 +505,47 @@ include 'include/'.$folder_func.'/navigation.php';
                                             $params[':date_f'] = $d." 00:00:00";
                                             $params[':date_e'] = $d." 23:59:59";
                                         }
-                                        
                                     }
-                                            $stmt = $conn->prepare($sql);
-                                            $stmt->execute($params);
+                                    
+                                    $stmt = $conn->prepare($sql);
+                                    $stmt->execute($params);
 
-                                            while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                                $safe_batch_no = htmlspecialchars($row['BATCH_NO'], ENT_QUOTES, 'UTF-8');
-                                                
-                                                // ส่ง $conn เข้าไปในฟังก์ชันที่ปรับปรุงใหม่
-                                                $chk_coil = RT_COIL_PRO($row['BATCH_NO']); 
+                                    while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                                        $safe_batch_no = htmlspecialchars($row['BATCH_NO'], ENT_QUOTES, 'UTF-8');
+                                        $chk_coil = RT_COIL_PRO($row['BATCH_NO']); 
 
-                                                echo "<tr>";
-                                                echo "<td align='center'><button type='button' class='btn-badge-clickable' onclick=\"show_detail_batch('" . addslashes($row['BATCH_NO']) . "')\">".$safe_batch_no."</button></td>";
-                                                echo "<td>".htmlspecialchars($row['MATERIAL_IN'], ENT_QUOTES, 'UTF-8')."</td>";
-                                                echo "<td>".htmlspecialchars($row['ALLOY'], ENT_QUOTES, 'UTF-8')."</td>";
-                                                echo "<td style='color:#64748b; font-size:14px;'>".htmlspecialchars($row['BATCH_DATE'], ENT_QUOTES, 'UTF-8')."</td>";
-                                                echo "<td style='font-weight:500;'>".number_format($row['TOTAL_CHARGE'], 2)."</td>";
-                                                echo "<td style='font-weight:500;'>".number_format($row['TOTAL_DROSS'], 2)."</td>";
-                                                echo "<td style='font-weight:600; color:#0f172a;'>".number_format($row['BALANCE_BATCH'], 2)."</td>";
-   
-                                                // หากถูกใช้งานแล้ว เปลี่ยนปุ่มลบเป็นปุ่ม Edit
-                                                if($chk_coil){ 
-                                                    //echo "<td align='center'><button type='button' class='btn btn-success btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"use_document('" . addslashes($row['BATCH_NO']) . "')\">Used</button></td>"; 
-                                                   if(strtoupper($position)=='OPERATOR' || strtoupper($position)=='STAFF'){
-                                                        echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title='Cannot be used because don't have permission.'>Used</button></td>";
-                                                        echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title='Cannot be edit because don't have permission.'>Edit</button></td>"; 
-                                                        echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title='Cannot be deleted because don't have permission.'>Delete</button></td>";   
-                                                    }else{
-                                                        echo "<td align='center'><button type='button' class='btn btn-success btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"use_document('" . addslashes($row['BATCH_NO']) . "')\">Used</button></td>";                                                         
-                                                        echo "<td align='center'><button type='button' class='btn btn-warning btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"edit_document('" . addslashes($row['BATCH_NO']) . "')\">Edit</button></td>"; 
-                                                        echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title='Cannot be deleted because it is already in use.'>Delete</button></td>";        
-                                                    }                                                          
-                                                } else {
-                                                    //echo "<td align='center'><span class='badge-status status-processing'>In progress.</span></td>";
-                                                   if(strtoupper($position)=='OPERATOR' || strtoupper($position)=='STAFF'){
-                                                        echo "<td align='center'><span class='badge-status status-processing'>In progress.</span></td>";
-                                                        echo "<td align='center'><button type='button' class='btn btn-warning btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"edit_document('" . addslashes($row['BATCH_NO']) . "')\">Edit</button></td>"; 
-                                                        echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title='Cannot be deleted because don't have permission.'>Delete</button></td>";   
-                                                    }else{
-                                                        echo "<td align='center'><span class='badge-status status-processing'>In progress.</span></td>";
-                                                        echo "<td align='center'><button type='button' class='btn btn-warning btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"edit_document('" . addslashes($row['BATCH_NO']) . "')\">Edit</button></td>";  
-                                                        echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title='Cannot be deleted because don't have permission.'>Delete</button></td>";     
-                                                    }
-                                                }
+                                        echo "<tr>";
+                                        echo "<td align='center'><button type='button' class='btn-badge-clickable' onclick=\"show_detail_batch('" . addslashes($row['BATCH_NO']) . "')\">".$safe_batch_no."</button></td>";
+                                        echo "<td>".htmlspecialchars($row['MATERIAL_IN'], ENT_QUOTES, 'UTF-8')."</td>";
+                                        echo "<td>".htmlspecialchars($row['ALLOY'], ENT_QUOTES, 'UTF-8')."</td>";
+                                        echo "<td style='color:#64748b; font-size:14px;'>".htmlspecialchars($row['BATCH_DATE'], ENT_QUOTES, 'UTF-8')."</td>";
+                                        echo "<td style='font-weight:500;'>".number_format($row['TOTAL_CHARGE'], 2)."</td>";
+                                        echo "<td style='font-weight:500;'>".number_format($row['TOTAL_DROSS'], 2)."</td>";
+                                        echo "<td style='font-weight:600; color:#0f172a;'>".number_format($row['BALANCE_BATCH'], 2)."</td>";
 
-                                                //echo "<td align='center'><button type='button' class='btn btn-warning btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"edit_document('" . addslashes($row['BATCH_NO']) . "')\">Edit</button></td>"; 
-                                                //echo "<td align='center'><button type='button' class='btn btn-action-del' onclick=\"delete_document('" . addslashes($row['BATCH_NO']) . "')\">Delete</button></td>";    
-                                                echo "</tr>";                                                         
+                                        if($chk_coil){ 
+                                            if(strtoupper($position) == 'OPERATOR' || strtoupper($position) == 'STAFF'){
+                                                echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title=\"Cannot be used because don't have permission.\">Used</button></td>";
+                                                echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title=\"Cannot be edit because don't have permission.\">Edit</button></td>"; 
+                                                echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title=\"Cannot be deleted because don't have permission.\">Delete</button></td>";   
+                                            } else {
+                                                echo "<td align='center'><button type='button' class='btn btn-success btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"use_document('" . addslashes($row['BATCH_NO']) . "')\">Used</button></td>";                                                         
+                                                echo "<td align='center'><button type='button' class='btn btn-warning btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"edit_document('" . addslashes($row['BATCH_NO']) . "')\">Edit</button></td>"; 
+                                                echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title='Cannot be deleted because it is already in use.'>Delete</button></td>";        
+                                            }                                                          
+                                        } else {
+                                            if(strtoupper($position) == 'OPERATOR' || strtoupper($position) == 'STAFF'){
+                                                echo "<td align='center'><span class='badge-status status-processing'>In progress.</span></td>";
+                                                echo "<td align='center'><button type='button' class='btn btn-warning btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"edit_document('" . addslashes($row['BATCH_NO']) . "')\">Edit</button></td>"; 
+                                                echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title=\"Cannot be deleted because don't have permission.\">Delete</button></td>";   
+                                            } else {
+                                                echo "<td align='center'><span class='badge-status status-processing'>In progress.</span></td>";
+                                                echo "<td align='center'><button type='button' class='btn btn-warning btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"edit_document('" . addslashes($row['BATCH_NO']) . "')\">Edit</button></td>";  
+                                                echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title=\"Cannot be deleted because don't have permission.\">Delete</button></td>";     
                                             }
+                                        }
+                                        echo "</tr>";                                                         
+                                    }
                                 ?>                                              
                                 </tbody>
                             </table>
@@ -567,14 +585,13 @@ function use_document(ref) {
 
 function edit_document(ref) {
     var data_fun = document.getElementById("func").value;
-    // เปลี่ยนไปยังหน้าฟอร์มแก้ไขตามชื่อไฟล์ของคุณ (เช่น furnance_charging_edit_mats.php)
     window.location.assign('furnance_charging_edit_mats.php?func=' + encodeURIComponent(data_fun) + '&bno=' + encodeURIComponent(ref));
 }
 
 function search_batch_no(){   
     var data_fun = document.getElementById("func").value;
     var data_bno = document.getElementById("batch_no").value; 
-    window.location.assign('furnance_mats.php?func='+encodeURIComponent(data_fun)+'&bno='+encodeURIComponent(data_bno)); 
+    window.location.assign('furnance_mats.php?func=' + encodeURIComponent(data_fun) + '&bno=' + encodeURIComponent(data_bno)); 
 }    
 
 function delete_document(ref){
@@ -608,8 +625,14 @@ function delete_document(ref){
 }
 
 function open_batch_no(){
+    var canCreate = <?php echo json_encode($can_create_batch); ?>;
+    if (!canCreate) {
+        alert("เตือน: เฉพาะ Caster Line 1 และ Line 2 หรือระดับหัวหน้างานที่ได้รับอนุญาตเท่านั้นที่สามารถสร้าง Batch ได้");
+        return false;
+    }
+
     var data_fun = document.getElementById("func").value;
-    window.location.assign('furnance_charging_mats.php?func='+encodeURIComponent(data_fun));         
+    window.location.assign('furnance_charging_mats.php?func=' + encodeURIComponent(data_fun));         
 } 
 
 function show_detail_batch(do_no){     
@@ -620,7 +643,7 @@ function show_detail_batch(do_no){
         "searching": false,
         "processing": true,
         "serverSide": true,
-        "ajax": "model/data_bt_list_order_mats.php?BATCH="+encodeURIComponent(do_no),
+        "ajax": "model/data_bt_list_order_mats.php?BATCH=" + encodeURIComponent(do_no),
         "columnDefs": [
             { 
               "searchable": true, "orderable": true, "targets": 0, "className": "text-center",

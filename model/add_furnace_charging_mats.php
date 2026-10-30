@@ -50,6 +50,16 @@ try {
             // รับ Product No ที่ส่งมาในฟิลด์ที่ 20 (Index 19)
             $product_no     = isset($data1[19]) ? trim($data1[19]) : '';
             
+            // รับรายการ Ingot จาก WIP ที่ส่งมาในรูปแบบ JSON Array ของ req_detail_id
+            $ingot_items_raw = isset($_POST['ingot_items']) ? trim($_POST['ingot_items']) : '';
+            $ingot_ids = [];
+            if(!empty($ingot_items_raw)) {
+                $decoded = json_decode($ingot_items_raw, true);
+                if(is_array($decoded)) {
+                    $ingot_ids = array_map('intval', $decoded);
+                }
+            }
+
             $conn->beginTransaction();
             
             // 1. Insert FRNCPRCS1
@@ -128,11 +138,87 @@ try {
             $result2 = $stmt2->execute();
             
             // -------------------------------------------------------------
-            // 3. ตรวจสอบและ UPDATE 4 ตารางย่อย
+            // 3. บันทึกตัดใช้ WIP (WIP_ISSUE_TRANSACTIONS) และ UPDATE REQUISITION_DETAIL
+            // -------------------------------------------------------------
+            if(!empty($ingot_ids)) {
+                // ดึงข้อมูลจาก REQUISITION_DETAIL พร้อม JOIN ไปยัง RECEIVING_HEADER ด้วย container_no
+                $inQuery = implode(',', array_fill(0, count($ingot_ids), '?'));
+                $sqlGetWip = "SELECT 
+                                d.req_detail_id, 
+                                d.req_no,
+                                d.container_no, 
+                                d.packing_no, 
+                                d.net_weight_kg, 
+                                d.piece_count,
+                                rh.material_id,
+                                rh.materials_no,
+                                rh.pack_list_no,
+                                rh.invoice_no,
+                                rh.supplier_id,
+                                rh.country_of_origin
+                              FROM REQUISITION_DETAIL d
+                              LEFT JOIN RECEIVING_HEADER rh 
+                                     ON LTRIM(RTRIM(d.container_no)) = LTRIM(RTRIM(rh.container_no))
+                              WHERE d.req_detail_id IN ($inQuery)";
+                $stmtGetWip = $conn->prepare($sqlGetWip);
+                $stmtGetWip->execute($ingot_ids);
+                $wipItems = $stmtGetWip->fetchAll(PDO::FETCH_ASSOC);
+
+                // SQL บันทึกการจ่ายใช้ (WIP_ISSUE_TRANSACTIONS)
+                $sqlIssue = "INSERT INTO WIP_ISSUE_TRANSACTIONS (
+                                issue_no, container_no, packing_no, material_id, materials_no, pack_list_no, invoice_no, supplier_id, country_of_origin,
+                                net_weight_kg, piece_count, issued_by, issued_date, remarks, 
+                                is_checked_out, checked_out_date
+                             ) VALUES (
+                                :issue_no, :container_no, :packing_no, :material_id, :materials_no, :pack_list_no, :invoice_no, :supplier_id, :country_of_origin,
+                                :net_weight_kg, :piece_count, :issued_by, :issued_date, :remarks, 
+                                :is_checked_out, :checked_out_date
+                             )";
+                $stmtIssue = $conn->prepare($sqlIssue);
+
+                // SQL อัปเดตสถานะใน REQUISITION_DETAIL ให้เป็น 'Use'
+                $sqlUpdateReq = "UPDATE REQUISITION_DETAIL 
+                                 SET status = 'Use', 
+                                     update_at = :update_at 
+                                 WHERE req_detail_id = :req_detail_id";
+                $stmtUpdateReq = $conn->prepare($sqlUpdateReq);
+
+                foreach ($wipItems as $item) {
+                    $issue_remark = "Charge into Furnace: " . $batch_no;
+
+                    // บันทึกธุรกรรมการเบิกใช้
+                    $stmtIssue->execute([
+                        ':issue_no'          => $batch_no,
+                        ':container_no'      => $item['container_no'],
+                        ':packing_no'        => $item['packing_no'],
+                        ':material_id'       => !empty($item['material_id']) ? $item['material_id'] : null,
+                        ':materials_no'      => !empty($item['materials_no']) ? $item['materials_no'] : null,
+                        ':pack_list_no'      => !empty($item['pack_list_no']) ? $item['pack_list_no'] : null,
+                        ':invoice_no'        => !empty($item['invoice_no']) ? $item['invoice_no'] : null,
+                        ':supplier_id'       => !empty($item['supplier_id']) ? $item['supplier_id'] : null,
+                        ':country_of_origin' => !empty($item['country_of_origin']) ? $item['country_of_origin'] : null,
+                        ':net_weight_kg'     => $item['net_weight_kg'],
+                        ':piece_count'       => $item['piece_count'],
+                        ':issued_by'         => $operator,
+                        ':issued_date'       => $operateDate,
+                        ':remarks'           => $issue_remark,
+                        ':is_checked_out'    => $operateDate,
+                        ':checked_out_date'  => $operateDate
+                    ]);
+
+                    // อัปเดตสถานะเป็น 'Use'
+                    $stmtUpdateReq->execute([
+                        ':update_at'     => $operateDate,
+                        ':req_detail_id' => $item['req_detail_id']
+                    ]);
+                }
+            }
+
+            // -------------------------------------------------------------
+            // 4. ตรวจสอบและ UPDATE 4 ตารางย่อยของ Product Remelt (ถ้ามี)
             // -------------------------------------------------------------
             if(!empty($product_no)) {
-                
-                // 3.1 PRODRMLT2 (ใช้ MELT_STATUS, MELT_DATE, RQT2_UPDATE)
+                // 4.1 PRODRMLT2
                 $uSql1 = "UPDATE PRODRMLT2 
                           SET MELT_STATUS = 'MT', 
                               MELT_DATE = :operate_date, 
@@ -145,7 +231,7 @@ try {
                     ':product_no'   => $product_no
                 ]);
 
-                // 3.2 COILPROD1
+                // 4.2 COILPROD1
                 $uSql2 = "UPDATE COILPROD1 
                           SET COIL_STATUS = 'MT', 
                               COIL_UPDATEDATE = :operate_date, 
@@ -158,7 +244,7 @@ try {
                     ':product_no'   => $product_no
                 ]);
 
-                // 3.3 CRSHPROD1
+                // 4.3 CRSHPROD1
                 $uSql3 = "UPDATE CRSHPROD1 
                           SET CRSH_STATUS = 'MT', 
                               CRSH_UPDATEDATE = :operate_date, 
@@ -171,7 +257,7 @@ try {
                     ':product_no'   => $product_no
                 ]);
 
-                // 3.4 PACKPROD1
+                // 4.4 PACKPROD1
                 $uSql4 = "UPDATE PACKPROD1 
                           SET PACK_STATUS = 'MT', 
                               PACK_UPDATEDATE = :operate_date, 

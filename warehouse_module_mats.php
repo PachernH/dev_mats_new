@@ -68,82 +68,175 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
                 <?php include 'include/navbar.php';?>
             </div>
         </nav>
+        <div class="content">    
+            <div class="w-full mx-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                    
+                                <div class="lg:col-span-4 space-y-4">
+                                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 relative">
+                                        <div class="absolute -top-3 left-4 bg-blue-600 text-white px-3 py-0.5 rounded-full text-[14px] font-bold uppercase tracking-wider">
+                                            MODULE
+                                        </div>
+                                        
+                                        <div class="flex flex-col gap-3 mt-2">                                            
+                                            <a href="packing_list_process_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                                <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
+                                                <div>
+                                                    <div class="text-bg font-bold text-blue-900">Material Receive (Ingots)</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                </div>
+                                            </a>      
 
-        <div class="container-fluid" style="padding-top: 20px;">
-            
-            <!-- Content Area -->
-                    <div class="lg:col-span-4 space-y-4">
-                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 relative">
-                            <div class="absolute -top-3 left-4 bg-blue-600 text-white px-3 py-0.5 rounded-full text-[14px] font-bold uppercase tracking-wider">
-                                Module
-                            </div>
-                            &nbsp;
-                            <div class="flex flex-col gap-3 mt-2">
-                                <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
-                                    <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
-                                    <div>
-                                        <div class="text-bg font-bold text-blue-900">Product or Scrap Receive From Supplier or Customer</div>
-                                        <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                            <div class="flex justify-center text-slate-300 py-1">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                                            </div>
+                                            
+                                            <a href="material_issue_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                                <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
+                                                <div>
+                                                    <div class="text-bg font-bold text-blue-900">Material Issue</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                </div>
+                                            </a>     
+
+                                            <div class="flex justify-center text-slate-300 py-1">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                                            </div>
+                                            
+                                            <a href="material_inventory_stock_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                                <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
+                                                <div>
+                                                    <div class="text-bg font-bold text-blue-900">Material Inventory Stock</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                </div>
+                                            </a>     
+
+                                            <div class="flex justify-center text-slate-300 py-1">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                                            </div>
+                                            
+                                            <a href="material_inventory_stock_wip_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                                <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
+                                                <div>
+                                                    <div class="text-bg font-bold text-blue-900">Material Inventory Stock WIP </div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                </div>
+                                            </a>                                                                                                 
+                                        </div>
+
                                     </div>
-                                </a>
-
-                                <div class="flex justify-center text-slate-300 py-1">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
                                 </div>
 
-                                <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
-                                    <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
-                                    <div>
-                                        <div class="text-bg font-bold text-blue-900">Select Coil Buffer for Cold Mill</div>
-                                        <div class="text-[10px] text-blue-600 uppercase">Function</div>
-                                    </div>
-                                </a>
+                                <div class="lg:col-span-4 space-y-4">
+                                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 relative">
+                                        <div class="absolute -top-3 left-4 bg-blue-600 text-white px-3 py-0.5 rounded-full text-[14px] font-bold uppercase tracking-wider">
+                                          MODULE  
+                                        </div>
 
-                                <div class="flex justify-center text-slate-300 py-1">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                                        <div class="flex flex-col gap-3 mt-2">                                                                                        
+                                            <a href="material_receiving_report_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                                <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
+                                                <div>
+                                                    <div class="text-bg font-bold text-blue-900">Material Receive Report</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                </div>
+                                            </a>        
+
+                                            <div class="flex justify-center text-slate-300 py-1">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                                            </div>
+                                            
+                                            <a href="material_issuance_report_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                                <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
+                                                <div>
+                                                    <div class="text-bg font-bold text-blue-900">Material Issue Report</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                </div>
+                                            </a>                                                     
+                                        </div>                                   
+                                        
+                                    </div>
                                 </div>
-                                
-                                <a href="packing_list_process_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
-                                    <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
-                                    <div>
-                                        <div class="text-bg font-bold text-blue-900">Material Receive</div>
-                                        <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                    
+                                <div class="lg:col-span-4 space-y-4">
+                                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 relative">
+                                        <div class="absolute -top-3 left-4 bg-blue-600 text-white px-3 py-0.5 rounded-full text-[14px] font-bold uppercase tracking-wider">
+                                           MODULE 
+                                        </div>
+
+                                        <div class="flex flex-col gap-3 mt-2">
+  
+                                        <div class="flex flex-col gap-3 mt-2">
+                                            <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                                <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
+                                                <div>
+                                                    <div class="text-bg font-bold text-blue-900">Product or Scrap Receive From Supplier or Customer</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                </div>
+                                            </a>
+
+                                            <div class="flex justify-center text-slate-300 py-1">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                                            </div>
+
+                                            <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                                <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
+                                                <div>
+                                                    <div class="text-bg font-bold text-blue-900">Material Receive</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                </div>
+                                            </a>      
+
+                                            <div class="flex justify-center text-slate-300 py-1">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                                            </div>
+
+                                            <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                                <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
+                                                <div>
+                                                    <div class="text-bg font-bold text-blue-900">Select Coil Buffer for Cold Mill</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                </div>
+                                            </a>
+
+                                            <div class="flex justify-center text-slate-300 py-1">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                                            </div>
+                                            
+                                            <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                                <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
+                                                <div>
+                                                    <div class="text-bg font-bold text-blue-900">Purchase Order Receive Data</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                </div>
+                                            </a>  
+                                            
+                                            <div class="flex justify-center text-slate-300 py-1">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                                            </div>
+                                            
+                                            <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                                <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
+                                                <div>
+                                                    <div class="text-bg font-bold text-blue-900">Part Borrow Record</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                </div>
+                                            </a>        
+                                        </div>                                                 
+
+                                        </div>                                               
+                                        
                                     </div>
-                                </a>          
-                                
-                                <div class="flex justify-center text-slate-300 py-1">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
                                 </div>
-                                
-                                <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
-                                    <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
-                                    <div>
-                                        <div class="text-bg font-bold text-blue-900">Purchase Order Receive Data</div>
-                                        <div class="text-[10px] text-blue-600 uppercase">Function</div>
-                                    </div>
-                                </a>  
 
-                                <div class="flex justify-center text-slate-300 py-1">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                                <div class="flex justify-center text-slate-300 py-1">                                   
                                 </div>
-                                
-                                <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
-                                    <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
-                                    <div>
-                                        <div class="text-bg font-bold text-blue-900">Part Borrow Record</div>
-                                        <div class="text-[10px] text-blue-600 uppercase">Function</div>
-                                    </div>
-                                </a>                                 
-                                
-                               
-                                
-                            </div>
-                        </div>
 
-                    </div>        
-                    &nbsp;    
-
+                            
+                </div>
+            </div>
         </div>
+        
         <?php include 'include/content-footer.php';?>
     </div>
 </div>

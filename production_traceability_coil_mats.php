@@ -28,7 +28,11 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
     <!-- Mermaid.js สำหรับวาด Genealogy Tree Graph -->
     <script src="assets/js/mermaid.min.js"></script>
     <script>
-        mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+        mermaid.initialize({ 
+            startOnLoad: false, 
+            theme: 'neutral',
+            securityLevel: 'loose'
+        });
     </script>     
 
     <style>
@@ -38,12 +42,9 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
             color: #334155;
             -webkit-font-smoothing: antialiased;
         }
-        .main-panel {
-            background-color: #f8fafc !important;
-        }
+        .main-panel { background-color: #f8fafc !important; }
         .main-panel .content { padding: 20px 20px !important; }
         
-        /* Dashboard Card Container */
         .dashboard-card {
             background: #ffffff;
             border-radius: 12px;
@@ -53,7 +54,6 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
             border: 1px solid #e2e8f0;
         }
 
-        /* Filter Section Layout */
         .filter-wrapper {
             display: flex;
             flex-wrap: wrap;
@@ -80,24 +80,6 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
             text-transform: uppercase;
         }
 
-        /* Form Styling Control */
-        .form-control {
-            border-radius: 8px;
-            border: 1px solid #cbd5e1;
-            height: 42px;
-            padding: 8px 12px;
-            font-size: 15px;
-            color: #334155;
-            transition: all 0.2s ease;
-            box-shadow: none;
-        }
-        .form-control:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-            outline: none;
-        }
-
-        /* ช่องป้อน ค้นหาแบบไร้ขอบสี่เหลี่ยม */
         .form-control-minimal {
             border: none !important;
             border-bottom: 2px solid #cbd5e1 !important;
@@ -117,7 +99,6 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
             outline: none;
         }
 
-        /* Buttons Styling */
         .btn-search {
             background-color: #1e293b;
             color: #ffffff;
@@ -136,36 +117,36 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
             transform: translateY(-1px);
         }
 
-        /* Modern Table Styles & Font Scaling Up */
         .table-responsive {
             border: none !important;
             margin-top: 15px;
         }
-        #user_table {
+        #user_table, #mat_table {
             border-collapse: separate;
             border-spacing: 0;
             width: 100% !important;
         }
-        #user_table thead th {
+        #user_table thead th, #mat_table thead th {
             background-color: #f1f5f9;
             color: #475569;
             font-weight: 700;
             text-transform: uppercase;
-            font-size: 14px;
+            font-size: 13px;
             letter-spacing: 0.5px;
-            padding: 16px 12px;
+            padding: 14px 12px;
             border-bottom: 2px solid #e2e8f0;
+            white-space: nowrap;
         }
-        #user_table tbody td {
-            padding: 16px 12px;
+        #user_table tbody td, #mat_table tbody td {
+            padding: 14px 12px;
             vertical-align: middle;
             border-bottom: 1px solid #f1f5f9;
-            font-size: 15px;
+            font-size: 14px;
             line-height: 1.6;
             color: #334155;
+            white-space: nowrap;
         }
 
-        /* รองรับการ Click แถว (Line Clickable) */
         #user_table tbody tr {
             cursor: pointer;
             transition: background-color 0.15s ease;
@@ -174,13 +155,12 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
             background-color: #e0f2fe !important;
         }
 
-        /* Badge แสดงข้อมูล */
         .badge-coil {
             display: inline-block;
-            padding: 6px 12px;
-            font-size: 14px;
+            padding: 4px 10px;
+            font-size: 13px;
             font-weight: 700;
-            border-radius: 12px;
+            border-radius: 8px;
             background-color: #eff6ff;
             color: #1d4ed8;
             border: 1px solid #bfdbfe;
@@ -188,45 +168,78 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
 
         .badge-prod {
             display: inline-block;
-            padding: 6px 12px;
-            font-size: 14px;
+            padding: 4px 10px;
+            font-size: 13px;
             font-weight: 700;
-            border-radius: 12px;
+            border-radius: 8px;
             background-color: #f0fdf4;
             color: #15803d;
             border: 1px solid #bbf7d0;
         }
 
-        .badge-level {
+        .badge-batch {
+            display: inline-block;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 8px;
+            background-color: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fde68a;
+        }
+
+        .badge-mat {
             display: inline-block;
             padding: 4px 10px;
             font-size: 13px;
             font-weight: 700;
-            border-radius: 10px;
+            border-radius: 8px;
+            background-color: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+
+        .badge-level {
+            display: inline-block;
+            padding: 3px 8px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 8px;
             background-color: #f1f5f9;
             color: #475569;
             border: 1px solid #cbd5e1;
         }
 
-        /* Structure Modal แบบ Vertical Table */
-        .modal-content {
-            border-radius: 14px;
+        .tab-menu-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            background: #ffffff;
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 24px;
+        }
+        .btn-tab-item {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            border-radius: 8px;
             border: none;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+            background: transparent;
+            transition: all 0.2s;
         }
-        .modal-header {
-            background-color: #ffffff;
-            border-bottom: 1px solid #f1f5f9;
-            padding: 20px 24px;
+        .btn-tab-item:hover {
+            background-color: #f1f5f9;
+            color: #334155;
         }
-        .modal-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #1e293b;
-        }
-        .modal-body {
-            padding: 24px 32px !important;
-        }
+        .btn-tab-item.active {
+            background-color: #2563eb;
+            color: #ffffff;
+            font-weight: 600;
+        }        
 
         #tbl_batch {
             width: 100% !important;
@@ -261,8 +274,6 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
             color: #475569 !important;
             text-align: left !important;
             border-bottom: 1px solid #e2e8f0 !important;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
             height: 42px;
             box-sizing: border-box;
         }
@@ -278,66 +289,18 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
             height: 42px;
             box-sizing: border-box;
         }
-        
-        #tbl_batch thead th:last-child, 
-        #tbl_batch tbody td:last-child {
-            border-bottom: none !important;
-        }
-
-        .modal-body .dataTables_length,
-        .modal-body .dataTables_filter,
-        .modal-body .dataTables_info,
-        .modal-body .dataTables_paginate {
-            display: none !important;
-        }
-
-        .modal-footer {
-            border-top: 1px solid #f1f5f9;
-            padding: 15px 24px;
-        }
-
-        /* เมนูแท็บด้านบนสำหรับเลือกประเภทมาสเตอร์การผลิต */
-        .tab-menu-wrapper {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            background: #ffffff;
-            padding: 12px;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
-            margin-bottom: 24px;
-        }
-        .btn-tab-item {
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: 500;
-            color: #64748b;
-            border-radius: 8px;
-            border: none;
-            background: transparent;
-            transition: all 0.2s;
-        }
-        .btn-tab-item:hover {
-            background-color: #f1f5f9;
-            color: #334155;
-        }
-        .btn-tab-item.active {
-            background-color: #2563eb;
-            color: #ffffff;
-            font-weight: 600;
-        }        
     </style>
 </head>
 <body>
 
+    <!-- Modal Specification Coil -->
     <div class="modal fade" id="dataIn_modal" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-md" role="document" style="max-width: 600px;">
-            <div class="modal-content">
+            <div class="modal-content" style="border-radius:14px; border:none;">
                 <div class="modal-header">
-                    <h4 class="modal-title">📋 Coil Production Specifications Details</h4>
+                    <h4 class="modal-title" style="font-weight:700;">📋 Coil Production Specifications Details</h4>
                 </div>
-                <div class="modal-body">                
+                <div class="modal-body" style="padding: 24px 32px !important;">                
                     <table id="tbl_batch" class="table">
                         <thead>
                             <tr>   
@@ -358,8 +321,7 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
                                 <th>COIL STATUS</th>       
                             </tr>
                         </thead>
-                        <tbody>
-                        </tbody>
+                        <tbody></tbody>
                     </table>
                 </div>
                 <div class="modal-footer">
@@ -371,10 +333,7 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
 
 <div class="wrapper">
 <?php $menu = 'mats';?>
-
-<?php   
-include 'include/'.$folder_func.'/navigation.php';
-?>
+<?php include 'include/'.$folder_func.'/navigation.php';?>
 
    <div class="main-panel">
         <nav class="navbar navbar-default navbar-fixed">
@@ -391,7 +350,7 @@ include 'include/'.$folder_func.'/navigation.php';
             <div class="tab-menu-wrapper">
                 <button onclick="open_coil_traceability()" class="btn-tab-item">Parent to Child </button>
                 <button onclick="open_coil_traceability_child()" class="btn-tab-item">Child to Parent </button>
-                <button onclick="open_production_traceability_coil()" class="btn-tab-item active">Production No to Parent Coil</button>
+                <button onclick="open_production_traceability_coil()" class="btn-tab-item active">Production No to Parent Coil & Raw Material</button>
                 <button onclick="open_coil_traceability_production()" class="btn-tab-item">Parent Coil to Production No </button>
             </div>
             
@@ -408,10 +367,181 @@ include 'include/'.$folder_func.'/navigation.php';
                 </div>
             </div>
 
+            <?php
+                include 'function_mats.php';
+                include("dbcon_mats-new.php");
+                ini_set('max_execution_time', 300);
+
+                $root_coil_no = "";
+                $root_batch_no = "";
+                $rawMaterials = [];
+                $treeRows = [];
+
+                if (!empty($cno)) {
+                    // 1. Recursive CTE สืบย้อน Child to Parent พร้อมดึง BATCH_NO จาก COILPROD1
+                    $sql = "WITH ChildToParent AS (
+                        SELECT 
+                            CAST(c.COIL_NO AS VARCHAR(100)) AS Node_ID,
+                            CAST(c.PRODUCT_REFERENCE AS VARCHAR(100)) AS Parent_Node,
+                            CAST(c.BATCH_NO AS VARCHAR(100)) AS BATCH_NO,
+                            CAST(c.ALLOY AS VARCHAR(50)) AS ALLOY,
+                            CAST(c.TEMPER AS VARCHAR(50)) AS TEMPER,
+                            CAST(c.THICKNESS AS FLOAT) AS THICKNESS,
+                            CAST(c.WIDTH AS FLOAT) AS WIDTH,
+                            CAST(c.COIL_BALANCEWEIGHT AS FLOAT) AS WEIGHT,
+                            CAST(c.COIL_STATUS AS VARCHAR(50)) AS STATUS,
+                            CAST(crsh.PRODUCT_NO AS VARCHAR(100)) AS PRODUCT_NO,
+                            CAST(crsh.CRSH_ACTUALWEIGHT AS FLOAT) AS CRSH_ACTUALWEIGHT,
+                            CAST(crsh.CRSH_STATUS AS VARCHAR(50)) AS CRSH_STATUS,
+                            1 AS PathLevel
+                        FROM CRSHPROD1 crsh
+                        INNER JOIN COILPROD1 c ON crsh.COIL_NO = c.COIL_NO
+                        WHERE crsh.PRODUCT_NO = :target_pd
+
+                        UNION ALL
+
+                        SELECT 
+                            CAST(p.COIL_NO AS VARCHAR(100)) AS Node_ID,
+                            CAST(p.PRODUCT_REFERENCE AS VARCHAR(100)) AS Parent_Node,
+                            CAST(p.BATCH_NO AS VARCHAR(100)) AS BATCH_NO,
+                            CAST(p.ALLOY AS VARCHAR(50)) AS ALLOY,
+                            CAST(p.TEMPER AS VARCHAR(50)) AS TEMPER,
+                            CAST(p.THICKNESS AS FLOAT) AS THICKNESS,
+                            CAST(p.WIDTH AS FLOAT) AS WIDTH,
+                            CAST(p.COIL_BALANCEWEIGHT AS FLOAT) AS WEIGHT,
+                            CAST(p.COIL_STATUS AS VARCHAR(50)) AS STATUS,
+                            CAST(NULL AS VARCHAR(100)) AS PRODUCT_NO,
+                            CAST(NULL AS FLOAT) AS CRSH_ACTUALWEIGHT,
+                            CAST(NULL AS VARCHAR(50)) AS CRSH_STATUS,
+                            cp.PathLevel + 1 AS PathLevel
+                        FROM ChildToParent cp
+                        INNER JOIN COILPROD1 p ON cp.Parent_Node = p.COIL_NO
+                        WHERE cp.Parent_Node IS NOT NULL 
+                          AND cp.Parent_Node <> ''
+                          AND cp.Parent_Node <> cp.Node_ID
+                    )
+                    SELECT 
+                        (MAX(PathLevel) OVER() - PathLevel) AS [Level],
+                        Node_ID AS COIL_NO,
+                        Parent_Node AS PRODUCT_REFERENCE,
+                        BATCH_NO,
+                        ALLOY,
+                        TEMPER,
+                        THICKNESS,
+                        WIDTH,
+                        WEIGHT AS COIL_BALANCEWEIGHT,
+                        STATUS AS COIL_STATUS,
+                        PRODUCT_NO,
+                        CRSH_ACTUALWEIGHT,
+                        CRSH_STATUS
+                    FROM ChildToParent
+                    ORDER BY [Level] ASC";
+
+                    $stmt = $conn->prepare($sql);
+                    $stmt->execute([':target_pd' => $cno]);
+                    $treeRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    // 2. หา Root Parent Coil (Level 0) และดึง BATCH_NO ต้นทาง
+                    foreach ($treeRows as $r) {
+                        if ((int)$r['Level'] === 0) {
+                            $root_coil_no = trim($r['COIL_NO']);
+                            $root_batch_no = trim($r['BATCH_NO'] ?? '');
+                            break;
+                        }
+                    }
+
+                    // 3. นำ BATCH_NO ไปค้นหาใน WIP_ISSUE_TRANSACTIONS
+                    if (!empty($root_batch_no)) {
+                        $sqlMat = "SELECT 
+                                        issue_id,
+                                        issue_no,
+                                        container_no,
+                                        packing_no,
+                                        materials_no,
+                                        pack_list_no,
+                                        invoice_no,
+                                        country_of_origin,
+                                        net_weight_kg,
+                                        piece_count,
+                                        issued_by,
+                                        issued_date
+                                   FROM WIP_ISSUE_TRANSACTIONS
+                                   WHERE LTRIM(RTRIM(issue_no)) = :batch_no
+                                   ORDER BY issue_id ASC";
+                        $stmtMat = $conn->prepare($sqlMat);
+                        $stmtMat->execute([':batch_no' => $root_batch_no]);
+                        $rawMaterials = $stmtMat->fetchAll(PDO::FETCH_ASSOC);
+                    }
+                }
+            ?>
+
+            <!-- กล่องแสดงรายการวัตถุดิบ (Raw Material Ingot) -->
+            <?php if (!empty($cno)): ?>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="dashboard-card" style="border-left: 4px solid #0284c7;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h4 style="margin:0; font-weight:700; color:#0369a1; font-size:17px;">
+                                📦 Raw Materials Ingot Used in Root Batch: 
+                                <span class="badge-batch"><?php echo !empty($root_batch_no) ? htmlspecialchars($root_batch_no) : 'Not Found'; ?></span>
+                                &nbsp;(Root Coil: <strong><?php echo !empty($root_coil_no) ? htmlspecialchars($root_coil_no) : '-'; ?></strong>)
+                            </h4>
+                            <span style="font-size: 13px; color: #64748b;">Source: WIP_ISSUE_TRANSACTIONS</span>
+                        </div>
+
+                        <div class="table-responsive table-full-width">
+                            <table id="mat_table" class="table">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: center;">#</th>
+                                        <th style="text-align: center;">Batch No (Issue No)</th>
+                                        <th style="text-align: center;">Invoice No.</th>
+                                        <th style="text-align: center;">Pack List No.</th>
+                                        <th style="text-align: center;">Container No.</th>
+                                        <th style="text-align: center;">Packing No.</th>
+                                        <th style="text-align: center;">Country of Origin</th>
+                                        <th style="text-align: right;">Net Weight (Kg)</th>
+                                        <th style="text-align: center;">Piece Count</th>
+                                        <th style="text-align: center;">Charge Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (!empty($rawMaterials)): ?>
+                                        <?php foreach ($rawMaterials as $idx => $m): 
+                                            $issue_date = !empty($m['issued_date']) ? date('Y-m-d H:i', strtotime($m['issued_date'])) : '-';
+                                        ?>
+                                            <tr>
+                                                <td align="center"><?php echo $idx + 1; ?></td>
+                                                <td align="center"><span class="badge-batch"><?php echo htmlspecialchars($m['issue_no'] ?? '-'); ?></span></td>
+                                                <td align="center" style="font-weight:600; color:#1e293b;"><?php echo htmlspecialchars($m['invoice_no'] ?? '-'); ?></td>
+                                                <td align="center"><?php echo htmlspecialchars($m['pack_list_no'] ?? '-'); ?></td>
+                                                <td align="center"><span class="badge-mat"><?php echo htmlspecialchars($m['container_no'] ?? '-'); ?></span></td>
+                                                <td align="center" style="font-weight:700; color:#0369a1;">📦 <?php echo htmlspecialchars($m['packing_no'] ?? '-'); ?></td>
+                                                <td align="center" style="font-weight:600; color:#0284c7;"><?php echo htmlspecialchars($m['country_of_origin'] ?? '-'); ?></td>
+                                                <td align="right" style="font-weight:700; color:#059669;"><?php echo number_format((float)($m['net_weight_kg'] ?? 0), 2); ?></td>
+                                                <td align="center"><?php echo number_format((float)($m['piece_count'] ?? 0)); ?></td>
+                                                <td align="center" style="color:#64748b;"><?php echo htmlspecialchars($issue_date); ?></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="10" align="center" style="color: #94a3b8; padding: 20px;">
+                                                <?php echo empty($root_batch_no) ? 'Root Coil does not have BATCH_NO linked.' : 'No WIP Issue Transactions found for Batch No: ' . htmlspecialchars($root_batch_no); ?>
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- ตาราง Coil Traceability Table -->
             <div class="row">
                 <div class="col-md-12">
                     <div class="dashboard-card">
-                        
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Coil Traceability Genealogy Tree (Child to Parent Path)</h4>
                         </div>
@@ -422,6 +552,7 @@ include 'include/'.$folder_func.'/navigation.php';
                                     <tr>
                                         <th style="width: 80px; text-align: center;">Level</th>
                                         <th style="width: 150px; text-align: center;">Coil No</th>
+                                        <th style="width: 140px; text-align: center;">Batch No</th>
                                         <th style="width: 150px; text-align: center;">Parent Coil Ref.</th>
                                         <th style="width: 80px; text-align: center;">Alloy</th>
                                         <th style="width: 80px; text-align: center;">Temper</th>
@@ -433,107 +564,43 @@ include 'include/'.$folder_func.'/navigation.php';
                                         <th style="width: 110px; text-align: center;">CRSH Status</th>
                                     </tr>
                                 </thead>
-                                
                                 <tbody>
                                 <?php
-                                    include 'function_mats.php';
-                                    include("dbcon_mats-new.php");
-                                    ini_set('max_execution_time', 300);
+                                    foreach($treeRows as $row) {
+                                        $safe_coil_no  = htmlspecialchars($row['COIL_NO'] ?? '', ENT_QUOTES, 'UTF-8');
+                                        $safe_batch_no = htmlspecialchars($row['BATCH_NO'] ?? '-', ENT_QUOTES, 'UTF-8');
+                                        $safe_parent   = htmlspecialchars($row['PRODUCT_REFERENCE'] ?? '-', ENT_QUOTES, 'UTF-8');
+                                        $safe_prod     = htmlspecialchars($row['PRODUCT_NO'] ?? '-', ENT_QUOTES, 'UTF-8');
 
-                                    if (!empty($cno)) {
-                                        // SQL ปรับแต่งการ CAST เพิ่มความสอดคล้องของชนิดข้อมูล
-                                        $sql = "WITH ChildToParent AS (
-                                            SELECT 
-                                                CAST(c.COIL_NO AS VARCHAR(100)) AS Node_ID,
-                                                CAST(c.PRODUCT_REFERENCE AS VARCHAR(100)) AS Parent_Node,
-                                                CAST(c.ALLOY AS VARCHAR(50)) AS ALLOY,
-                                                CAST(c.TEMPER AS VARCHAR(50)) AS TEMPER,
-                                                CAST(c.THICKNESS AS FLOAT) AS THICKNESS,
-                                                CAST(c.WIDTH AS FLOAT) AS WIDTH,
-                                                CAST(c.COIL_BALANCEWEIGHT AS FLOAT) AS WEIGHT,
-                                                CAST(c.COIL_STATUS AS VARCHAR(50)) AS STATUS,
-                                                CAST(crsh.PRODUCT_NO AS VARCHAR(100)) AS PRODUCT_NO,
-                                                CAST(crsh.CRSH_ACTUALWEIGHT AS FLOAT) AS CRSH_ACTUALWEIGHT,
-                                                CAST(crsh.CRSH_STATUS AS VARCHAR(50)) AS CRSH_STATUS,
-                                                1 AS PathLevel
-                                            FROM CRSHPROD1 crsh
-                                            INNER JOIN COILPROD1 c ON crsh.COIL_NO = c.COIL_NO
-                                            WHERE crsh.PRODUCT_NO = :target_pd
+                                        $thick = !is_null($row['THICKNESS']) ? number_format((float)$row['THICKNESS'], 2, '.', '') : '0.00';
+                                        $width = !is_null($row['WIDTH']) ? number_format((float)$row['WIDTH'], 2, '.', '') : '0.00';
+                                        $dim   = $thick . ' x ' . $width;
 
-                                            UNION ALL
+                                        $c_weight = !is_null($row['COIL_BALANCEWEIGHT']) ? number_format((float)$row['COIL_BALANCEWEIGHT'], 2) : '-';
+                                        $p_weight = !is_null($row['CRSH_ACTUALWEIGHT']) ? number_format((float)$row['CRSH_ACTUALWEIGHT'], 2) : '-';
 
-                                            SELECT 
-                                                CAST(p.COIL_NO AS VARCHAR(100)) AS Node_ID,
-                                                CAST(p.PRODUCT_REFERENCE AS VARCHAR(100)) AS Parent_Node,
-                                                CAST(p.ALLOY AS VARCHAR(50)) AS ALLOY,
-                                                CAST(p.TEMPER AS VARCHAR(50)) AS TEMPER,
-                                                CAST(p.THICKNESS AS FLOAT) AS THICKNESS,
-                                                CAST(p.WIDTH AS FLOAT) AS WIDTH,
-                                                CAST(p.COIL_BALANCEWEIGHT AS FLOAT) AS WEIGHT,
-                                                CAST(p.COIL_STATUS AS VARCHAR(50)) AS STATUS,
-                                                CAST(NULL AS VARCHAR(100)) AS PRODUCT_NO,
-                                                CAST(NULL AS FLOAT) AS CRSH_ACTUALWEIGHT,
-                                                CAST(NULL AS VARCHAR(50)) AS CRSH_STATUS,
-                                                cp.PathLevel + 1 AS PathLevel
-                                            FROM ChildToParent cp
-                                            INNER JOIN COILPROD1 p ON cp.Parent_Node = p.COIL_NO
-                                            WHERE cp.Parent_Node IS NOT NULL 
-                                              AND cp.Parent_Node <> ''
-                                              AND cp.Parent_Node <> cp.Node_ID
-                                        )
-                                        SELECT 
-                                            (MAX(PathLevel) OVER() - PathLevel) AS [Level],
-                                            Node_ID AS COIL_NO,
-                                            Parent_Node AS PRODUCT_REFERENCE,
-                                            ALLOY,
-                                            TEMPER,
-                                            THICKNESS,
-                                            WIDTH,
-                                            WEIGHT AS COIL_BALANCEWEIGHT,
-                                            STATUS AS COIL_STATUS,
-                                            PRODUCT_NO,
-                                            CRSH_ACTUALWEIGHT,
-                                            CRSH_STATUS
-                                        FROM ChildToParent
-                                        ORDER BY [Level] ASC";
-
-                                        $stmt = $conn->prepare($sql);
-                                        $stmt->execute([':target_pd' => $cno]);
-                                 
-                                        while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                            $safe_coil_no = htmlspecialchars($row['COIL_NO'] ?? '', ENT_QUOTES, 'UTF-8');
-                                            $safe_parent  = htmlspecialchars($row['PRODUCT_REFERENCE'] ?? '-', ENT_QUOTES, 'UTF-8');
-                                            $safe_prod    = htmlspecialchars($row['PRODUCT_NO'] ?? '-', ENT_QUOTES, 'UTF-8');
-
-                                            $thick = !is_null($row['THICKNESS']) ? number_format((float)$row['THICKNESS'], 2, '.', '') : '0.00';
-                                            $width = !is_null($row['WIDTH']) ? number_format((float)$row['WIDTH'], 2, '.', '') : '0.00';
-                                            $dim   = $thick . ' x ' . $width;
-
-                                            $c_weight = !is_null($row['COIL_BALANCEWEIGHT']) ? number_format((float)$row['COIL_BALANCEWEIGHT'], 2) : '-';
-                                            $p_weight = !is_null($row['CRSH_ACTUALWEIGHT']) ? number_format((float)$row['CRSH_ACTUALWEIGHT'], 2) : '-';
-
-                                            echo "<tr class='clickable-row' data-coil='".$safe_coil_no."'>";
-                                            echo "<td style='text-align:center;'><span class='badge-level'>".htmlspecialchars($row['Level'], ENT_QUOTES, 'UTF-8')."</span></td>";
-                                            echo "<td style='text-align:center;'><span class='badge-coil'>".$safe_coil_no."</span></td>";
-                                            echo "<td style='text-align:center; color:#64748b;'>".$safe_parent."</td>";
-                                            echo "<td style='text-align:center;'>".htmlspecialchars($row['ALLOY'] ?? '', ENT_QUOTES, 'UTF-8')."</td>";
-                                            echo "<td style='text-align:center;'>".htmlspecialchars($row['TEMPER'] ?? '', ENT_QUOTES, 'UTF-8')."</td>";
-                                            echo "<td style='text-align:center; font-weight:600;'>".$dim."</td>";
-                                            echo "<td style='text-align:right;'>".$c_weight."</td>";
-                                            echo "<td style='text-align:center;'>".htmlspecialchars($row['COIL_STATUS'] ?? '', ENT_QUOTES, 'UTF-8')."</td>";
-                                            
-                                            if ($safe_prod !== '-' && strtoupper($safe_prod) === strtoupper($cno)) {
-                                                echo "<td style='text-align:center;'><span class='badge-prod' style='background-color:#fef08a; color:#854d0e; border-color:#fde047;'>".$safe_prod." ★</span></td>";
-                                            } else if ($safe_prod !== '-') {
-                                                echo "<td style='text-align:center;'><span class='badge-prod'>".$safe_prod."</span></td>";
-                                            } else {
-                                                echo "<td style='text-align:center;'>-</td>";
-                                            }
-
-                                            echo "<td style='text-align:right;'>".$p_weight."</td>";
-                                            echo "<td style='text-align:center;'>".htmlspecialchars($row['CRSH_STATUS'] ?? '-', ENT_QUOTES, 'UTF-8')."</td>";
-                                            echo "</tr>";                                                         
+                                        echo "<tr class='clickable-row' data-coil='".$safe_coil_no."'>";
+                                        echo "<td style='text-align:center;'><span class='badge-level'>".htmlspecialchars($row['Level'], ENT_QUOTES, 'UTF-8')."</span></td>";
+                                        echo "<td style='text-align:center;'><span class='badge-coil'>".$safe_coil_no."</span></td>";
+                                        echo "<td style='text-align:center;'><span class='badge-batch'>".$safe_batch_no."</span></td>";
+                                        echo "<td style='text-align:center; color:#64748b;'>".$safe_parent."</td>";
+                                        echo "<td style='text-align:center;'>".htmlspecialchars($row['ALLOY'] ?? '', ENT_QUOTES, 'UTF-8')."</td>";
+                                        echo "<td style='text-align:center;'>".htmlspecialchars($row['TEMPER'] ?? '', ENT_QUOTES, 'UTF-8')."</td>";
+                                        echo "<td style='text-align:center; font-weight:600;'>".$dim."</td>";
+                                        echo "<td style='text-align:right;'>".$c_weight."</td>";
+                                        echo "<td style='text-align:center;'>".htmlspecialchars($row['COIL_STATUS'] ?? '', ENT_QUOTES, 'UTF-8')."</td>";
+                                        
+                                        if ($safe_prod !== '-' && strtoupper($safe_prod) === strtoupper($cno)) {
+                                            echo "<td style='text-align:center;'><span class='badge-prod' style='background-color:#fef08a; color:#854d0e; border-color:#fde047;'>".$safe_prod." ★</span></td>";
+                                        } else if ($safe_prod !== '-') {
+                                            echo "<td style='text-align:center;'><span class='badge-prod'>".$safe_prod."</span></td>";
+                                        } else {
+                                            echo "<td style='text-align:center;'>-</td>";
                                         }
+
+                                        echo "<td style='text-align:right;'>".$p_weight."</td>";
+                                        echo "<td style='text-align:center;'>".htmlspecialchars($row['CRSH_STATUS'] ?? '-', ENT_QUOTES, 'UTF-8')."</td>";
+                                        echo "</tr>";                                                         
                                     }
                                 ?>                                              
                                 </tbody>
@@ -543,68 +610,28 @@ include 'include/'.$folder_func.'/navigation.php';
                 </div>
             </div>
 
-
+            <!-- กล่องแสดง Graph Genealogy Tree -->
             <div class="row">
                 <div class="col-md-12">
                     <div class="dashboard-card">
-                        
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">📋 Graph Coil Traceability Genealogy Tree (Direct Path)</h4>
+                            <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">
+                                📋 Graph Coil & Raw Material Traceability Genealogy Tree
+                            </h4>
                         </div>
                         
                         <?php
                         $mermaid_code = "";
-                        if (!empty($cno)) {
-                            $sql_graph = "WITH ChildToParent AS (
-                                            SELECT 
-                                                CAST(c.COIL_NO AS VARCHAR(100)) AS Node_ID,
-                                                CAST(c.PRODUCT_REFERENCE AS VARCHAR(100)) AS Parent_Node,
-                                                CAST(c.THICKNESS AS FLOAT) AS THICKNESS,
-                                                CAST(c.WIDTH AS FLOAT) AS WIDTH,
-                                                CAST(crsh.PRODUCT_NO AS VARCHAR(100)) AS PRODUCT_NO,
-                                                CAST(crsh.CRSH_STATUS AS VARCHAR(50)) AS CRSH_STATUS,
-                                                1 AS PathLevel
-                                            FROM CRSHPROD1 crsh
-                                            INNER JOIN COILPROD1 c ON crsh.COIL_NO = c.COIL_NO
-                                            WHERE crsh.PRODUCT_NO = :target_pd
-
-                                            UNION ALL
-
-                                            SELECT 
-                                                CAST(p.COIL_NO AS VARCHAR(100)) AS Node_ID,
-                                                CAST(p.PRODUCT_REFERENCE AS VARCHAR(100)) AS Parent_Node,
-                                                CAST(p.THICKNESS AS FLOAT) AS THICKNESS,
-                                                CAST(p.WIDTH AS FLOAT) AS WIDTH,
-                                                CAST(NULL AS VARCHAR(100)) AS PRODUCT_NO,
-                                                CAST(NULL AS VARCHAR(50)) AS CRSH_STATUS,
-                                                cp.PathLevel + 1 AS PathLevel
-                                            FROM ChildToParent cp
-                                            INNER JOIN COILPROD1 p ON cp.Parent_Node = p.COIL_NO
-                                            WHERE cp.Parent_Node IS NOT NULL 
-                                              AND cp.Parent_Node <> ''
-                                              AND cp.Parent_Node <> cp.Node_ID
-                                        )
-                                        SELECT 
-                                            (MAX(PathLevel) OVER() - PathLevel) AS [Level],
-                                            Node_ID AS COIL_NO,
-                                            Parent_Node AS PRODUCT_REFERENCE,
-                                            THICKNESS,
-                                            WIDTH,
-                                            PRODUCT_NO,
-                                            CRSH_STATUS
-                                        FROM ChildToParent
-                                        ORDER BY [Level] ASC";
-
-                            $stmt_graph = $conn->prepare($sql_graph);
-                            $stmt_graph->execute([':target_pd' => $cno]);
-
+                        if (!empty($cno) && !empty($treeRows)) {
                             $nodes = [];
                             $edges = [];
                             $yellow_nodes = [];
                             $green_nodes = [];
+                            $blue_nodes = [];
                             $target_node = "";
 
-                            while ($g_row = $stmt_graph->fetch(PDO::FETCH_ASSOC)) {
+                            // 1. สร้าง Node Coil และ Product
+                            foreach ($treeRows as $g_row) {
                                 $coil   = htmlspecialchars($g_row['COIL_NO'] ?? '', ENT_QUOTES, 'UTF-8');
                                 $parent = htmlspecialchars($g_row['PRODUCT_REFERENCE'] ?? '', ENT_QUOTES, 'UTF-8');
                                 $prod   = htmlspecialchars($g_row['PRODUCT_NO'] ?? '', ENT_QUOTES, 'UTF-8');
@@ -614,7 +641,6 @@ include 'include/'.$folder_func.'/navigation.php';
                                 $dim   = "{$thick} x {$width}";
 
                                 $coil_id = preg_replace('/[^A-Za-z0-9_]/', '_', $coil);
-
                                 $nodes[$coil_id] = "{$coil_id}[\"<b>{$coil}</b><br/>{$dim}\"]";
                                 $yellow_nodes[$coil_id] = true;
 
@@ -648,15 +674,46 @@ include 'include/'.$folder_func.'/navigation.php';
                                 }
                             }
 
+                            // 2. สร้าง Node วัตถุดิบ (เฉพาะกรณีที่มีข้อมูลใน WIP_ISSUE_TRANSACTIONS เท่านั้น)
+                            if (!empty($rawMaterials) && !empty($root_coil_no)) {
+                                $root_coil_id = preg_replace('/[^A-Za-z0-9_]/', '_', $root_coil_no);
+
+                                $uniqueContainers = [];
+                                foreach ($rawMaterials as $m) {
+                                    $cont = trim($m['container_no'] ?? '-');
+                                    $orig = trim($m['country_of_origin'] ?? '-');
+                                    if ($cont !== '-' && $cont !== '') {
+                                        $uniqueContainers[$cont] = $orig;
+                                    }
+                                }
+
+                                foreach ($uniqueContainers as $cont => $orig) {
+                                    $cont_id = "CONT_" . preg_replace('/[^A-Za-z0-9_]/', '_', $cont);
+                                    // โหนดกะทัดรัด 2 ชั้น: container_no / country_of_origin
+                                    $nodes[$cont_id] = "{$cont_id}[\"<b>{$cont}</b><br/>{$orig}\"]";
+                                    $blue_nodes[$cont_id] = true;
+
+                                    $edge_key = "{$cont_id} --> {$root_coil_id}";
+                                    if (!in_array($edge_key, $edges)) {
+                                        $edges[] = $edge_key;
+                                    }
+                                }
+                            }
+
+                            // 3. รวม Mermaid Code พร้อมเว้นบรรทัด
                             if (!empty($nodes)) {
                                 $mermaid_code = "graph TD\n";
                                 foreach ($nodes as $n) {
-                                    $mermaid_code .= "    {$n}\n";
+                                    $mermaid_code .= "    " . $n . "\n";
                                 }
                                 foreach ($edges as $e) {
-                                    $mermaid_code .= "    {$e}\n";
+                                    $mermaid_code .= "    " . $e . "\n";
                                 }
 
+                                if (!empty($blue_nodes)) {
+                                    $mermaid_code .= "    classDef blueNode fill:#e0f2fe,stroke:#0284c7,stroke-width:1.5px,color:#0369a1;\n";
+                                    $mermaid_code .= "    class " . implode(",", array_keys($blue_nodes)) . " blueNode;\n";
+                                }
                                 if (!empty($yellow_nodes)) {
                                     $mermaid_code .= "    classDef yellowNode fill:#ffffaa,stroke:#eab308,stroke-width:1px;\n";
                                     $mermaid_code .= "    class " . implode(",", array_keys($yellow_nodes)) . " yellowNode;\n";
@@ -673,11 +730,10 @@ include 'include/'.$folder_func.'/navigation.php';
                         }
                         ?>
 
-                        <div style="overflow-x: auto; text-align: center; padding: 10px;">
+                        <div style="overflow-x: auto; text-align: center; padding: 15px;">
                             <?php if (!empty($mermaid_code)): ?>
-                                <div class="mermaid">
-                                    <?php echo $mermaid_code; ?>
-                                </div>
+                                <textarea id="mermaid_source" style="display:none;"><?php echo htmlspecialchars($mermaid_code, ENT_QUOTES, 'UTF-8'); ?></textarea>
+                                <div id="mermaid_output" style="display:inline-block; min-width: 300px;"></div>
                             <?php else: ?>
                                 <p style="color: #94a3b8; padding: 20px;">No graph data found. Please enter the production number to search.</p>
                             <?php endif; ?>
@@ -699,8 +755,12 @@ include 'include/'.$folder_func.'/navigation.php';
 
 <script type="text/javascript">       
 $(document).ready(function() {
+    // 1. วาดกราฟ Mermaid ทันทีเป็นอันดับแรก
+    renderMermaidGraph();
+
+    // 2. DataTables ของตาราง Coil Traceability
     $("#user_table").DataTable({
-        scrollY: "500px",
+        scrollY: "400px",
         scrollX: true,
         scrollCollapse: true,
         paging: true,
@@ -710,15 +770,70 @@ $(document).ready(function() {
         buttons: []
     });
 
+    // 3. DataTables ตารางวัตถุดิบ (รันเฉพาะเมื่อมีข้อมูลจริงเท่านั้นเพื่อป้องกัน DataTables crash)
+    <?php if (!empty($rawMaterials)): ?>
+    $("#mat_table").DataTable({
+        scrollY: "250px",
+        scrollX: true,
+        scrollCollapse: true,
+        paging: false,
+        searching: false,
+        dom: 'Bfrtip',
+        order: [[0, 'asc']],
+        buttons: []
+    });
+    <?php endif; ?>
+
+    // 4. คลิกแถวเพื่อเปิดดูสเปกคอยล์
     $('#user_table tbody').on('click', 'tr.clickable-row', function () {
         var coilNo = $(this).attr('data-coil');
         if (coilNo) {
             show_detail_coil(coilNo);
         }
     });
-
-    mermaid.run();
 });
+
+// ฟังก์ชันวาดกราฟ Mermaid
+function renderMermaidGraph() {
+    var sourceElement = document.getElementById("mermaid_source");
+    var outputElement = document.getElementById("mermaid_output");
+    if (!sourceElement || !outputElement) return;
+
+    var graphDefinition = sourceElement.value.trim();
+    if (graphDefinition === "") return;
+
+    try {
+        var uniqueId = 'mermaid_chart_' + Math.floor(Math.random() * 1000000);
+        mermaid.render(uniqueId, graphDefinition).then(function(result) {
+            outputElement.innerHTML = result.svg;
+        }).catch(function(err) {
+            console.error("Mermaid Render Error:", err);
+        });
+    } catch (e) {
+        console.error("Mermaid Execution Error:", e);
+    }
+}
+
+function show_detail_coil(do_no){     
+    $('#tbl_batch').DataTable({
+        "pageLength": 1,
+        "destroy": true,
+        "searching": false,
+        "processing": true,
+        "serverSide": true,
+        "ajax": "model/data_coil_list_order_mats.php?COIL=" + encodeURIComponent(do_no),
+        "columnDefs": [
+            {
+                "targets": 0,
+                "render": function(data) {
+                    return '<span class="badge" style="background-color:#eff6ff; color:#1d4ed8; font-weight:700; padding:6px 12px; border:1px solid #bfdbfe; border-radius:12px; display:inline-block; font-size:13px;">' + data + '</span>';
+                }
+            },
+            { "targets": "_all", "defaultContent": "-" }
+        ]
+    });
+    $("#dataIn_modal").modal('show');
+}
 
 function open_coil_traceability(){   
     var data_fun = document.getElementById("func").value;
@@ -745,26 +860,5 @@ function search_batch_no(){
     var data_cno = document.getElementById("coil_no").value; 
     window.location.assign('production_traceability_coil_mats.php?func='+encodeURIComponent(data_fun)+'&cno='+encodeURIComponent(data_cno)); 
 }    
-
-function show_detail_coil(do_no){     
-    $('#tbl_batch').DataTable({
-        "pageLength": 1,
-        "destroy": true,
-        "searching": false,
-        "processing": true,
-        "serverSide": true,
-        "ajax": "model/data_coil_list_order_mats.php?COIL=" + encodeURIComponent(do_no),
-        "columnDefs": [
-            {
-                "targets": 0,
-                "render": function(data) {
-                    return '<span class="badge" style="background-color:#eff6ff; color:#1d4ed8; font-weight:700; padding:6px 12px; border:1px solid #bfdbfe; border-radius:12px; display:inline-block; font-size:13px;">' + data + '</span>';
-                }
-            },
-            { "targets": "_all", "defaultContent": "-" }
-        ]
-    });
-    $("#dataIn_modal").modal('show');
-} 
 </script>
 </html>
