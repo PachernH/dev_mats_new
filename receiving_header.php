@@ -41,11 +41,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $description_fg = "";
         foreach ($materialsList as $mat) {
             if ($mat['material_id'] == ($_POST['description_fg_id'] ?? '')) {
-                $description_fg = $mat['item_name'];
+                $description_fg = $mat['item_code'] .' - '. $mat['item_name'];
                 $materials_no = $mat['item_code'];
                 break;
             }
-        }        
+        }     
 
         // บันทึกข้อมูลเข้าตาราง RECEIVING_HEADER
         $sql = "INSERT INTO RECEIVING_HEADER (

@@ -2,8 +2,13 @@
 // stretcher_process_mats.php
 session_start();
 
+// ดึงค่า Session ต่างๆ
 $iduser_func     = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
 $folder_func     = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
+$line_func       = isset($_SESSION['LINE']) ? strtoupper(htmlspecialchars($_SESSION['LINE'], ENT_QUOTES, 'UTF-8')) : '1';
+$group_func      = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$process_func    = isset($_SESSION['PROCESS_GROUP']) ? htmlspecialchars($_SESSION['PROCESS_GROUP'], ENT_QUOTES, 'UTF-8') : '';
+$position_func   = isset($_SESSION['POSITION']) ? strtoupper(trim($_SESSION['POSITION'])) : '';
 $department_func = isset($_SESSION['DEPARTMENT']) ? strtoupper(trim($_SESSION['DEPARTMENT'])) : '';
 
 if (empty($iduser_func)) {
@@ -11,14 +16,33 @@ if (empty($iduser_func)) {
     exit();
 }
 
+// =========================================================================
+// สิทธิ์พิเศษ: ต้องเป็น CEO, MANAGER, SUPERVISOR และต้องอยู่แผนก PD, IT, TC, MG
+// =========================================================================
+$bypass_positions    = ['CEO', 'MANAGER', 'SUPERVISOR'];
 $allowed_departments = ['PD', 'IT', 'TC', 'MG'];
-if (!in_array($department_func, $allowed_departments)) {
-    echo "<script>
-            alert('เตือน: แผนกของคุณไม่มีสิทธิ์เข้าใช้งานกระบวนการ Stretcher Process');
-            window.location.href = 'dashboard_mats.php';
-          </script>";
-    exit();
+
+$is_supervisor_up = in_array($position_func, $bypass_positions) && in_array($department_func, $allowed_departments);
+
+// ตรวจสอบ Line Process เฉพาะกระบวนการ Blanking (Line 1, 2, 3, 4, 5)
+$allowed_lines_stretcher = ['1', '2'];
+
+if (!$is_supervisor_up) {
+    if ($process_group !== 'STRETCHER' || !in_array($line_func, $allowed_lines_stretcher)) {
+        echo "<script>
+                alert('เตือน: Line การทำงานของคุณ ไม่ใช่กระบวนการ Stretcher Process (Line 1, 2)');
+                window.location.href = 'dashboard_mats.php';
+              </script>";
+        exit();
+    }
 }
+
+// เช็กว่า Line ที่ล็อกอินตรงกับสายการผลิตนี้หรือไม่ สำหรับคุมการกดปุ่ม Action
+$is_correct_line = in_array($line_func, $allowed_lines_stretcher);
+
+
+
+
 
 $jno  = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOTES, 'UTF-8');
 $mode = isset($_GET['mode']) && $_GET['mode'] === 'history' ? 'history' : 'pending';

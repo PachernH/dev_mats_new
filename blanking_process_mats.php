@@ -27,12 +27,23 @@ $is_supervisor_up = in_array($position_func, $bypass_positions) && in_array($dep
 
 // ตรวจสอบ Line Process เฉพาะกระบวนการ Blanking (Line 1, 2, 3, 4, 5)
 $allowed_lines_blanking = ['1', '2', '3', '4', '5'];
-if (!$is_supervisor_up && !in_array($line_func, $allowed_lines_blanking)) {
-    echo "<script>
-            alert('เตือน: Line การทำงานของคุณ ไม่ใช่กระบวนการ Blanking Process (Line 1, 2, 3, 4, 5)');
-            window.location.href = 'dashboard_mats.php';
-          </script>";
-    exit();
+
+//if (!$is_supervisor_up && !in_array($line_func, $allowed_lines_blanking)) {
+//    echo "<script>
+//            alert('เตือน: Line การทำงานของคุณ ไม่ใช่กระบวนการ Blanking Process (Line 1, 2, 3, 4, 5)');
+//            window.location.href = 'dashboard_mats.php';
+//          </script>";
+//    exit();
+//}
+
+if (!$is_supervisor_up) {
+    if ($process_group !== 'BLANKING' || !in_array($line_func, $allowed_lines_blanking)) {
+        echo "<script>
+                alert('เตือน: Line การทำงานของคุณ ไม่ใช่กระบวนการ Blanking Process (Line 1, 2, 3, 4, 5)');
+                window.location.href = 'dashboard_mats.php';
+              </script>";
+        exit();
+    }
 }
 
 // เช็กว่า Line ที่ล็อกอินตรงกับสายการผลิตนี้หรือไม่ สำหรับคุมการกดปุ่ม Action

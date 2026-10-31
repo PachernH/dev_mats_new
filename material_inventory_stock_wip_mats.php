@@ -22,29 +22,47 @@ $stockData = [];
 $error_msg = '';
 
 try {
-    // กำหนด Query ดึงข้อมูลจาก REQUISITION_DETAIL และ REQUISITION_HEADER
-    // ใช้ LEFT JOIN กับ WIP_ISSUE_TRANSACTIONS โดยตรงเพื่อความปลอดภัย
-    $sql = "SELECT 
-                LTRIM(RTRIM(d.container_no)) AS container_no,
+    // ใช้ CTE ดึงยอด IN จาก REQUISITION_DETAIL และ OUT จาก WIP_ISSUE_TRANSACTIONS (ไม่ใช้ Status)
+    $sql = "WITH Inbound AS (
+                SELECT 
+                    LTRIM(RTRIM(container_no)) AS container_no,
+                    SUM(CAST(net_weight_kg AS FLOAT)) / 1000.0 AS in_mt
+                FROM REQUISITION_DETAIL
+                WHERE container_no IS NOT NULL AND LTRIM(RTRIM(container_no)) <> ''
+                GROUP BY LTRIM(RTRIM(container_no))
+            ),
+            Outbound AS (
+                SELECT 
+                    LTRIM(RTRIM(container_no)) AS container_no,
+                    SUM(CAST(net_weight_kg AS FLOAT)) / 1000.0 AS out_mt
+                FROM WIP_ISSUE_TRANSACTIONS
+                WHERE container_no IS NOT NULL AND LTRIM(RTRIM(container_no)) <> ''
+                GROUP BY LTRIM(RTRIM(container_no))
+            ),
+            AllContainers AS (
+                SELECT container_no FROM Inbound
+                UNION
+                SELECT container_no FROM Outbound
+            )
+            SELECT 
+                ac.container_no,
                 MAX(d.req_no) AS req_no,
                 MAX(h.req_date) AS req_date,
                 MAX(h.department) AS department,
                 MAX(d.country_of_origin) AS country_of_origin,
-                
-                -- WIP IN: รวมยอดรายการสถานะ 'Issued' (แปลงเป็น MT)
-                ISNULL(SUM(CASE WHEN LTRIM(RTRIM(d.status)) = 'Issued' THEN CAST(d.net_weight_kg AS FLOAT) ELSE 0 END), 0) / 1000.0 AS in_mt,
-
-                -- WIP OUT: รวมยอดรายการสถานะ 'Use' (แปลงเป็น MT)
-                ISNULL(SUM(CASE WHEN LTRIM(RTRIM(d.status)) = 'Use' THEN CAST(d.net_weight_kg AS FLOAT) ELSE 0 END), 0) / 1000.0 AS out_mt
-
-            FROM REQUISITION_DETAIL d
+                ISNULL(i.in_mt, 0) AS in_mt,
+                ISNULL(o.out_mt, 0) AS out_mt
+            FROM AllContainers ac
+            LEFT JOIN Inbound i ON ac.container_no = i.container_no
+            LEFT JOIN Outbound o ON ac.container_no = o.container_no
+            LEFT JOIN REQUISITION_DETAIL d ON ac.container_no = LTRIM(RTRIM(d.container_no))
             LEFT JOIN REQUISITION_HEADER h ON LTRIM(RTRIM(d.req_no)) = LTRIM(RTRIM(h.req_no))
-            WHERE d.container_no IS NOT NULL AND LTRIM(RTRIM(d.container_no)) <> ''";
+            WHERE 1=1";
     
     $params = [];
 
     if (!empty($search_container)) {
-        $sql .= " AND d.container_no LIKE :container";
+        $sql .= " AND ac.container_no LIKE :container";
         $params[':container'] = "%$search_container%";
     }
     if (!empty($search_req_no)) {
@@ -56,7 +74,7 @@ try {
         $params[':country'] = "%$search_country%";
     }
 
-    $sql .= " GROUP BY LTRIM(RTRIM(d.container_no))";
+    $sql .= " GROUP BY ac.container_no, i.in_mt, o.out_mt";
     $sql .= " ORDER BY MAX(h.req_date) DESC";
     
     $stmt = $conn->prepare($sql);
@@ -67,13 +85,8 @@ try {
         $in_mt      = (float)$row['in_mt'];
         $out_mt     = (float)$row['out_mt'];
         
-        if($in_mt - $out_mt>0){
-            $balance_mt = $in_mt - $out_mt;
-        }else{
-            $balance_mt = 0;
-        }
-
-        //$balance_mt = $in_mt - $out_mt;
+        // WIP BALANCE คือ IN - OUT โดยตรง
+        $balance_mt = $in_mt - $out_mt;
 
         $stockData[] = [
             'req_date'          => $row['req_date'],

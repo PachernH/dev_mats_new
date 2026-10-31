@@ -118,7 +118,7 @@ $search_keyword = !isset($_GET['search']) ? '' : htmlspecialchars(trim($_GET['se
                 </a>
                 <a href="receiving_header_process_mats.php?func=<?php echo $folder_func; ?>" 
                    class="tab-btn">
-                   ➕ สร้างใหม่ (Create New)
+                   ➕ Create New
                 </a>
             </div>
 
@@ -131,7 +131,7 @@ $search_keyword = !isset($_GET['search']) ? '' : htmlspecialchars(trim($_GET['se
             <div class="filter-wrapper">
                 <div class="filter-item" style="flex: 1; min-width: 240px;">
                     <label style="font-size:12px; font-weight:700; color:#64748b;">SEARCH GR NO. / PACK LIST / INVOICE / CONTAINER</label>
-                    <input class="form-control-minimal" name="search_kw" id="search_kw" type="text" placeholder="ระบุเลขที่เอกสารหรือข้อความ..." value="<?php echo $search_keyword; ?>" onchange="search_data()"/>
+                    <input class="form-control-minimal" name="search_kw" id="search_kw" type="text" placeholder="Enter the document number or text..." value="<?php echo $search_keyword; ?>" onchange="search_data()"/>
                 </div>
                 <div class="filter-item">
                     <button class="btn btn-search" onclick="search_data()">🔍 SEARCH</button>

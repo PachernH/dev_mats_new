@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $description_fg = "";
         foreach ($materialsList as $mat) {
             if ($mat['material_id'] == ($_POST['description_fg_id'] ?? '')) {
-                $description_fg = $mat['item_name'];
+                $description_fg = $mat['item_code'] .' - '. $mat['item_name'];
                 $materials_no = $mat['item_code'];
                 break;
             }
@@ -166,7 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </a>
                 <a href="receiving_header_process_mats.php?func=<?php echo $folder_func; ?>" 
                    class="tab-btn active">
-                   ➕ สร้างใหม่ (Create New)
+                   ➕ Create New
                 </a>
             </div>
 
@@ -178,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             <div class="dashboard-card">
                 <h4 style="margin:0 0 20px 0; font-weight:700; color:#1e293b;">
-                    📝 บันทึกข้อมูล Packing List & Container Header
+                    📝 Packing List & Container Header
                 </h4>
 
                 <form method="POST" action="">
@@ -268,10 +268,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                     <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
                         <a href="packing_list_process_mats.php?func=<?php echo $folder_func; ?>" class="btn btn-search" style="background-color: #64748b; line-height: 40px; text-decoration: none;">
-                            ยกเลิก
+                            Cancel
                         </a>
                         <button type="submit" class="btn-action-work" style="height: 40px; padding: 0 28px; font-size: 14px;">
-                            💾 บันทึก และไปรายการ Packing List
+                            💾 Save and Go to Packing List
                         </button>
                     </div>
                 </form>

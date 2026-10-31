@@ -284,7 +284,7 @@ include 'include/'.$folder_func.'/navigation.php';
                 
                 <div class="tab-menu-wrapper">
                     <button onclick="truck_pd_no()" class="btn-tab-item active">Product (Truck Scale) Master Data</button>  
-            
+                    <button onclick="material_pd_no()" class="btn-tab-item">Material Master Data</button>  
                 </div>
 
                 <div class="row">
@@ -377,6 +377,11 @@ include 'include/'.$folder_func.'/navigation.php';
         var data_fun = document.getElementById("func").value;
         window.location.assign('truck_product_master_mats.php?func='+encodeURIComponent(data_fun)); 
     }   
+
+    function material_pd_no(){   
+        var data_fun = document.getElementById("func").value;
+        window.location.assign('material_master_mats.php?func='+encodeURIComponent(data_fun)); 
+    }     
     
     function delete_Data(ref){
         var d = ref.split("*");

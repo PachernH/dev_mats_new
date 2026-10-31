@@ -173,7 +173,7 @@ $mode = isset($_GET['mode']) && $_GET['mode'] === 'history' ? 'history' : 'pendi
                                 $safe_stat = htmlspecialchars($row['CRSH_STATUS'], ENT_QUOTES, 'UTF-8');
 
                                 echo "<tr>";
-                                echo "<td align='center'><span class='badge-job'>📦 {$safe_prod}</span></td>";
+                                echo "<td align='center'><span class='badge-job'>{$safe_prod}</span></td>";
                                 echo "<td align='center' style='font-weight:600;'>{$safe_job}</td>";
                                 echo "<td align='center'><span class='badge' style='background-color:#059669;'>{$safe_stat}</span></td>";
                                 echo "<td align='center'>".htmlspecialchars($row['ALLOY'])."</td>";

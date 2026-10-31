@@ -126,7 +126,7 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
         <nav class="navbar navbar-default navbar-fixed">
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <a class="navbar-brand" href="#">รายงานการรับเข้า (รายละเอียดราย Packing No.)</a>
+                    <a class="navbar-brand" href="#">Report receive material (Detail Packing No.)</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -138,11 +138,11 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                 <form method="GET" action="" class="filter-wrapper">
                     <div class="row g-3 align-items-end">
                         <div class="col-md-2 col-sm-6">
-                            <label class="small fw-bold text-muted mb-1">ตั้งแต่วันที่</label>
+                            <label class="small fw-bold text-muted mb-1">Start Date</label>
                             <input type="date" class="form-control form-control-minimal" name="date_from" value="<?php echo htmlspecialchars($date_from); ?>">
                         </div>
                         <div class="col-md-2 col-sm-6">
-                            <label class="small fw-bold text-muted mb-1">ถึงวันที่</label>
+                            <label class="small fw-bold text-muted mb-1">End Date</label>
                             <input type="date" class="form-control form-control-minimal" name="date_to" value="<?php echo htmlspecialchars($date_to); ?>">
                         </div>
                         <div class="col-md-3 col-sm-6">
@@ -155,7 +155,7 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                         </div>
                         <div class="col-md-2 col-sm-12">
                             <button type="submit" class="btn btn-search">
-                                <i class="fa-solid fa-magnifying-glass me-1"></i> ค้นหา
+                                <i class="fa-solid fa-magnifying-glass me-1"></i> Search
                             </button>
                         </div>
                     </div>
@@ -165,7 +165,7 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                 <div class="dashboard-card">
                     <div class="card-header-flex">
                         <h4 class="card-title-sub text-primary m-0">
-                            <i class="fa-solid fa-file-lines me-2"></i> รายการรับเข้า
+                            <i class="fa-solid fa-file-lines me-2"></i> List of received materials (Detail Packing No.) from <?php echo htmlspecialchars($date_from); ?> to <?php echo htmlspecialchars($date_to); ?>
                         </h4>
                         <a href="?date_from=<?php echo urlencode($date_from); ?>&date_to=<?php echo urlencode($date_to); ?>&container=<?php echo urlencode($search_container); ?>&supplier=<?php echo urlencode($search_supplier); ?>&export=excel" class="btn btn-excel">
                             <i class="fa-solid fa-file-excel"></i> Export Excel
@@ -176,7 +176,7 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                         <table class="table table-striped table-bordered align-middle text-center mb-0">
                             <thead>
                                 <tr class="custom-table-header">
-                                    <th>วันที่รับเข้า</th>
+                                    <th>Date Receive</th>
                                     <th>CONTAINER NO.</th>
                                     <th>INVOICE NO.</th>
                                     <th>PO NO.</th>
@@ -185,7 +185,7 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                                     <th>DESCRIPTION FG</th>
                                     <th>SUPPLIER</th>
                                     <th>COUNTRY</th>
-                                    <th>จำนวนชิ้น (Pcs)</th>
+                                    <th>Total Pieces (Pcs)</th>
                                     <th>Net Weight (KG)</th>
                                     <th>สถานะ</th>
                                 </tr>
@@ -210,13 +210,13 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                                     <?php endforeach; ?>
                                     <!-- แถวสรุปผลรวม -->
                                     <tr class="table-footer-summary">
-                                        <td colspan="9" class="text-end">รวมทั้งสิ้น (Total):</td>
+                                        <td colspan="9" class="text-end">Total:</td>
                                         <td><?php echo number_format($sum_pcs); ?></td>
                                         <td class="text-success"><?php echo number_format($sum_net, 2); ?></td>
                                         <td></td>
                                     </tr>
                                 <?php else: ?>
-                                    <tr><td colspan="12" class="text-muted py-4">ไม่พบข้อมูลการรับเข้าในช่วงวันที่เลือก</td></tr>
+                                    <tr><td colspan="12" class="text-muted py-4">No data found for the selected date range</td></tr>
                                 <?php endif; ?>
                             </tbody>
                         </table>

@@ -171,7 +171,7 @@ $folder_func = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], EN
         <nav class="navbar navbar-default navbar-fixed">
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <a class="navbar-brand" href="#">ระบบตัดจ่ายวัสดุยกตู้ (Full Container Material Issuance)</a>
+                    <a class="navbar-brand" href="#">Material issuance system (Full Container Material Issuance)</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -190,11 +190,11 @@ $folder_func = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], EN
                 <!-- ฟอร์มค้นหา -->
                 <form method="GET" action="" class="filter-wrapper shadow-sm">
                     <div class="filter-item">
-                        <label class="small fw-bold text-muted">ค้นหา Container No. (เฉพาะสถานะ CL)</label>
+                        <label class="small fw-bold text-muted">Search Container No. (Status CL)</label>
                         <input type="text" class="form-control form-control-minimal" name="container" value="<?php echo htmlspecialchars($search_container); ?>" placeholder="ระบุเลขตู้...">
                     </div>
                     <div class="filter-item">
-                        <button type="submit" class="btn btn-search"><i class="fa-solid fa-magnifying-glass me-1"></i> ค้นหา</button>
+                        <button type="submit" class="btn btn-search"><i class="fa-solid fa-magnifying-glass me-1"></i> Search</button>
                     </div>
                 </form>
 
@@ -203,41 +203,41 @@ $folder_func = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], EN
                     <input type="hidden" name="action" value="issue_container">
 
                     <div class="dashboard-card shadow-sm">
-                        <h4 class="card-title-sub text-primary mb-3"><i class="fa-solid fa-file-invoice me-2"></i> ข้อมูลการออกใบเบิกตัดจ่ายยกตู้</h4>
+                        <h4 class="card-title-sub text-primary mb-3"><i class="fa-solid fa-file-invoice me-2"></i> Disbursement documents</h4>
                         <div class="row mb-4">
                             <div class="col-md-4 mb-3">
-                                <label class="small fw-bold text-muted mb-1">แผนกที่ขอเบิก (Department) *</label>
+                                <label class="small fw-bold text-muted mb-1">Department(แผนกที่ขอเบิก) *</label>
                                 <input type="text" class="form-control" name="department" placeholder="เช่น Production Line 1" required>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="small fw-bold text-muted mb-1">เลขที่อ้างอิง (Ref No.)</label>
+                                <label class="small fw-bold text-muted mb-1">Ref No (เลขที่อ้างอิง)</label>
                                 <input type="text" class="form-control" name="ref_no" placeholder="ระบุเลขที่อ้างอิงเอกสาร...">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="small fw-bold text-muted mb-1">วันที่ตัดจ่าย (Issue Date) *</label>
+                                <label class="small fw-bold text-muted mb-1">Issue Date (วันที่ตัดจ่าย) *</label>
                                 <input type="date" class="form-control" name="req_date" value="<?php echo date('Y-m-d'); ?>" required>
                             </div>
                             <div class="col-md-12 mb-3">
-                                <label class="small fw-bold text-muted mb-1">หมายเหตุ (Remarks)</label>
+                                <label class="small fw-bold text-muted mb-1">Remarks (หมายเหตุ)</label>
                                 <input type="text" class="form-control" name="remarks" placeholder="ระบุเหตุผลหรือหมายเหตุเพิ่มเติม...">
                             </div>
                         </div>
 
-                        <h4 class="card-title-sub text-dark mb-3"><i class="fa-solid fa-truck-container me-2"></i> ตู้ Container ที่มีสถานะ CL พร้อมจ่ายยกตู้</h4>
+                        <h4 class="card-title-sub text-dark mb-3"><i class="fa-solid fa-truck-container me-2"></i> Container with status CL is ready for release.</h4>
                         <div class="table-responsive">
                             <table class="table table-striped table-bordered align-middle text-center mb-0">
                                 <thead>
                                     <tr class="custom-table-header">
                                         <th style="width: 50px;"><input type="checkbox" id="selectAll"></th>
-                                        <th>วันที่รับเข้า</th>
+                                        <th>Date Receive</th>
                                         <th>CONTAINER NO.</th>
                                         <th>INVOICE NO.</th>
                                         <th>SUPPLIER</th>
                                         <th>COUNTRY</th>
                                         <th>DESCRIPTION FG</th>
-                                        <th>จำนวนมัด (Packing)</th>
-                                        <th>จำนวนชิ้นรวม (Pcs)</th>
-                                        <th>น้ำหนักสุทธิรวม (KG)</th>
+                                        <th>Lot/Packing</th>
+                                        <th>Total Pieces (Pcs)</th>
+                                        <th>Net Weight Total (KG)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -272,7 +272,7 @@ $folder_func = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], EN
 
                         <div class="text-end mt-4">
                             <button type="submit" class="btn btn-issue" onclick="return confirm('คุณแน่ใจหรือไม่ที่จะทำการตัดจ่ายสินค้า [ยกตู้ทั้งตู้] ที่เลือก?')">
-                                <i class="fa-solid fa-check-to-slot me-2"></i> ยืนยันการตัดจ่ายยกตู้ (Confirm Full Container Issue)
+                                <i class="fa-solid fa-check-to-slot me-2"></i> Confirm Full Container Issue
                             </button>
                         </div>
                     </div>

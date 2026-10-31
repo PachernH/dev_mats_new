@@ -316,11 +316,11 @@ if (!empty($container_param)) {
                                         <td align="center">
                                             <?php if ($is_used): ?>
                                                 <span style="color: #dc2626; font-weight: 700;">
-                                                    ✔️ ผลิตนำไปใช้แล้ว (Used)
+                                                    ✔️ Production  (Used)
                                                 </span>
                                             <?php else: ?>
                                                 <span style="color: #059669; font-weight: 600;">
-                                                    ⏳ รอผลิตนำไปใช้ (Issued)
+                                                    ⏳ Waiting production (Issued)
                                                 </span>
                                             <?php endif; ?>
                                         </td>

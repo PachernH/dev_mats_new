@@ -220,17 +220,17 @@ try {
             <div class="tab-btn-group">
                 <a href="packing_list_process_mats.php?func=<?php echo $folder_func; ?>" 
                    class="tab-btn">
-                   ⬅️ กลับไปหน้า Packing List
+                   ⬅️ Back to Packing List
                 </a>
                 <a href="receiving_header_process_mats.php?func=<?php echo $folder_func; ?>" 
                    class="tab-btn">
-                   ➕ สร้าง Header ใหม่
+                   ➕ Create New Header
                 </a>
                 <?php if (!empty($gr_no_param)): ?>
                 <!-- ปุ่ม Close Scan เชื่อมโยงไป model/close_scan_receive_mats.php -->
                 <a href="model/close_scan_receive_mats.php?func=<?php echo urlencode($folder_func); ?>&gr_no=<?php echo urlencode($gr_no_param); ?>" 
                    class="tab-btn-close"
-                   onclick="return confirm('ยืนยันที่จะปิดการสแกน (Close Scan) สำหรับ GR No. <?php echo htmlspecialchars($gr_no_param); ?> ใช่หรือไม่?\nเมื่อปิดแล้วสถานะจะถูกเปลี่ยนเป็น CL');">
+                   onclick="return confirm('Confirm to stop scanning (Close Scan) for GR No. <?php echo htmlspecialchars($gr_no_param); ?> Is it right ? When closed, the status will be changed to CL');">
                    🔒 Close Scan
                 </a>
                 <?php endif; ?>
@@ -252,13 +252,13 @@ try {
                         </h4>
                         <div class="scanner-card">
                             <label style="font-size:13px; font-weight:700; color:#2563eb; margin-bottom: 10px; display: block;">
-                                คลิกช่องด้านล่าง แล้วยิงบาร์โค้ด
+                               Click the box below, then scan the barcode.
                             </label>
-                            <input type="text" id="hardwareScanInput" class="form-control-minimal" style="text-align:center; font-size:16px;" placeholder="คลิกเพื่อรอสแกน..." autofocus />
-                            <small style="color:#64748b; display:block; margin-top:10px;">ระบบจะจับคู่ข้อมูลและกรอกลงฟอร์มให้อัตโนมัติ</small>
+                            <input type="text" id="hardwareScanInput" class="form-control-minimal" style="text-align:center; font-size:16px;" placeholder="Click to wait for scan..." autofocus />
+                            <small style="color:#64748b; display:block; margin-top:10px;">The system will match the data and fill the form automatically</small>
                         </div>
                         <div style="background:#f1f5f9; padding:15px; border-radius:8px; border:1px solid #e2e8f0; font-size:13px; color:#475569;">
-                            ℹ️ <strong>วิธีใช้งาน:</strong> สามารถใช้หัวอ่านบาร์โค้ดยิงฉลากสินค้าเพื่อดึง Lot/Packing No., Cast No., Net Weight และ Production Date เข้าสู่แบบฟอร์มได้ทันที
+                            ℹ️ <strong>Usage Instructions:</strong> You can use the barcode scanner to scan product labels to automatically fill in Lot/Packing No., Cast No., Net Weight and Production Date into the form.
                         </div>
                     </div>
                 </div>
@@ -267,7 +267,7 @@ try {
                 <div class="col-md-8">
                     <div class="dashboard-card">
                         <h4 style="margin:0 0 15px 0; font-weight:700; color:#1e293b;">
-                            📝 บันทึกรับเข้าวัตถุดิบ (Container No: <?php echo htmlspecialchars($container_no); ?>) 
+                            📝 Material Receiving Record (Container No: <?php echo htmlspecialchars($container_no); ?>) 
                         </h4>
 
                         <form method="POST" action="">
@@ -354,7 +354,7 @@ try {
 
                             <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; display: flex; justify-content: flex-end;">
                                 <button type="submit" class="btn-action-work" style="height: 40px; padding: 0 28px; font-size: 14px;">
-                                    💾 บันทึกรับเข้าและอัปเดตพิกัดลาน
+                                    💾 Record arrivals and update coordinates
                                 </button>
                             </div>
                         </form>
@@ -365,7 +365,7 @@ try {
             <!-- ส่วนตารางแสดงประวัติรับเข้าล่าสุด -->
             <div class="dashboard-card">
                 <h4 style="margin:0 0 15px 0; font-weight:700; color:#1e293b;">
-                    📋 รายการรับเข้าล่าสุด (Recent Received Logs)
+                    📋 Recent Received Logs
                 </h4>
 
                 <div class="table-responsive">
@@ -388,8 +388,8 @@ try {
                                 $no = 1;
                                 foreach ($logs as $row) {
                                     $net_mt = (float)$row['net_weight_kg'] / 1000;
-                                    $gross_mt = ((float)$row['gross_weight_kg']) / 1000;
-                                    //$gross_mt = ((float)$row['net_weight_kg'] + 0.5) / 1000;
+                                    //$gross_mt = ((float)$row['gross_weight_kg']) / 1000;
+                                    $gross_mt = ((float)$row['net_weight_kg'] + 0.5) / 1000;
                                     $safe_pack = htmlspecialchars($row['packing_no'] ?? '', ENT_QUOTES, 'UTF-8');
                                     ?>
                                     <tr>
@@ -467,7 +467,10 @@ function parseScannedData(data) {
             }
 
             let weightMatch = data.match(/KG([0-9.]+)/);
-            if(weightMatch) { document.getElementById('net_weight_kg').value = weightMatch[1]; }
+            if(weightMatch) { 
+                document.getElementById('net_weight_kg').value = weightMatch[1]; 
+                document.getElementById('gross_weight_kg').value = weightMatch[1]; 
+            }
         } catch (err) {}
     } else {
         document.getElementById('packing_no').value = data;
