@@ -9,8 +9,8 @@ if (empty($search_key)) {
     die("<h3 style='color:red; text-align:center; margin-top:50px;'>คำเตือน: ไม่พบการระบุ PRODUCT_NO หรือ COIL_NO</h3>");
 }
 
-// 1. ดึงข้อมูลจาก SCRPPROD1 (ค้นหาจาก PRODUCT_NO หรือ COIL_NO)
-$sql_scrap = "SELECT PRODUCT_NO, COIL_NO, SCRP_WEIGHT, SCRP_OPERATOR, SCRP_STATUS 
+// 1. ดึงข้อมูลจาก SCRPPROD1 (เพิ่มฟิลด์ ALLOY และ MATERIAL_IN เพื่อใช้กรณีไม่มี COIL_NO)
+$sql_scrap = "SELECT PRODUCT_NO, COIL_NO, ALLOY, MATERIAL_IN, SCRP_WEIGHT, SCRP_OPERATOR, SCRP_STATUS 
               FROM SCRPPROD1 
               WHERE PRODUCT_NO = :search_key OR COIL_NO = :search_key";
 $stmt_scrap = $conn->prepare($sql_scrap);
@@ -22,48 +22,60 @@ if (!$scrap_data) {
     die("<h3 style='color:red; text-align:center; margin-top:50px;'>ไม่พบข้อมูลใน SCRPPROD1 สำหรับ: " . htmlspecialchars($search_key, ENT_QUOTES, 'UTF-8') . "</h3>");
 }
 
-$coil_no = $scrap_data['COIL_NO'];
-
-// 2. ดึงข้อมูลจาก COILPROD1 ตาม COIL_NO ที่ได้
-$sql_coil = "SELECT COIL_NO, ALLOY, CSTMSPPL_ID, MATERIAL_IN 
-             FROM COILPROD1 
-             WHERE COIL_NO = :coil_no";
-$stmt_coil = $conn->prepare($sql_coil);
-$stmt_coil->bindParam(':coil_no', $coil_no, PDO::PARAM_STR);
-$stmt_coil->execute();
-$coil_data = $stmt_coil->fetch(PDO::FETCH_ASSOC);
-
-// 3. ดึง Parent Coil ด้วย Recursive CTE
-$sql_parent = "WITH ParentTree AS (
-                    SELECT 
-                        c.COIL_NO, c.MATERIAL_IN, c.LINE_PROCESS, c.PRODUCT_REFERENCE, c.COIL_ENDDATE, 
-                        c.COIL_ACTUALWEIGHT, c.CSTMSPPL_ID, c.ALLOY, c.THICKNESS, c.WIDTH, 
-                        c.COIL_STATUS, c.COIL_OPERATEDATE,
-                        0 AS Level
-                    FROM COILPROD1 AS c
-                    WHERE c.COIL_NO = :coil_no
-                    UNION ALL
-                    SELECT 
-                        p.COIL_NO, p.MATERIAL_IN, p.LINE_PROCESS, p.PRODUCT_REFERENCE, p.COIL_ENDDATE, 
-                        p.COIL_ACTUALWEIGHT, p.CSTMSPPL_ID, p.ALLOY, p.THICKNESS, p.WIDTH, 
-                        p.COIL_STATUS, p.COIL_OPERATEDATE,
-                        child.Level - 1 
-                    FROM COILPROD1 AS p
-                    INNER JOIN ParentTree AS child ON p.COIL_NO = child.PRODUCT_REFERENCE
-                )
-                SELECT COIL_NO FROM ParentTree ORDER BY Level ASC";
-
-$stmt_parent = $conn->prepare($sql_parent);
-$stmt_parent->bindParam(':coil_no', $coil_no, PDO::PARAM_STR);
-$stmt_parent->execute();
-$parent_list = $stmt_parent->fetchAll(PDO::FETCH_COLUMN);
-
-// หา Parent Coil
+$coil_no = trim($scrap_data['COIL_NO'] ?? '');
+$coil_data = null;
 $parent_coil_no = '';
-if (count($parent_list) > 1) {
-    $parent_coil_no = $parent_list[0];
+
+// 2. ตรวจสอบเงื่อนไขว่ามี COIL_NO หรือไม่
+if (!empty($coil_no)) {
+    // 2.1 ดึงข้อมูลจาก COILPROD1
+    $sql_coil = "SELECT COIL_NO, ALLOY, CSTMSPPL_ID, MATERIAL_IN 
+                 FROM COILPROD1 
+                 WHERE COIL_NO = :coil_no";
+    $stmt_coil = $conn->prepare($sql_coil);
+    $stmt_coil->bindParam(':coil_no', $coil_no, PDO::PARAM_STR);
+    $stmt_coil->execute();
+    $coil_data = $stmt_coil->fetch(PDO::FETCH_ASSOC);
+
+    // 2.2 ดึง Parent Coil ด้วย Recursive CTE
+    $sql_parent = "WITH ParentTree AS (
+                        SELECT 
+                            c.COIL_NO, c.MATERIAL_IN, c.LINE_PROCESS, c.PRODUCT_REFERENCE, c.COIL_ENDDATE, 
+                            c.COIL_ACTUALWEIGHT, c.CSTMSPPL_ID, c.ALLOY, c.THICKNESS, c.WIDTH, 
+                            c.COIL_STATUS, c.COIL_OPERATEDATE,
+                            0 AS Level
+                        FROM COILPROD1 AS c
+                        WHERE c.COIL_NO = :coil_no
+                        UNION ALL
+                        SELECT 
+                            p.COIL_NO, p.MATERIAL_IN, p.LINE_PROCESS, p.PRODUCT_REFERENCE, p.COIL_ENDDATE, 
+                            p.COIL_ACTUALWEIGHT, p.CSTMSPPL_ID, p.ALLOY, p.THICKNESS, p.WIDTH, 
+                            p.COIL_STATUS, p.COIL_OPERATEDATE,
+                            child.Level - 1 
+                        FROM COILPROD1 AS p
+                        INNER JOIN ParentTree AS child ON p.COIL_NO = child.PRODUCT_REFERENCE
+                    )
+                    SELECT COIL_NO FROM ParentTree ORDER BY Level ASC";
+
+    $stmt_parent = $conn->prepare($sql_parent);
+    $stmt_parent->bindParam(':coil_no', $coil_no, PDO::PARAM_STR);
+    $stmt_parent->execute();
+    $parent_list = $stmt_parent->fetchAll(PDO::FETCH_COLUMN);
+
+    if (count($parent_list) > 1) {
+        $parent_coil_no = $parent_list[0];
+    } else {
+        $parent_coil_no = $coil_no;
+    }
+
+    // กำหนดค่า ALLOY จาก COILPROD1 (ถ้าใน COIL ว่าง ให้ fallback เป็นของ SCRPPROD1)
+    $display_alloy = !empty($coil_data['ALLOY']) ? $coil_data['ALLOY'] : ($scrap_data['ALLOY'] ?? '');
+    $display_material_in = !empty($coil_data['MATERIAL_IN']) ? $coil_data['MATERIAL_IN'] : ($scrap_data['MATERIAL_IN'] ?? '');
 } else {
-    $parent_coil_no = $coil_no;
+    // กรณีไม่มี COIL_NO ให้อ้างอิง ALLOY และ MATERIAL_IN จาก SCRPPROD1 โดยตรง
+    $display_alloy = $scrap_data['ALLOY'] ?? '';
+    $display_material_in = $scrap_data['MATERIAL_IN'] ?? '';
+    $parent_coil_no = '-';
 }
 
 function h($val) {
@@ -141,7 +153,7 @@ function h($val) {
         .text-center { text-align: center; }
         .text-right { text-align: right; }
 
-        /* หัวตารางขยายตัวโต + ตัวหนาพิเศษ ความสูงรวมเท่ากับ 3 Row (~150px) */
+        /* หัวตารางขยายตัวโต + ตัวหนาพิเศษ */
         .header-title-large {
             font-size: 34px !important;
             font-weight: 900 !important;
@@ -194,10 +206,8 @@ function h($val) {
     <button class="no-print" onclick="window.print()">🖨️ พิมพ์เอกสาร (Print Scrap Label)</button>
 
     <div class="print-page">
-        <!-- Container ควบคุมขนาดให้อยู่ในสัดส่วนครึ่งหน้า A4 -->
         <div class="label-half-container">
             <table class="scrap-table">
-                <!-- กำหนดความกว้างคอลัมน์สมดุล 4 ช่อง (22% | 28% | 22% | 28%) -->
                 <colgroup>
                     <col style="width: 22%;">
                     <col style="width: 28%;">
@@ -205,7 +215,7 @@ function h($val) {
                     <col style="width: 28%;">
                 </colgroup>
 
-                <!-- Row 1: Header ขยายใหญ่ข้ามความสูงเทียบเท่า 3 แถว (150px) -->
+                <!-- Row 1: Header ขยายใหญ่ -->
                 <tr>
                     <td class="text-center header-title-large">
                         SCRAP<br>LABEL
@@ -234,7 +244,7 @@ function h($val) {
                 <tr>
                     <td class="lbl-title">COIL NO.</td>
                     <td>
-                        <span class="auto-fit"><?php echo h($scrap_data['COIL_NO']); ?></span>
+                        <span class="auto-fit"><?php echo h($scrap_data['COIL_NO'] ?: '-'); ?></span>
                     </td>
                     <td class="lbl-title">PRINT DATE</td>
                     <td class="text-center">
@@ -258,7 +268,8 @@ function h($val) {
                 <tr>
                     <td class="lbl-title">ALLOY</td>
                     <td class="text-center">
-                        <span class="auto-fit"><?php echo h($coil_data['ALLOY'] ?? ''); ?></span>
+                        <!-- แสดง Alloy ตามเงื่อนไข Coil หรือ Scrap -->
+                        <span class="auto-fit"><?php echo h($display_alloy); ?></span>
                     </td>
                     <td class="lbl-title">COIL FROM</td>
                     <td class="text-center">
@@ -279,7 +290,7 @@ function h($val) {
                     </td>
                     <td class="lbl-title">MATERIAL IN</td>
                     <td class="text-center">
-                        <span class="auto-fit"><?php echo h($coil_data['MATERIAL_IN'] ?? ''); ?></span>
+                        <span class="auto-fit"><?php echo h($display_material_in); ?></span>
                     </td>
                 </tr>
             </table>
@@ -292,7 +303,6 @@ function h($val) {
     </div>
 
     <script>
-        // ฟังก์ชั่นย่อขนาดตัวอักษรอัตโนมัติเมื่อข้อความยาวเกินช่องตาราง
         function fitTextToCell() {
             document.querySelectorAll('.auto-fit').forEach(el => {
                 const parent = el.parentElement;

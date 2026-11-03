@@ -166,6 +166,39 @@ $jno = !isset($_GET['jno']) ? '' : htmlspecialchars(trim($_GET['jno']), ENT_QUOT
             background-color: #94a3b8 !important; color: #ffffff !important; font-weight: 600; font-size: 12px;
             padding: 6px 14px; border-radius: 6px; border: none; min-width: 130px; cursor: not-allowed !important; opacity: 0.75;
         }
+
+        /* บังคับให้ส่วน Pagination และ Info ด้านล่างตารางแสดงผลชัดเจน */
+        /*
+        .dataTables_paginate {
+            display: block !important;
+            text-align: right !important;
+            padding-top: 15px !important;
+        }
+
+        .dataTables_info {
+            display: block !important;
+            float: left !important;
+            padding-top: 15px !important;
+            font-size: 13px !important;
+            color: #64748b !important;
+        }
+
+        .dataTables_paginate .paginate_button {
+            padding: 5px 12px !important;
+            margin-left: 4px !important;
+            border-radius: 6px !important;
+            border: 1px solid #cbd5e1 !important;
+            background: #ffffff !important;
+            color: #334155 !important;
+            cursor: pointer !important;
+        }
+
+        .dataTables_paginate .paginate_button.current {
+            background: #2563eb !important;
+            color: #ffffff !important;
+            border-color: #2563eb !important;
+        } 
+        */
     </style>
 </head>
 <body>

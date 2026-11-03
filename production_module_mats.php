@@ -199,26 +199,14 @@ include 'include/'.$folder_func.'/navigation.php';
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
                                             </div>
                                             
-                                            <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=job" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                            <a href="batch_annealing_mats.php?func=<?php echo $folder_func; ?>&type=job" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
                                                 <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                                 <div>
-                                                    <div class="text-bg font-bold text-blue-900">Input Batch Annealing Process</div>
+                                                    <div class="text-bg font-bold text-blue-900">Input / Output Batch Annealing Process</div>
                                                     <div class="text-[10px] text-blue-600 uppercase">Function</div>
                                                 </div>
                                             </a>
                                             
-                                            <div class="flex justify-center text-slate-300 py-1">
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
-                                            </div>
-                                            
-                                            <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=job" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
-                                                <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
-                                                <div>
-                                                    <div class="text-bg font-bold text-blue-900">Output Batch Annealing Process</div>
-                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
-                                                </div>
-                                            </a>
-
                                             <div class="flex justify-center text-slate-300 py-1">
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
                                             </div>
@@ -393,7 +381,7 @@ include 'include/'.$folder_func.'/navigation.php';
                                         </div>
                                         
                                         <div class="flex flex-col gap-3 mt-2">
-                                            <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                            <a href="scrap_produce_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
                                                 <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                                 <div>
                                                     <div class="text-bg font-bold text-blue-900">Scrap from Produce</div>
@@ -405,10 +393,10 @@ include 'include/'.$folder_func.'/navigation.php';
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
                                             </div>
                                             
-                                            <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=job" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                            <a href="combine_scrap_all_process.php?func=<?php echo $folder_func; ?>&type=job" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
                                                 <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                                 <div>
-                                                    <div class="text-bg font-bold text-blue-900">Combine Wrap Product</div>
+                                                    <div class="text-bg font-bold text-blue-900">Combine Scrap for All Process</div>
                                                     <div class="text-[10px] text-blue-600 uppercase">Function</div>
                                                 </div>
                                             </a>
@@ -417,7 +405,19 @@ include 'include/'.$folder_func.'/navigation.php';
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
                                             </div>
                                             
-                                            <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=job" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                            <a href="combining_process_mats.php?func=<?php echo $folder_func; ?>&type=job" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                                <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
+                                                <div>
+                                                    <div class="text-bg font-bold text-blue-900">Combine Wrap Product</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                </div>
+                                            </a>
+
+                                            <div class="flex justify-center text-slate-300 py-1">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                                            </div>
+                                            
+                                            <a href="wrapping_process_mats.php?func=<?php echo $folder_func; ?>&type=job" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
                                                 <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                                 <div>
                                                     <div class="text-bg font-bold text-blue-900">Wrap Product</div>
