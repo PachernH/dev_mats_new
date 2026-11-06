@@ -19,10 +19,23 @@ $sum_pcs = 0;
 $sum_net = 0;
 
 try {
-    $sql = "SELECT h.req_no, h.req_date, h.department, h.ref_no, h.issued_by, h.remarks, d.country_of_origin,
-                   d.container_no, d.packing_no, d.piece_count, d.net_weight_kg, d.status
+    // ใช้ DISTINCT และอ้างอิง req_detail_id เพื่อให้แต่ละ Packing No. แสดงเพียงแถวเดียว ไม่ซ้ำซ้อน
+    $sql = "SELECT DISTINCT 
+                   d.req_detail_id,
+                   h.req_no, 
+                   h.req_date, 
+                   h.department, 
+                   h.ref_no, 
+                   h.issued_by, 
+                   h.remarks, 
+                   d.country_of_origin,
+                   d.container_no, 
+                   d.packing_no, 
+                   d.piece_count, 
+                   d.net_weight_kg, 
+                   d.status
             FROM requisition_header h
-            JOIN requisition_detail d ON h.req_no = d.req_no
+            INNER JOIN requisition_detail d ON h.req_no = d.req_no
             WHERE h.req_date >= :date_from AND h.req_date <= :date_to";
 
     $params = [
@@ -40,14 +53,24 @@ try {
         $params[':ref'] = "%$search_req%";
     }
 
-    $sql .= " ORDER BY h.req_date DESC, d.container_no ASC";
+    $sql .= " ORDER BY h.req_date DESC, d.container_no ASC, d.packing_no ASC";
     $stmt = $conn->prepare($sql);
     $stmt->execute($params);
-    $reportData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $rawReport = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    foreach ($reportData as $row) {
-        $sum_pcs += $row['piece_count'];
-        $sum_net += $row['net_weight_kg'];
+    // กรองซ้ำระดับ PHP อีกชั้น โดยใช้ container_no + packing_no เป็น Unique Key
+    $seen = [];
+    foreach ($rawReport as $row) {
+        $uniqueKey = (!empty($row['req_detail_id'])) 
+                     ? $row['req_detail_id'] 
+                     : ($row['container_no'] . '_' . $row['packing_no'] . '_' . $row['req_no']);
+
+        if (!isset($seen[$uniqueKey])) {
+            $seen[$uniqueKey] = true;
+            $reportData[] = $row;
+            $sum_pcs += floatval($row['piece_count']);
+            $sum_net += floatval($row['net_weight_kg']);
+        }
     }
 
     // หากกดปุ่ม Export Excel ให้ส่งออกเป็นไฟล์ .xls ทันที
@@ -82,7 +105,7 @@ try {
         echo '<tr style="font-weight: bold; background-color: #f1f5f9;">';
         echo '<td colspan="7" style="text-align: right;">Total:</td>';
         echo '<td>' . $sum_pcs . '</td>';
-        echo '<td>' . $sum_net . '</td>';
+        echo '<td>' . number_format($sum_net, 2, '.', '') . '</td>';
         echo '<td colspan="2"></td>';
         echo '</tr>';
         echo '</table>';
@@ -134,7 +157,6 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
         </nav>
         <div class="content">
             <div class="container-fluid">
-                <!-- ฟอร์มค้นหา จัดสัดส่วน Grid ใหม่ -->
                 <form method="GET" action="" class="filter-wrapper">
                     <div class="row g-3 align-items-end">
                         <div class="col-md-2 col-sm-6">
@@ -161,7 +183,6 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                     </div>
                 </form>
 
-                <!-- ตารางแสดงรายงาน พร้อมปุ่ม Export Excel ที่หัวข้อขวาบน -->
                 <div class="dashboard-card">
                     <div class="card-header-flex">
                         <h4 class="card-title-sub text-primary m-0">
@@ -206,7 +227,6 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                                             <td><span class="badge-issued"><?php echo htmlspecialchars($row['status']); ?></span></td>
                                         </tr>
                                     <?php endforeach; ?>
-                                    <!-- แถวสรุปผลรวม (Summary Footer) -->
                                     <tr class="table-footer-summary">
                                         <td colspan="7" class="text-end">Total:</td>
                                         <td><?php echo number_format($sum_pcs); ?></td>

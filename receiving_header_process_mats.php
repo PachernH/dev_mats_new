@@ -30,7 +30,8 @@ $msgType = "";
 // ดึงข้อมูล Supplier
 $suppliers = [];
 try {
-    $supStmt = $conn->query("SELECT CSTMSPPL_ID, EN_COMPANY FROM CSSPMSTR22 WHERE EN_COMPANY <> '' ORDER BY EN_COMPANY ASC");
+    $supStmt = $conn->query("SELECT CSTMSPPL_ID, EN_COMPANY FROM CSSPMSTR22 WHERE (CSTMSPPL_ID='P-6309' OR CSTMSPPL_ID='P-N022' OR CSTMSPPL_ID='P-T172' OR CSTMSPPL_ID='R-T015')
+     ORDER BY EN_COMPANY ASC");
     $suppliers = $supStmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {}
 
@@ -65,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         $description_fg = "";
+        $materials_no = "";
         foreach ($materialsList as $mat) {
             if ($mat['material_id'] == ($_POST['description_fg_id'] ?? '')) {
                 $description_fg = $mat['item_code'] .' - '. $mat['item_name'];
@@ -102,7 +104,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             ':country_of_origin'    => $_POST['country_of_origin'] ?? ''
         ]);
 
-        // ส่งต่อไปยังหน้าแสดงรายการ Packing List
         header("Location: packing_list_process_mats.php?func=" . urlencode($folder_func));
         exit();
 
@@ -121,24 +122,60 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <style>
         body { font-family: 'Segoe UI', 'Tahoma', 'Sarabun', sans-serif; background-color: #f8fafc; color: #334155; }
         .dashboard-card { background: #ffffff; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0; }
-        .filter-wrapper { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; background: #ffffff; padding: 18px 24px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
         .filter-item { display: flex; flex-direction: column; gap: 6px; }
-        .form-control-minimal { border: none !important; border-bottom: 2px solid #cbd5e1 !important; border-radius: 0 !important; background-color: transparent !important; height: 40px; font-size: 15px; font-weight: 600; color: #1e293b; outline: none; }
+        .form-control-minimal { 
+            border: none !important; 
+            border-bottom: 2px solid #cbd5e1 !important; 
+            border-radius: 0 !important; 
+            background-color: transparent !important; 
+            height: 40px; 
+            font-size: 15px; 
+            font-weight: 600; 
+            color: #1e293b; 
+            outline: none; 
+            width: 100%;
+        }
         .btn-search {
             background-color: #1e293b; color: #ffffff; font-weight: 600; font-size: 13px;
             letter-spacing: 0.5px; height: 40px; padding: 0 24px; border-radius: 8px; border: none; transition: all 0.2s;
         }
         .btn-search:hover { background-color: #0f172a; color: #ffffff; transform: translateY(-1px); }        
-        .badge-job { background-color: #eff6ff; color: #1d4ed8; font-weight: 700; font-size: 12.5px; padding: 5px 12px; border-radius: 20px; border: 1px solid #bfdbfe; }
-        .badge-prod { background-color: #fef3c7; color: #92400e; font-weight: 700; font-size: 12px; padding: 4px 8px; border-radius: 6px; }
         .btn-action-work { background-color: #059669; color: #ffffff; font-weight: 700; font-size: 12.5px; padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; }
         .btn-action-work:hover { background-color: #047857; }
-        .btn-action-edit { background-color: #2563eb; color: #ffffff; font-weight: 700; font-size: 12.5px; padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; }
-        .btn-action-edit:hover { background-color: #1d4ed8; }
 
         .tab-btn-group { display: flex; gap: 8px; margin-bottom: 15px; }
         .tab-btn { padding: 9px 20px; font-weight: 700; font-size: 14px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #64748b; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
         .tab-btn.active { background: #059669; color: #fff; border-color: #059669; box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2); }
+
+        /* ปรับ wrapper ให้เต็ม 100% เพื่อให้เส้นใต้กว้างเท่าช่องอื่น */
+        .supplier-picker-wrap {
+            position: relative;
+            width: 100%;
+            cursor: pointer;
+        }
+        .supplier-picker-wrap input {
+            cursor: pointer;
+            padding-right: 35px;
+            width: 100%;
+        }
+        .supplier-picker-icon {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            color: #64748b;
+            pointer-events: none;
+        }
+
+        /* ตาราง Supplier ใน Modal */
+        .table-supplier-list tbody tr {
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .table-supplier-list tbody tr:hover {
+            background-color: #f1f5f9;
+        }
     </style>
 </head>
 <body>
@@ -185,18 +222,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <div class="row" style="margin-bottom: 18px;">
                         <div class="col-md-6 filter-item">
                             <label style="font-size:12px; font-weight:700; color:#64748b;">INVOICE NO. (เลขที่ใบกำกับสินค้า)</label>
-                            <input class="form-control-minimal" type="text" name="invoice_no" placeholder="กรอกเลขที่ Invoice..." />
+                            <input class="form-control-minimal" type="text" name="invoice_no" placeholder="กรอกเลขที่ Invoice..." oninput="this.value = this.value.toUpperCase()" />
                         </div>                        
                         <div class="col-md-6 filter-item">
                             <label style="font-size:12px; font-weight:700; color:#64748b;">PACK LIST NO. (เลขที่แพ็คเกจลิสต์) *</label>
-                            <input class="form-control-minimal" type="text" name="pack_list_no" placeholder="กรอกเลขที่ Pack List..." required />
+                            <input class="form-control-minimal" type="text" name="pack_list_no" placeholder="กรอกเลขที่ Pack List..." oninput="this.value = this.value.toUpperCase()" required />
                         </div>
                     </div>
 
                     <div class="row" style="margin-bottom: 18px;">
                         <div class="col-md-6 filter-item">
                             <label style="font-size:12px; font-weight:700; color:#64748b;">PO NO. (เลขที่ใบสั่งซื้อ) *</label>
-                            <input class="form-control-minimal" type="text" name="po_no" placeholder="กรอกเลขที่ PO..." required />
+                            <input class="form-control-minimal" type="text" name="po_no" placeholder="กรอกเลขที่ PO..." oninput="this.value = this.value.toUpperCase()" required />
                         </div>
                         <div class="col-md-6 filter-item">
                             <label style="font-size:12px; font-weight:700; color:#64748b;">MATERIALS (รายละเอียดสินค้า) *</label>
@@ -216,33 +253,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <label style="font-size:12px; font-weight:700; color:#64748b;">DATE (วันที่รับเข้า) *</label>
                             <input class="form-control-minimal" type="date" name="receive_date" value="<?php echo date('Y-m-d'); ?>" required />
                         </div>
+                        
+                        <!-- SUPPLIER POPUP PICKER (แก้เส้นใต้ให้ยาวเต็มช่อง) -->
                         <div class="col-md-6 filter-item">
                             <label style="font-size:12px; font-weight:700; color:#64748b;">SUPPLIER (ผู้ผลิต) *</label>
-                            <select class="form-control-minimal" name="supplier_id" required>
-                                <option value="">-- เลือก Supplier --</option>
-                                <?php foreach ($suppliers as $sup): ?>
-                                    <option value="<?php echo htmlspecialchars($sup['CSTMSPPL_ID']); ?>">
-                                        <?php echo htmlspecialchars($sup['CSTMSPPL_ID'] . ' - ' . $sup['EN_COMPANY']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
+                            <div class="supplier-picker-wrap" data-toggle="modal" data-target="#supplierModal">
+                                <input type="hidden" name="supplier_id" id="supplier_id" required />
+                                <input class="form-control-minimal" type="text" id="supplier_display" placeholder="คลิกเพื่อเลือก Supplier..." readonly required />
+                                <span class="supplier-picker-icon">🔍</span>
+                            </div>
                         </div>
                     </div>
 
                     <div class="row" style="margin-bottom: 18px;">
                         <div class="col-md-6 filter-item">
                             <label style="font-size:12px; font-weight:700; color:#64748b;">CONTAINER NO. (เลขตู้คอนเทนเนอร์)</label>
-                            <input class="form-control-minimal" type="text" name="container_no" placeholder="กรอกเลข Container..." />
+                            <input class="form-control-minimal" type="text" name="container_no" placeholder="กรอกเลข Container..." oninput="this.value = this.value.toUpperCase()"/>
                         </div>
                         <div class="col-md-6 filter-item">
                             <label style="font-size:12px; font-weight:700; color:#64748b;">SEAL NO. (เลขซีลตู้)</label>
-                            <input class="form-control-minimal" type="text" name="seal_no" placeholder="กรอกเลข Seal..." />
+                            <input class="form-control-minimal" type="text" name="seal_no" placeholder="กรอกเลข Seal..." oninput="this.value = this.value.toUpperCase()"/>
                         </div>
                     </div>
 
                     <div class="row" style="margin-bottom: 24px;">
                         <div class="col-md-6 filter-item">
-                            <label style="font-size:12px; font-weight:700; color:#64748b;">COUNTRY OF ORIGIN (PRIMARY SMELT) *</label>
+                            <label style="font-size:12px; font-weight:700; color:#64748b;">COUNTRY OF LARGEST SMELT *</label>
                             <select class="form-control-minimal" name="country_of_origin" required>
                                 <option value="">-- เลือก Country --</option>
                                 <option value="MALAYSIA">MALAYSIA</option>
@@ -254,7 +290,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         </div>
 
                         <div class="col-md-6 filter-item">
-                            <label style="font-size:12px; font-weight:700; color:#64748b;">COUNTRY OF SECONDARY (SECONDARY SMELT) *</label>
+                            <label style="font-size:12px; font-weight:700; color:#64748b;">COUNTRY OF SECONDARY LARGEST SMELT *</label>
                             <select class="form-control-minimal" name="country_of_secondary" disabled>
                                 <option value="">-- เลือก Country --</option>
                                 <option value="MALAYSIA">MALAYSIA</option>
@@ -281,6 +317,115 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <?php include 'include/content-footer.php';?>
     </div>
 </div>
-</body>
+
+<!-- Modal Popup สำหรับเลือก Supplier -->
+<div class="modal fade" id="supplierModal" tabindex="-1" role="dialog" aria-labelledby="supplierModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
+            <div class="modal-header" style="background-color: #1e293b; color: #fff; padding: 16px 20px;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: #fff; opacity: 0.8;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="supplierModalLabel" style="font-weight: 700; margin: 0; font-size: 16px;">
+                    🔍 ค้นหาและเลือก Supplier (ผู้ผลิต)
+                </h4>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                
+                <!-- กล่องค้นหาแบบ Flexbox ชัดเจน ป้องกันปุ่มถูกซ่อนหรือตกบรรทัด -->
+                <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                    <input type="text" id="supplierSearchInput" class="form-control" 
+                           placeholder="พิมพ์ รหัส หรือ ชื่อบริษัท แล้วกดค้นหา (หรือกด Enter)..." 
+                           style="height: 42px; font-size: 14px; border-radius: 8px; border: 1px solid #cbd5e1; flex: 1;" />
+                    
+                    <button type="button" id="btnDoSearch" 
+                            style="height: 42px; padding: 0 24px; font-weight: 700; font-size: 14px; border-radius: 8px; background-color: #2563eb; color: #ffffff; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
+                        🔍 ค้นหา
+                    </button>
+                    
+                    <button type="button" id="btnResetSearch" 
+                            style="height: 42px; padding: 0 16px; font-weight: 600; font-size: 13px; border-radius: 8px; background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; cursor: pointer; white-space: nowrap;">
+                        ล้างค่า
+                    </button>
+                </div>
+                
+                <div style="max-height: 380px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <table class="table table-hover table-striped table-supplier-list" style="margin-bottom: 0;">
+                        <thead>
+                            <tr style="background-color: #f8fafc; color: #475569; font-size: 13px;">
+                                <th style="width: 25%; padding: 12px 16px;">Supplier ID</th>
+                                <th style="padding: 12px 16px;">Company Name</th>
+                                <th style="width: 15%; text-align: center; padding: 12px 16px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="supplierTableBody">
+                            <?php foreach ($suppliers as $sup): ?>
+                                <tr onclick="selectSupplier('<?php echo htmlspecialchars(addslashes($sup['CSTMSPPL_ID'])); ?>', '<?php echo htmlspecialchars(addslashes($sup['EN_COMPANY'])); ?>')">
+                                    <td style="font-weight: 700; color: #1e293b; padding: 10px 16px;"><?php echo htmlspecialchars($sup['CSTMSPPL_ID']); ?></td>
+                                    <td style="color: #334155; padding: 10px 16px;"><?php echo htmlspecialchars($sup['EN_COMPANY']); ?></td>
+                                    <td style="text-align: center; padding: 10px 16px;">
+                                        <button type="button" class="btn btn-xs btn-primary" style="border-radius: 4px; padding: 4px 10px;">เลือก</button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #e2e8f0; padding: 12px 20px;">
+                <button type="button" class="btn btn-default" data-dismiss="modal" style="border-radius: 6px; font-weight: 600;">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?php include 'include/footer.php';?>
+
+<script>
+// เลือก Supplier และปิด Modal
+function selectSupplier(id, name) {
+    document.getElementById('supplier_id').value = id;
+    document.getElementById('supplier_display').value = id + ' - ' + name;
+    $('#supplierModal').modal('hide');
+}
+
+// ฟังก์ชันค้นหาเมื่อกดปุ่มหรือกด Enter
+function executeSupplierSearch() {
+    var keyword = document.getElementById('supplierSearchInput').value.toLowerCase().trim();
+    var rows = document.querySelectorAll('#supplierTableBody tr');
+
+    rows.forEach(function(row) {
+        var text = row.innerText.toLowerCase();
+        row.style.display = (keyword === '' || text.indexOf(keyword) > -1) ? '' : 'none';
+    });
+}
+
+// กดปุ่มค้นหา
+document.getElementById('btnDoSearch').addEventListener('click', executeSupplierSearch);
+
+// กดปุ่มล้างค่า
+document.getElementById('btnResetSearch').addEventListener('click', function() {
+    document.getElementById('supplierSearchInput').value = '';
+    executeSupplierSearch();
+    document.getElementById('supplierSearchInput').focus();
+});
+
+// กดปุ่ม Enter ในช่อง Input เพื่อค้นหา
+document.getElementById('supplierSearchInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        executeSupplierSearch();
+    }
+});
+
+// เคลียร์และแสดงแถวทั้งหมดเมื่อเปิด Modal
+$('#supplierModal').on('shown.bs.modal', function () {
+    var searchInput = document.getElementById('supplierSearchInput');
+    searchInput.value = '';
+    var rows = document.querySelectorAll('#supplierTableBody tr');
+    rows.forEach(function(row) { row.style.display = ''; });
+    searchInput.focus();
+});
+</script>
+</body>
 </html>

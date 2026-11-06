@@ -36,7 +36,7 @@ try {
                     WHERE y.container_no = h.container_no) / 1000.0 AS out_mt
 
             FROM RECEIVING_HEADER h
-            WHERE 1=1";
+            WHERE 1=1 and h.receive_status='CL'";
     
     $params = [];
 

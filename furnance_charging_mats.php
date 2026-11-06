@@ -1,13 +1,11 @@
 <?php
 // เริ่ม session ก่อน ANY output
 session_start();
-// ถ้าไม่มี Session หรือไม่ได้ Login ให้กลับไปหน้า index.php
 if (!isset($_SESSION['ID'])) {
     header("Location: index.php");
     exit();
 }
 
-// ดึงค่าและตรวจสอบข้อมูลนำเข้าเพื่อความปลอดภัย (Sanitize Input)
 $d = !isset($_GET['d']) ? date('Y-m-d') : htmlspecialchars($_GET['d'], ENT_QUOTES, 'UTF-8');
 $bno = !isset($_GET['bno']) ? '' : htmlspecialchars(trim($_GET['bno']), ENT_QUOTES, 'UTF-8');
 
@@ -30,7 +28,6 @@ $allowed_departments = ['PD', 'IT', 'TC', 'MG'];
 
 $is_supervisor_up = in_array($position_func, $bypass_positions) && in_array($department_func, $allowed_departments);
 
-// ตรวจสอบ Line การทำงาน (เฉพาะกลุ่ม CASTER ต้องเป็น Line 1 หรือ 2 เท่านั้น)
 $allowed_lines_caster = ['1', '2'];
 if (!$is_supervisor_up) {
     if ($process_group !== 'CASTER' || !in_array($line_func, $allowed_lines_caster)) {
@@ -42,10 +39,10 @@ if (!$is_supervisor_up) {
     }
 }
 
-// กำหนด Furnace No. อัตโนมัติจาก Line ที่ Login เข้ามา
+// กำหนด Furnace No. อัตโนมัติจาก Line
 $auto_furnace_no = '';
 if (in_array($line_func, ['1', '2'])) {
-    $auto_furnace_no = $line_func; // Line 1 -> Furnace 1, Line 2 -> Furnace 2
+    $auto_furnace_no = $line_func;
 }
 ?>
 <!doctype html>
@@ -157,7 +154,6 @@ if (in_array($line_func, ['1', '2'])) {
         .modal-backdrop { z-index: 1040 !important; }
         .modal { z-index: 1050 !important; }
         
-        /* สไตล์ตาราง Modal WIP Ingot */
         .wip-table thead th {
             background-color: #f1f5f9;
             color: #1e293b;
@@ -176,6 +172,11 @@ if (in_array($line_func, ['1', '2'])) {
             border-radius: 6px;
             font-weight: 600;
             font-size: 12px;
+        }
+
+        .required-star {
+            color: #ef4444;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -226,29 +227,29 @@ if (in_array($line_func, ['1', '2'])) {
                             </div>
                             <div class="col-md-6 col-sm-12">
                                 <div class="form-group">
-                                    <label for="furnace_no">Furnace No. <span style="color:#ef4444;">*</span> <small class="text-primary">(Auto from Line)</small></label>
+                                    <label for="furnace_no">Furnace No. <span class="required-star">*</span> <small class="text-primary">(Auto from Line)</small></label>
                                     
-                                    <!-- ถ้าตรง Line 1 หรือ 2 จะ disabled ไม่ให้เลือกเอง -->
                                     <select class="form-control" id="furnace_no_select" onchange="syncFurnaceNo(this.value)" <?php echo ($auto_furnace_no != '') ? 'disabled' : ''; ?>>
                                         <option value="">-- Select Furnace --</option>
                                         <option value="1" <?php echo ($auto_furnace_no === '1') ? 'selected' : ''; ?>>FURNACE #01 (Line 1)</option>
                                         <option value="2" <?php echo ($auto_furnace_no === '2') ? 'selected' : ''; ?>>FURNACE #02 (Line 2)</option>
                                     </select>
-                                    <!-- Hidden Input สำหรับเก็บค่าเตาจริงเพื่อใช้ตอน Submit -->
                                     <input type="hidden" id="furnace_no" name="furnace_no" value="<?php echo htmlspecialchars($auto_furnace_no, ENT_QUOTES, 'UTF-8'); ?>" />
                                 </div>
                             </div>
+                            
                             <div class="col-md-6 col-sm-12">
                                 <div class="form-group">
-                                    <label for="batch_no">Batch No</label>
-                                    <input class="form-control" name="batch_no" id="batch_no" type="text" readonly style="font-weight: 600; color: #1e293b;"/> 
+                                    <label for="batch_no">Batch No <small class="text-muted">(Auto on Save)</small></label>
+                                    <input class="form-control" name="batch_no" id="batch_no" type="text" value="[Auto Generated on Save]" readonly style="font-weight: 600; color: #2563eb; background-color: #f1f5f9;"/> 
                                 </div>
                             </div>
+
                             <div class="col-md-6 col-sm-12">
                                 <div class="form-group">
-                                    <label for="material_name">Material In</label>
+                                    <label for="material_name">Material In <span class="required-star">*</span></label>
                                     <select class="form-control" id="material_name" onchange="handleMaterialChange()">
-                                        <option value=""></option>
+                                        <option value="">-- Select Material In --</option>
                                         <?php
                                             include('dbcon_mats-new.php');
                                             $sql = "SELECT BOI_PROJECT FROM BOIPRJCT1 
@@ -271,9 +272,9 @@ if (in_array($line_func, ['1', '2'])) {
                         <div class="row">
                             <div class="col-md-4 col-sm-12">
                                 <div class="form-group">
-                                    <label for="alloy">Alloy</label>
+                                    <label for="alloy">Alloy <span class="required-star">*</span></label>
                                     <select class="form-control" id="alloy">
-                                        <option value=""></option>
+                                        <option value="">-- Select Alloy --</option>
                                         <?php
                                             include('dbcon_mats-new.php');
                                             $sql = "SELECT ALLOY FROM CMPSMSTR1 GROUP BY ALLOY";
@@ -287,7 +288,6 @@ if (in_array($line_func, ['1', '2'])) {
                                 </div>
                             </div>
                             
-                            <!-- Primary & Secondary Smelt Country (Disabled ไม่ให้เลือกเอง) -->
                             <div class="col-md-4 col-sm-6">
                                 <div class="form-group">
                                     <label for="primary_smelt">Primary Smelt Country <small class="text-primary">(Auto Calc)</small></label>
@@ -331,10 +331,10 @@ if (in_array($line_func, ['1', '2'])) {
                                 </div>
                             </div>
                             
-                            <!-- Charge AL Ingot (Kg) เป็นปุ่มเลือกจาก WIP Stock ข้ามตู้ -->
+                            <!-- Charge AL Ingot (Kg) -->
                             <div class="col-md-6 col-sm-12">
                                 <div class="form-group">
-                                    <label for="charge_ingot">Charge AL Ingot (Kg)</label>
+                                    <label for="charge_ingot">Charge AL Ingot (Kg) <span class="required-star">*</span></label>
                                     <div class="input-group">
                                         <input class="form-control" name="charge_ingot" id="charge_ingot" type="number" readonly placeholder="Click button to select Ingot..." style="background-color: #f8fafc; font-weight: 700; color: #1e40af;"/> 
                                         <span class="input-group-btn">
@@ -400,7 +400,7 @@ if (in_array($line_func, ['1', '2'])) {
                         <h4 class="card-title-sub">📊 Weight Summary Calculations</h4>
                         
                         <div class="form-group mb-4">
-                            <label for="total_charge" style="font-size:14px; font-weight:600;">Total AL Charging (Kg)</label>
+                            <label for="total_charge" style="font-size:14px; font-weight:600;">Total AL Charging (Kg) <span class="required-star">*</span></label>
                             <input class="form-control bg-total-charge" name="total_charge" id="total_charge" type="number" readonly/> 
                         </div>
 
@@ -437,7 +437,6 @@ if (in_array($line_func, ['1', '2'])) {
             </div>
         </div>
 
-        <!-- Hidden Inputs สำหรับส่งค่ารายการที่เลือก -->
         <input type="hidden" id="selected_product_no" name="selected_product_no" value="" />
         <input type="hidden" id="selected_ingot_items" name="selected_ingot_items" value="" />
 
@@ -445,7 +444,7 @@ if (in_array($line_func, ['1', '2'])) {
     </div>
 </div>
 
-<!-- Modal เลือก AL Ingot จาก WIP Stock (ข้ามตู้ได้) -->
+<!-- Modal เลือก AL Ingot จาก WIP Stock -->
 <div class="modal fade" id="ingotModal" tabindex="-1" role="dialog" aria-labelledby="ingotModalLabel">
     <div class="modal-dialog modal-lg" role="document" style="width: 85%;">
         <div class="modal-content" style="border-radius: 12px;">
@@ -456,7 +455,6 @@ if (in_array($line_func, ['1', '2'])) {
                 </h4>
             </div>
             <div class="modal-body">
-                <!-- ฟิลเตอร์ค้นหาใน Modal -->
                 <div class="row" style="margin-bottom: 15px;">
                     <div class="col-md-4 col-sm-6">
                         <label style="font-size: 12px; color: #64748b;">Filter by Container No.</label>
@@ -474,7 +472,6 @@ if (in_array($line_func, ['1', '2'])) {
                     </div>
                 </div>
 
-                <!-- สรุปผลการเลือกปัจจุบันใน Modal -->
                 <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px 16px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <span style="font-size: 14px; font-weight: 600; color: #166534;">
@@ -504,9 +501,7 @@ if (in_array($line_func, ['1', '2'])) {
                                 <th style="text-align: center;">Requisition No.</th>
                             </tr>
                         </thead>
-                        <tbody id="ingotListBody">
-                            <!-- รายการ Packing No -->
-                        </tbody>
+                        <tbody id="ingotListBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -523,7 +518,7 @@ if (in_array($line_func, ['1', '2'])) {
     </div>
 </div>
 
-<!-- Modal Remelt Selection (คงเดิม) -->
+<!-- Modal Remelt Selection -->
 <div class="modal fade" id="remeltModal" tabindex="-1" role="dialog" aria-labelledby="remeltModalLabel">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content" style="border-radius: 12px;">
@@ -582,17 +577,15 @@ if (in_array($line_func, ['1', '2'])) {
 <?php include 'include/footer.php';?>
 
 <script>
-// ซิงค์ค่าเมื่อมีการเปลี่ยน Furnace (กรณีเป็น Supervisor ที่เปิดให้เลือกเองได้)
 function syncFurnaceNo(val) {
     document.getElementById("furnace_no").value = val;
-    generateBatchNo();
 }
 
 // ==========================================
-// ส่วนของการจัดการ WIP Ingot Selection
+// การจัดการ Ingot Selection
 // ==========================================
-var rawIngotData = [];           // เก็บรายการทั้งหมดที่ดึงมาจาก WIP
-var selectedIngotMap = {};       // เก็บรายการที่เลือก { req_detail_id: itemObject }
+var rawIngotData = [];
+var selectedIngotMap = {};
 
 function openIngotModal() {
     $.ajax({
@@ -601,7 +594,21 @@ function openIngotModal() {
         dataType: "json",
         success: function(response) {
             if (response.status === "success") {
-                rawIngotData = response.data;
+                var uniqueItems = [];
+                var seen = {};
+                (response.data || []).forEach(function(item) {
+                    var uniqueKey = (item.req_detail_id && String(item.req_detail_id).trim() !== "") 
+                                    ? String(item.req_detail_id) 
+                                    : (item.container_no + '_' + item.packing_no);
+                    
+                    if (!seen[uniqueKey]) {
+                        seen[uniqueKey] = true;
+                        item._uniqueKey = uniqueKey;
+                        uniqueItems.push(item);
+                    }
+                });
+
+                rawIngotData = uniqueItems;
                 populateCountryFilter();
                 renderIngotTable();
                 updateModalSummary();
@@ -647,12 +654,14 @@ function renderIngotTable() {
         rows = "<tr><td colspan='7' class='text-center' style='color:#94a3b8; padding: 20px;'>No WIP Ingot items found.</td></tr>";
     } else {
         filtered.forEach(function(item) {
-            var id = item.req_detail_id;
-            var isChecked = selectedIngotMap[id] ? "checked" : "";
+            var key = item._uniqueKey;
+            var isChecked = selectedIngotMap[key] ? "checked" : "";
             var weight = parseFloat(item.net_weight_kg) || 0;
             
-            rows += "<tr style='cursor:pointer;' onclick='toggleRowCheckbox(event, " + id + ")'>";
-            rows += "<td align='center'><input type='checkbox' class='chk_ingot' value='" + id + "' " + isChecked + " onclick='event.stopPropagation(); handleCheckboxChange(" + id + ")' style='cursor:pointer;'></td>";
+            rows += "<tr style='cursor:pointer;' onclick='toggleRowCheckbox(\"" + key + "\")'>";
+            rows += "<td align='center' onclick='event.stopPropagation();'>";
+            rows += "<input type='checkbox' class='chk_ingot' id='chk_ingot_" + key + "' value='" + key + "' " + isChecked + " onchange='onCheckboxChanged(\"" + key + "\", this.checked)' style='cursor:pointer;'>";
+            rows += "</td>";
             rows += "<td align='center'><strong>" + (item.container_no || '-') + "</strong></td>";
             rows += "<td align='center' style='color:#1e293b; font-weight:600;'>📦 " + (item.packing_no || '-') + "</td>";
             rows += "<td align='center'>" + (item.piece_count || '-') + "</td>";
@@ -666,19 +675,22 @@ function renderIngotTable() {
     updateModalSummary();
 }
 
-function toggleRowCheckbox(e, id) {
-    handleCheckboxChange(id);
-    renderIngotTable();
+function toggleRowCheckbox(key) {
+    var chk = document.getElementById("chk_ingot_" + key);
+    if (chk) {
+        chk.checked = !chk.checked;
+        onCheckboxChanged(key, chk.checked);
+    }
 }
 
-function handleCheckboxChange(id) {
-    if (selectedIngotMap[id]) {
-        delete selectedIngotMap[id];
-    } else {
-        var found = rawIngotData.find(function(it) { return it.req_detail_id == id; });
+function onCheckboxChanged(key, isChecked) {
+    if (isChecked) {
+        var found = rawIngotData.find(function(it) { return it._uniqueKey === key; });
         if (found) {
-            selectedIngotMap[id] = found;
+            selectedIngotMap[key] = found;
         }
+    } else {
+        delete selectedIngotMap[key];
     }
     updateModalSummary();
 }
@@ -686,20 +698,23 @@ function handleCheckboxChange(id) {
 function toggleSelectAllVisible(chkMaster) {
     var isCheck = chkMaster.checked;
     $(".chk_ingot").each(function() {
-        var id = $(this).val();
+        var key = $(this).val();
+        this.checked = isCheck;
         if (isCheck) {
-            var found = rawIngotData.find(function(it) { return it.req_detail_id == id; });
-            if (found) selectedIngotMap[id] = found;
+            var found = rawIngotData.find(function(it) { return it._uniqueKey === key; });
+            if (found) selectedIngotMap[key] = found;
         } else {
-            delete selectedIngotMap[id];
+            delete selectedIngotMap[key];
         }
     });
-    renderIngotTable();
+    updateModalSummary();
 }
 
 function clearAllIngotSelection() {
     selectedIngotMap = {};
-    renderIngotTable();
+    $(".chk_ingot").prop("checked", false);
+    $("#check_all_ingot").prop("checked", false);
+    updateModalSummary();
 }
 
 function updateModalSummary() {
@@ -718,7 +733,7 @@ function updateModalSummary() {
     });
 
     $("#modal_selected_count").text(count);
-    $("#modal_selected_weight").text(totalWeight.toFixed(2));
+    $("#modal_selected_weight").text(totalWeight.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
     var sortedCountries = Object.keys(countryTotals).sort(function(a, b) {
         return countryTotals[b] - countryTotals[a];
@@ -744,7 +759,7 @@ function confirmIngotSelection() {
         var c = (item.country_of_origin || '').trim().toUpperCase();
         
         totalWeight += w;
-        selectedIds.push(item.req_detail_id);
+        selectedIds.push(item.req_detail_id || item._uniqueKey);
         if (c !== "") {
             countryTotals[c] = (countryTotals[c] || 0) + w;
         }
@@ -754,7 +769,6 @@ function confirmIngotSelection() {
     $("#selected_ingot_items").val(JSON.stringify(selectedIds));
     $("#selected_ingot_count_text").text("Selected " + selectedIds.length + " packing items from WIP");
 
-    // เรียงลำดับค่าน้ำหนักเพื่อกำหนด Primary / Secondary
     var sortedCountries = Object.keys(countryTotals).sort(function(a, b) {
         return countryTotals[b] - countryTotals[a];
     });
@@ -790,7 +804,7 @@ function setSmeltCountry(elementId, countryName) {
 }
 
 // ==========================================
-// ฟังก์ชันการคำนวณน้ำหนักหน้าหลัก
+// การคำนวณหน้าหลัก
 // ==========================================
 function calculateTotal() {
     var remain_form    = parseFloat(document.getElementById("remain_form").value) || 0;
@@ -848,54 +862,61 @@ function handleMaterialChange() {
     calculateTotal();
 }
 
-function generateBatchNo() {
-    var furnaceNo    = document.getElementById("furnace_no").value;
-    var chargingDate = document.getElementById("Charg_date").value;
-    
-    if(furnaceNo == "" || chargingDate == "") return;
-    
-    var dateObj = new Date(chargingDate);
-    var year    = dateObj.getFullYear().toString().slice(-2);
-    var month   = ("0" + (dateObj.getMonth() + 1)).slice(-2);
-    var day     = ("0" + dateObj.getDate()).slice(-2);
-    var dateCode = year + month + day;
-    
-    $.ajax({
-        url: "model/get_last_batch_sequence_mats.php",
-        type: "POST",
-        data: { furnace_no: furnaceNo, charging_date: chargingDate },
-        dataType: "json",
-        success: function(response) {
-            var sequence = response.last_sequence || 0;
-            var nextSeq = parseInt(sequence) + 1;
-            var seqFormatted = ("0" + nextSeq).slice(-2);
-            document.getElementById("batch_no").value = "M" + dateCode + "-" + furnaceNo + "-" + seqFormatted;
-        },
-        error: function() {
-            document.getElementById("batch_no").value = "M" + dateCode + "-" + furnaceNo + "-01";
-        }
-    });
-}
-
+// ==========================================
+// Function บันทึกข้อมูล พร้อมเงื่อนไขตรวจสอบ (Validation)
+// ==========================================
 function create_code(){
-    var batchNo       = document.getElementById("batch_no").value;
+    var furnaceNo     = document.getElementById("furnace_no").value.trim();
+    var material      = document.getElementById("material_name").value.trim(); 
+    var alloy         = document.getElementById("alloy").value.trim();
+    var chargeIngot   = parseFloat(document.getElementById("charge_ingot").value) || 0;
+    var totalCharge   = parseFloat(document.getElementById("total_charge").value) || 0;
+
+    // --- 1. ตรวจสอบ Furnace No. ---
+    if (furnaceNo === "") {
+        alert("⚠️ กรุณาระบุหรือเลือก Furnace No. ก่อนทำการบันทึก");
+        document.getElementById("furnace_no_select").focus();
+        return;
+    }
+
+    // --- 2. ตรวจสอบ Material In ---
+    if (material === "") {
+        alert("⚠️ กรุณาเลือก Material In ก่อนทำการบันทึก");
+        document.getElementById("material_name").focus();
+        return;
+    }
+
+    // --- 3. ตรวจสอบ Alloy ---
+    if (alloy === "") {
+        alert("⚠️ กรุณาเลือก Alloy ก่อนทำการบันทึก");
+        document.getElementById("alloy").focus();
+        return;
+    }
+
+    // --- 4. ตรวจสอบ Charge AL Ingot (Kg) ---
+    if (chargeIngot <= 0) {
+        alert("⚠️ กรุณากดเลือก 'Select WIP' เพื่อเลือก Charge AL Ingot ก่อนทำการบันทึก");
+        openIngotModal();
+        return;
+    }
+
+    // --- 5. ตรวจสอบผลรวม Total AL Charging ---
+    if (totalCharge <= 0) {
+        alert("⚠️ ยอดรวมการ Charge (Total AL Charging) ต้องมากกว่า 0 Kg");
+        return;
+    }
+
     var chargingDate  = document.getElementById("Charg_date_show").value;
-    var furnaceNo     = document.getElementById("furnace_no").value;
-    var material      = document.getElementById("material_name").value; 
-    var alloy         = document.getElementById("alloy").value;
-    
     var primarySmelt  = $("#primary_smelt").val();
     var secondaySmelt = $("#seconday_smelt").val();
     
     var remainForm     = document.getElementById("remain_form").value;
-    var chargeIngot    = document.getElementById("charge_ingot").value;
     var chargeRemelt   = document.getElementById("charge_remelt").value;
     var chargeCasting  = document.getElementById("charge_casting").value;
     var chargeOther    = document.getElementById("charge_other").value;
     var chargeWire     = document.getElementById("charge_wire").value;
     var chargeRecycle  = document.getElementById("charge_recycle").value;
     var chargeAlloy    = document.getElementById("charge_alloy").value;
-    var totalCharge    = document.getElementById("total_charge").value;
     var totalDross     = document.getElementById("total_dross").value;
     var balanceFurnace = document.getElementById("balance_furnace").value;
     var remark         = document.getElementById("select_detail").value;
@@ -904,6 +925,8 @@ function create_code(){
     var productNo  = document.getElementById("selected_product_no") ? document.getElementById("selected_product_no").value : "";
     var ingotItems = document.getElementById("selected_ingot_items") ? document.getElementById("selected_ingot_items").value : "";
 
+    var batchNo = "AUTO_GEN"; 
+
     var data_string = batchNo + "*" + chargingDate + "*" + furnaceNo + "*" + material + "*" + 
                       alloy + "*" + primarySmelt + "*" + secondaySmelt + "*" +
                       remainForm + "*" + chargeIngot + "*" + chargeRemelt + "*" + 
@@ -911,10 +934,9 @@ function create_code(){
                       chargeRecycle + "*" + chargeAlloy + "*" + totalCharge + "*" + 
                       totalDross + "*" + balanceFurnace + "*" + remark + "*" + productNo;              
 
-    if(batchNo == "" || furnaceNo == ""){
-        alert("Please ensure Furnace No. and Batch No. are properly set before saving.");    
-        return;
-    }
+    // ป้องกันการกด Save ซ้ำ
+    var btnSave = $("#create_coderice");
+    btnSave.prop("disabled", true).text("⏳ Saving...");
 
     $.ajax({
         url: "model/add_furnace_charging_mats.php",
@@ -926,24 +948,21 @@ function create_code(){
         dataType: "json",
         success: function(resp) {
             if(resp.message){
-                alert("Data has been saved successfully.");    
+                var generatedBatchNo = resp.batch_no || '';
+                $("#batch_no").val(generatedBatchNo);
+                alert("Data has been saved successfully!\nGenerated Batch No: " + generatedBatchNo);    
                 window.location.assign('furnance_mats.php?func=' + encodeURIComponent(data_fun));
             } else {
                 alert("An error occurred: " + (resp.error || "Please check the updated information."));
+                btnSave.prop("disabled", false).text("💾 Save Data");
             }
         },
         error: function(xhr, status, error) {
             alert("An error occurred while saving the data: " + error);
+            btnSave.prop("disabled", false).text("💾 Save Data");
         }
     });                              
 }
-
-$(document).ready(function() {
-    // โหลดสร้าง Batch No ทันทีตามค่า Furnace ที่ Auto กำหนดไว้
-    if($("#furnace_no").val() != "" && $("#Charg_date").val() != "") {
-        generateBatchNo();
-    }
-});
 
 // ==========================================
 // Remelt Logic

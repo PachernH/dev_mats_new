@@ -15,7 +15,7 @@ $response['message'] = false;
 try {
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // แก้ไขเรื่อง Case Sensitive ของ Session ID
+    // ตรวจสอบ Session ID
     $operator = isset($_SESSION['ID']) ? $_SESSION['ID'] : (isset($_SESSION['id']) ? $_SESSION['id'] : 'unknown');
     $operateDate = date('Y-m-d H:i:s');
     $furnace = 'MELT';
@@ -26,9 +26,8 @@ try {
         // รับข้อมูลอย่างน้อย 19 ฟิลด์ขึ้นไป
         if(count($data1) >= 19) {
             
-            $batch_no       = trim($data1[0]);
             $batch_date     = trim($data1[1]);
-            $line_process   = trim($data1[2]);
+            $line_process   = trim($data1[2]); // Furnace No / Line
             $material_in    = trim($data1[3]);
             $alloy          = trim($data1[4]);
             $primary_smelt  = trim($data1[5]);
@@ -47,10 +46,9 @@ try {
             $balance_batch  = floatval($data1[17]);
             $ctrn_remark    = trim($data1[18]);
             
-            // รับ Product No ที่ส่งมาในฟิลด์ที่ 20 (Index 19)
             $product_no     = isset($data1[19]) ? trim($data1[19]) : '';
             
-            // รับรายการ Ingot จาก WIP ที่ส่งมาในรูปแบบ JSON Array ของ req_detail_id
+            // รายการ Ingot จาก WIP
             $ingot_items_raw = isset($_POST['ingot_items']) ? trim($_POST['ingot_items']) : '';
             $ingot_ids = [];
             if(!empty($ingot_items_raw)) {
@@ -60,9 +58,60 @@ try {
                 }
             }
 
+            // เริ่มต้น Database Transaction
             $conn->beginTransaction();
-            
+
+            // =============================================================
+            // รัน Batch No อัตโนมัติ (M + YYMMDD + -เตา- + Sequence 2 หลัก)
+            // โดยดึง Sequence สูงสุดจากทั้ง FRNCPRCS1 และ CHRGTRNS1 ป้องกันชน PK
+            // =============================================================
+            $dateTimestamp = !empty($batch_date) ? strtotime($batch_date) : time();
+            $dateCode = date('ymd', $dateTimestamp);
+            $prefixBatch = "M" . $dateCode . "-" . $line_process . "-";
+            $prefixSearch = $prefixBatch . "%";
+
+            // หาค่าลำดับสูงสุดจากทั้งสองตาราง
+            $sqlMax = "SELECT MAX(seq_val) AS max_seq FROM (
+                SELECT MAX(CAST(RIGHT(RTRIM(BATCH_NO), 2) AS INT)) AS seq_val 
+                FROM FRNCPRCS1 
+                WHERE BATCH_NO LIKE :p1
+                UNION ALL
+                SELECT MAX(CAST(RIGHT(RTRIM(BATCH_NO), 2) AS INT)) AS seq_val 
+                FROM CHRGTRNS1 
+                WHERE BATCH_NO LIKE :p2
+            ) AS combined";
+
+            $stmtMax = $conn->prepare($sqlMax);
+            $stmtMax->bindParam(':p1', $prefixSearch, PDO::PARAM_STR);
+            $stmtMax->bindParam(':p2', $prefixSearch, PDO::PARAM_STR);
+            $stmtMax->execute();
+            $maxRow = $stmtMax->fetch(PDO::FETCH_ASSOC);
+
+            $nextSeq = 1;
+            if ($maxRow && !empty($maxRow['max_seq'])) {
+                $nextSeq = intval($maxRow['max_seq']) + 1;
+            }
+
+            // เช็คและบวกเลขเพิ่มจนกว่าจะไม่ซ้ำกับทั้งสองตารางอย่างเด็ดขาด
+            $sqlCheckExists = "SELECT 1 FROM (
+                SELECT BATCH_NO FROM FRNCPRCS1 WHERE BATCH_NO = :b1
+                UNION ALL
+                SELECT BATCH_NO FROM CHRGTRNS1 WHERE BATCH_NO = :b2
+            ) AS exist_chk";
+            $stmtCheckExists = $conn->prepare($sqlCheckExists);
+
+            do {
+                $batch_no = $prefixBatch . str_pad($nextSeq, 2, '0', STR_PAD_LEFT);
+                $stmtCheckExists->execute([':b1' => $batch_no, ':b2' => $batch_no]);
+                $alreadyExists = $stmtCheckExists->fetchColumn();
+                if ($alreadyExists) {
+                    $nextSeq++;
+                }
+            } while ($alreadyExists);
+
+            // =============================================================
             // 1. Insert FRNCPRCS1
+            // =============================================================
             $sql1 = "INSERT INTO FRNCPRCS1 (
                         BATCH_NO, BATCH_ITEM, BATCH_DATE, LINE_PROCESS, FURNACE, 
                         MATERIAL_IN, ALLOY, PRIMARY_SMELT, SECONDARY_SMELT, 
@@ -101,7 +150,9 @@ try {
             $stmt1->bindParam(':operate_date', $operateDate, PDO::PARAM_STR);
             $result1 = $stmt1->execute();
             
+            // =============================================================
             // 2. Insert CHRGTRNS1
+            // =============================================================
             $sql2 = "INSERT INTO CHRGTRNS1 (
                         BATCH_NO, BATCH_ITEM, CHARGE_DATE, ALLOY, 
                         ADD_INGOT, ADD_COILREMELT, ADD_CASTSCRAP, ADD_OTHERSCRAP, 
@@ -137,11 +188,10 @@ try {
             $stmt2->bindParam(':ctrn_operatedate', $operateDate, PDO::PARAM_STR);
             $result2 = $stmt2->execute();
             
-            // -------------------------------------------------------------
+            // =============================================================
             // 3. บันทึกตัดใช้ WIP (WIP_ISSUE_TRANSACTIONS) และ UPDATE REQUISITION_DETAIL
-            // -------------------------------------------------------------
+            // =============================================================
             if(!empty($ingot_ids)) {
-                // ดึงข้อมูลจาก REQUISITION_DETAIL พร้อม JOIN ไปยัง RECEIVING_HEADER ด้วย container_no
                 $inQuery = implode(',', array_fill(0, count($ingot_ids), '?'));
                 $sqlGetWip = "SELECT 
                                 d.req_detail_id, 
@@ -164,7 +214,6 @@ try {
                 $stmtGetWip->execute($ingot_ids);
                 $wipItems = $stmtGetWip->fetchAll(PDO::FETCH_ASSOC);
 
-                // SQL บันทึกการจ่ายใช้ (WIP_ISSUE_TRANSACTIONS)
                 $sqlIssue = "INSERT INTO WIP_ISSUE_TRANSACTIONS (
                                 issue_no, container_no, packing_no, material_id, materials_no, pack_list_no, invoice_no, supplier_id, country_of_origin,
                                 net_weight_kg, piece_count, issued_by, issued_date, remarks, 
@@ -176,7 +225,6 @@ try {
                              )";
                 $stmtIssue = $conn->prepare($sqlIssue);
 
-                // SQL อัปเดตสถานะใน REQUISITION_DETAIL ให้เป็น 'Use'
                 $sqlUpdateReq = "UPDATE REQUISITION_DETAIL 
                                  SET status = 'Use', 
                                      update_at = :update_at 
@@ -186,7 +234,6 @@ try {
                 foreach ($wipItems as $item) {
                     $issue_remark = "Charge into Furnace: " . $batch_no;
 
-                    // บันทึกธุรกรรมการเบิกใช้
                     $stmtIssue->execute([
                         ':issue_no'          => $batch_no,
                         ':container_no'      => $item['container_no'],
@@ -206,7 +253,6 @@ try {
                         ':checked_out_date'  => $operateDate
                     ]);
 
-                    // อัปเดตสถานะเป็น 'Use'
                     $stmtUpdateReq->execute([
                         ':update_at'     => $operateDate,
                         ':req_detail_id' => $item['req_detail_id']
@@ -214,11 +260,10 @@ try {
                 }
             }
 
-            // -------------------------------------------------------------
-            // 4. ตรวจสอบและ UPDATE 4 ตารางย่อยของ Product Remelt (ถ้ามี)
-            // -------------------------------------------------------------
+            // =============================================================
+            // 4. Update Product Remelt 4 ตาราง (ถ้ามี)
+            // =============================================================
             if(!empty($product_no)) {
-                // 4.1 PRODRMLT2
                 $uSql1 = "UPDATE PRODRMLT2 
                           SET MELT_STATUS = 'MT', 
                               MELT_DATE = :operate_date, 
@@ -231,7 +276,6 @@ try {
                     ':product_no'   => $product_no
                 ]);
 
-                // 4.2 COILPROD1
                 $uSql2 = "UPDATE COILPROD1 
                           SET COIL_STATUS = 'MT', 
                               COIL_UPDATEDATE = :operate_date, 
@@ -244,7 +288,6 @@ try {
                     ':product_no'   => $product_no
                 ]);
 
-                // 4.3 CRSHPROD1
                 $uSql3 = "UPDATE CRSHPROD1 
                           SET CRSH_STATUS = 'MT', 
                               CRSH_UPDATEDATE = :operate_date, 
@@ -257,7 +300,6 @@ try {
                     ':product_no'   => $product_no
                 ]);
 
-                // 4.4 PACKPROD1
                 $uSql4 = "UPDATE PACKPROD1 
                           SET PACK_STATUS = 'MT', 
                               PACK_UPDATEDATE = :operate_date, 

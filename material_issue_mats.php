@@ -21,6 +21,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $issued_by          = $_SESSION['ID'] ?? 'System';
     $selected_containers = $_POST['selected_containers'] ?? []; // Array ของ container_no ที่เลือก
 
+    // กำหนดสถานะตามแผนกที่เลือก: ถ้าไม่ใช่ Production ให้สถานะเป็น 'use' ถ้าเป็น Production ให้เป็น 'Issued'
+    $detail_status = ($department === 'Production') ? 'Issued' : 'use';
+
     if (empty($department)) {
         $error_msg = 'กรุณาระบุแผนกที่ขอเบิกใช้งาน';
     } elseif (empty($selected_containers)) {
@@ -57,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $sql_get_items = "SELECT d.receive_id, d.packing_no, d.net_weight_kg, d.piece_count, d.material_id, h.country_of_origin 
                                   FROM receiving_details d
                                   JOIN RECEIVING_HEADER h ON d.gr_no = h.gr_no
-                                  WHERE h.container_no = ? AND (d.status != 'Issued' OR d.status IS NULL)";
+                                  WHERE h.container_no = ? AND (d.status != 'Issued' AND d.status != 'use' OR d.status IS NULL)";
                 $stmt_items = $conn->prepare($sql_get_items);
                 $stmt_items->execute([$container_no]);
                 $items = $stmt_items->fetchAll(PDO::FETCH_ASSOC);
@@ -65,17 +68,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 if (count($items) > 0) {
                     // A. บันทึกหัวบิลใบเบิก (requisition_header) พร้อม ref_no และ req_date ที่เลือก
                     $sql_head = "INSERT INTO requisition_header (req_no, req_date, department, ref_no, issued_by, status, remarks) 
-                                 VALUES (:req_no, :req_date, :department, :ref_no, :issued_by, 'Issued', :remarks)";
+                                 VALUES (:req_no, :req_date, :department, :ref_no, :issued_by, :status, :remarks)";
                     $conn->prepare($sql_head)->execute([
                         ':req_no'     => $req_no,
                         ':req_date'   => $custom_req_date . ' ' . date('H:i:s'),
                         ':department' => $department,
                         ':ref_no'     => $ref_no,
                         ':issued_by'  => $issued_by,
+                        ':status'     => $detail_status,
                         ':remarks'    => $remarks . ' [จ่ายยกตู้: ' . $container_no . ']'
                     ]);
 
-                    // B. วนลูปบันทึกรายละเอียด Packing ทั้งหมดในตู้ลง requisition_detail (รวม country_of_origin) และตัดสต็อก
+                    // B. วนลูปบันทึกรายละเอียด Packing ทั้งหมดในตู้ลง requisition_detail และตัดสต็อก
                     foreach ($items as $item) {
                         $receive_id  = $item['receive_id'];
                         $packing_no  = $item['packing_no'];
@@ -84,19 +88,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         $material_id = $item['material_id'];
                         $country     = $item['country_of_origin'];
 
-                        // บันทึก requisition_detail
+                        // บันทึก requisition_detail (ใช้สถานะตามเงื่อนไข Department)
                         $sql_req_det = "INSERT INTO requisition_detail (req_no, container_no, packing_no, net_weight_kg, piece_count, country_of_origin, status) 
-                                        VALUES (?, ?, ?, ?, ?, ?, 'Issued')";
-                        $conn->prepare($sql_req_det)->execute([$req_no, $container_no, $packing_no, $net_weight, $piece_count, $country]);
+                                        VALUES (?, ?, ?, ?, ?, ?, ?)";
+                        $conn->prepare($sql_req_det)->execute([$req_no, $container_no, $packing_no, $net_weight, $piece_count, $country, $detail_status]);
 
-                        // บันทึก WIP_ISSUE_TRANSACTIONS
-                        //$sql_issue = "INSERT INTO WIP_ISSUE_TRANSACTIONS (issue_no, container_no, packing_no, material_id, net_weight_kg, piece_count, issued_by, issued_date, remarks) 
-                        //              VALUES (?, ?, ?, ?, ?, ?, ?, GETDATE(), ?)";
-                        //$conn->prepare($sql_issue)->execute([$req_no, $container_no, $packing_no, $material_id, $net_weight, $piece_count, $issued_by, $remarks]);
-
-                        // อัปเดตสถานะใน receiving_details เป็น 'Issued'
-                        $sql_upd = "UPDATE receiving_details SET status = 'Issued' WHERE receive_id = ?";
-                        $conn->prepare($sql_upd)->execute([$receive_id]);
+                        // อัปเดตสถานะใน receiving_details ตามเงื่อนไข Department เช่นกัน
+                        $sql_upd = "UPDATE receiving_details SET status = ? WHERE receive_id = ?";
+                        $conn->prepare($sql_upd)->execute([$detail_status, $receive_id]);
                     }
                 }
             }
@@ -121,7 +120,7 @@ try {
                              SUM(ISNULL(d.net_weight_kg, 0)) AS total_net_weight
                       FROM RECEIVING_HEADER h
                       JOIN RECEIVING_DETAILS d ON h.gr_no = d.gr_no
-                      WHERE h.receive_status = 'CL' AND (d.status != 'Issued' OR d.status IS NULL)";
+                      WHERE h.receive_status = 'CL' AND (d.status NOT IN ('Issued', 'use') OR d.status IS NULL)";
 
     $params = [];
     if (!empty($search_container)) {
@@ -206,8 +205,15 @@ $folder_func = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], EN
                         <h4 class="card-title-sub text-primary mb-3"><i class="fa-solid fa-file-invoice me-2"></i> Disbursement documents</h4>
                         <div class="row mb-4">
                             <div class="col-md-4 mb-3">
-                                <label class="small fw-bold text-muted mb-1">Department(แผนกที่ขอเบิก) *</label>
-                                <input type="text" class="form-control" name="department" placeholder="เช่น Production Line 1" required>
+                                <label class="small fw-bold text-muted mb-1">Department (แผนกที่ขอเบิก) *</label>
+                                <select class="form-control" name="department" required>
+                                    <option value="" disabled selected>-- เลือกแผนก --</option>
+                                    <option value="Production">Production</option>
+                                    <option value="Supplier">Supplier</option>
+                                    <option value="NSA">NSA</option>
+                                    <option value="MAL">MAL</option>
+                                    <option value="ACC">ACC</option>
+                                </select>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="small fw-bold text-muted mb-1">Ref No (เลขที่อ้างอิง)</label>
@@ -258,13 +264,13 @@ $folder_func = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], EN
                                                 <td><?php echo htmlspecialchars($row['supplier_name']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['country_of_origin']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['description_fg']); ?></td>
-                                                <td><span class="badge bg-secondary"><?php echo number_format($row['total_packing_count']); ?> มัด</span></td>
+                                                <td><span class="badge bg-secondary"><?php echo number_format($row['total_packing_count']); ?> Bundle</span></td>
                                                 <td><?php echo number_format($row['total_piece_count']); ?></td>
                                                 <td class="fw-bold text-success"><?php echo number_format($row['total_net_weight'], 2); ?></td>
                                             </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>
-                                        <tr><td colspan="11" class="text-muted py-4">ไม่พบตู้ Container ที่มีสถานะ CL และมีสินค้าค้างจ่ายในขณะนี้</td></tr>
+                                        <tr><td colspan="10" class="text-muted py-4">ไม่พบตู้ Container ที่มีสถานะ CL และมีสินค้าค้างจ่ายในขณะนี้</td></tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
