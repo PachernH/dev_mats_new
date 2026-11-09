@@ -131,8 +131,14 @@ try {
 } catch (Exception $e) {}
 
 $logs = [];
+$total_scanned_count = 0;
 try {
-    $logSql = "SELECT TOP 10 r.receive_id, r.packing_no, r.cast_no, r.piece_count, l.zone, l.row_no 
+    // นับจำนวนรวมที่สแกนไปแล้วใน GR นี้
+    $countStmt = $conn->prepare("SELECT COUNT(*) FROM receiving_details WHERE gr_no = ?");
+    $countStmt->execute([$gr_no_param]);
+    $total_scanned_count = $countStmt->fetchColumn();
+
+    $logSql = "SELECT r.receive_id, r.packing_no, r.cast_no, r.piece_count, l.zone, l.row_no 
                FROM receiving_details r 
                LEFT JOIN STOCK_LOCATIONS l ON r.packing_no = l.packing_no 
                WHERE r.gr_no = ?
@@ -177,7 +183,7 @@ try {
             border: 1px solid #e2e8f0; 
         }
         .card-title-sub { 
-            font-size: 14px; 
+            font-size: 13px; 
             font-weight: 600; 
             color: #1e293b; 
             margin-top: 0; 
@@ -186,6 +192,8 @@ try {
             border-bottom: 2px solid #f1f5f9; 
             display: flex; 
             align-items: center; 
+            justify-content: space-between;
+            white-space: nowrap; /* บังคับไม่ให้ข้อความหัวข้อขึ้นบรรทัดใหม่ */
         }
         .form-label { 
             font-weight: 600; 
@@ -218,6 +226,16 @@ try {
             border-radius: 10px; 
             padding: 14px; 
             text-align: center; 
+        }
+        /* ดีไซน์ป้ายแสดงจำนวนที่สแกนแล้วให้อยู่บรรทัดเดียวและเด่นชัด */
+        .counter-badge {
+            background-color: #16a34a;
+            color: white;
+            font-size: 0.95rem;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 6px;
+            display: inline-block;
         }
         .btn-custom-submit { 
             background-color: #2563eb; 
@@ -276,11 +294,15 @@ try {
     <?php endif; ?>
 
     <div class="row g-3">
-        <!-- ช่องยิงสแกนบาร์โค้ด -->
+        <!-- ช่องยิงสแกนบาร์โค้ด และแสดงจำนวนที่สแกนแล้วในบรรทัดเดียว -->
         <div class="col-12">
             <div class="form-card mb-3">
                 <div class="card-title-sub text-primary mb-2">
-                    ช่องยิงบาร์โค้ด (Scanner Input)
+                    <span class="text-truncate">Scanner Input</span>
+                    <div class="text-nowrap ms-2">
+                        <span class="text-muted small">สแกนแล้ว:</span>
+                        <span class="counter-badge" id="scanCounterBadge"><?php echo $total_scanned_count; ?> มัด</span>
+                    </div>
                 </div>
                 <div class="scanner-box">
                     <label class="form-label text-primary fw-bold mb-1" style="font-size: 12px;">
@@ -295,10 +317,10 @@ try {
         <div class="col-12">
             <div class="form-card">
                 <div class="card-title-sub text-warning">
-                    บันทึกรับเข้าวัตถุดิบ
+                    <span>บันทึกรับเข้าวัตถุดิบ</span>
                 </div>
                 <div class="card-body p-0">
-                    <form method="POST" action="receiving.php?gr_no=<?php echo urlencode($gr_no_param); ?>">
+                    <form method="POST" action="receiving.php?gr_no=<?php echo urlencode($gr_no_param); ?>" id="receiveForm">
                         <input type="hidden" name="action" value="save_receive">
                         
                         <div class="mb-2">
@@ -392,7 +414,8 @@ try {
         <div class="col-12">
             <div class="form-card mb-0">
                 <div class="card-title-sub text-success mb-2">
-                    รายการรับเข้าล่าสุด (Recent Logs)
+                    <span>รายการรับเข้าล่าสุด (Recent Logs)</span>
+                    <span class="badge bg-success"><?php echo $total_scanned_count; ?> รายการ</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -489,7 +512,7 @@ function parseScannedData(data) {
             let weightMatch = data.match(/KG([0-9.]+)/i);
             if (weightMatch) {
                 weightVal = weightMatch[1];
-                document.getElementById('net_weight_kg').value = weightVal;
+                document.getElementById('net_weight_kg').value = weightMatch.length > 1 ? weightMatch[1] : '';
             }
         } 
         else if (data.startsWith("01")) {
@@ -525,7 +548,7 @@ function parseScannedData(data) {
 
     if (packingNoVal !== "" && weightValCheck !== "" && !isNaN(weightValCheck) && dateValCheck !== "" && materialVal !== "" && zoneVal !== "" && rowVal !== "") {
         setTimeout(function() {
-            document.querySelector('form').submit();
+            document.getElementById('receiveForm').submit();
         }, 100);
     }
 }

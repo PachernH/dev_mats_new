@@ -45,9 +45,6 @@ try {
     echo json_encode(['success' => false, 'message' => 'System error: ' . $e->getMessage()]);
 }
 
-// =========================================================================
-// Helper: ตรวจสอบและบันทึกลงตาราง Dimension Master อัตโนมัติตาม Logic S1
-// =========================================================================
 function ensureDimensionMaster($conn, $table, $column, $value) {
     $val = (float)$value;
     if ($val <= 0) return;
@@ -59,9 +56,7 @@ function ensureDimensionMaster($conn, $table, $column, $value) {
     }
 }
 
-// =========================================================================
-// 1. Get SO Details
-// =========================================================================
+// 1. Get SO Details (ดึงฟิลด์ Item ทั้งหมดเพื่อแสดงใน Modal ได้ครบถ้วน)
 function getSODetails($conn) {
     $sono = isset($_GET['sono']) ? trim($_GET['sono']) : '';
     if (empty($sono)) {
@@ -77,6 +72,7 @@ function getSODetails($conn) {
                      h.CTM1_PACKING, h.CTM1_TOLERANCE, h.CTM1_SHIPPEDBY, h.CTM1_TAXPERCENT,
                      h.CTM1_TRANSPORTATION, h.CTM1_OVERSEAFREIGHT, h.CTM1_INSURANCE,
                      h.CTM1_FOBTOTALAMOUNT, h.CTM1_GRANDTOTALAMOUNT, h.CTM1_TOTALAMOUNT,
+                     h.CTM1_SERIALCODE, h.CTM1_WHOLEWEIGHT, h.CTM1_MARKSKID, h.CTM1_SCRAPWIRE,
                      h.CTM1_REMARK1, h.CTM1_REMARK2, h.CTM1_REMARK3,
                      h.CTM1_LMETYPE, h.CTM1_LMEDATE, h.CTM1_ORDERLME, h.CTM1_MJPDATE, h.CTM1_MJPPRICE,
                      h.CTM1_ORDERSTDV, h.CTM1_ORDERFACTOR, h.CTM1_ORDERSTDXFACTOR,
@@ -119,11 +115,15 @@ function getSODetails($conn) {
                      d.WEIGHT_PIECE, d.CTM2_ORDERWEIGHT, d.CTM2_ORDERPIECE, d.CTM2_UOMWEIGHT,
                      d.CT2U_ORDERWEIGHT, d.CT2U_ORDERPIECE, d.CT2U_UOMWEIGHT,
                      d.CTM2_MAXTOLERANCE, d.CTM2_MINTOLERANCE,
+                     d.CTM2_REJECTWEIGHT, d.CTM2_REJECTPIECE, d.CTM2_REPLACEWEIGHT, d.CTM2_REPLACEPIECE,
                      d.CTM2_ACTUALPRICE, ROUND(d.CTM2_ORDERWEIGHT * d.CTM2_ACTUALPRICE, 2) AS AMOUNT,
                      d.CTM2_DESCRIPTION, d.CTM2_REMARK, d.CTM2_STATUS, 
                      d.MATERIAL_IN, d.COIL_FROM, d.FULL_COIL, d.PRICE_PERIOD, d.CTM2_CUSTOMERPARTNO,
                      d.T5_TEMPERATURE, d.CTM2_PODATE, d.REQUEST_DATE, d.CONFIRM_DATE,
-                     d.CTM2_ORDERLME, d.CTM2_MJPPRICE, d.CTM2_ORDERSTDV, d.CTM2_ORDERFACTOR, d.CTM2_ORDERSTDXFACTOR,
+                     d.CTM2_PONO, d.CTM2_POITEM, d.CTM2_CUSTOMERORDER, d.CTM2_CUSTOMERSALEORDER,
+                     d.CTM2_ENDCUSTOMERNAME, d.CTM2_ENDCUSTOMERPO,
+                     d.CTM2_LMETYPE, d.CTM2_LMEDATE, d.CTM2_ORDERLME, d.CTM2_MJPDATE, d.CTM2_MJPPRICE,
+                     d.CTM2_ORDERSTDV, d.CTM2_ORDERFACTOR, d.CTM2_ORDERSTDXFACTOR,
                      d.CTM2_SPECIALLABEL1, d.CTM2_SPECIALLABEL2, d.CTM2_SPECIALLABEL3, d.CTM2_SPECIALLABEL4
               FROM CSTMORDR2 d
               WHERE d.SALEORDER_NO = :sono 
@@ -148,9 +148,7 @@ function getSODetails($conn) {
     ]);
 }
 
-// =========================================================================
-// 2. Customer Info & Default Master Data
-// =========================================================================
+// 2. Customer Info
 function getCustomerInfo($conn) {
     $cust_id = isset($_GET['cust_id']) ? trim($_GET['cust_id']) : '';
     if (empty($cust_id)) {
@@ -177,9 +175,7 @@ function getCustomerInfo($conn) {
     }
 }
 
-// =========================================================================
 // 3. LME and MJP Rates
-// =========================================================================
 function getLMERates($conn) {
     $lme_date = isset($_GET['date']) ? trim($_GET['date']) : '';
     $lme_type = isset($_GET['type']) ? trim($_GET['type']) : 'D-DAILY';
@@ -204,6 +200,7 @@ function getLMERates($conn) {
             case 'M-MONTHLY':      $order_lme = (float)$row['LME3M_MONTHLY']; break;
             case 'D-DAILY CASH':   $order_lme = (float)$row['LME3M_DAILY']; break;
             case 'M-MONTHLY CASH': $order_lme = (float)$row['LME3M_MONTHLY']; break;
+            case 'MJP':            break;
         }
 
         echo json_encode([
@@ -219,9 +216,7 @@ function getLMERates($conn) {
     }
 }
 
-// =========================================================================
 // 4. Pricing Calculation
-// =========================================================================
 function calculatePriceAPI($conn) {
     $period     = trim($_GET['price_period'] ?? '');
     $coil_from  = trim($_GET['coil_from'] ?? 'MAT');
@@ -316,9 +311,7 @@ function getVal($conn, $sql, $params) {
     return ($val !== false) ? (float)$val : 0.0;
 }
 
-// =========================================================================
-// 5. Save Sales Order (ปรับปรุง Logic เต็มตาม S1)
-// =========================================================================
+// 5. Save Sales Order (บันทึกข้อมูลครบทุกคอลัมน์ของ CSTMORDR1 และ CSTMORDR2)
 function saveSalesOrder($conn) {
     $raw_input = file_get_contents('php://input');
     $payload   = json_decode($raw_input, true);
@@ -349,7 +342,7 @@ function saveSalesOrder($conn) {
     $conn->beginTransaction();
 
     try {
-        // 1. ตรวจสอบและบันทึก Dimension Master (THCKMSTR1, DMWDMSTR1, LNGTMSTR1) อัตโนมัติตาม S1
+        // บันทึก Dimension Master
         foreach ($items as $it) {
             ensureDimensionMaster($conn, 'THCKMSTR1', 'THICKNESS', $it['THICKNESS'] ?? 0);
             ensureDimensionMaster($conn, 'DMWDMSTR1', 'WIDTH', $it['WIDTH'] ?? 0);
@@ -365,7 +358,7 @@ function saveSalesOrder($conn) {
             $prefix = strtoupper(trim($h['SO_PREFIX'] ?? ''));
             if (strlen($prefix) !== 2) {
                 if ($order_cat === 'ORSP') $prefix = 'TT';
-                elseif ($order_cat === 'SCRR') $prefix = 'RC';
+                elseif ($order_cat === 'SCRR' || $order_cat === 'SCSC' || $order_cat === 'SCCC' || $order_cat === 'SCCO' || $order_cat === 'SCCS' || $order_cat === 'SCSH' || $order_cat === 'ORSV') $prefix = 'RC';
                 else $prefix = 'SO';
             }
 
@@ -397,24 +390,28 @@ function saveSalesOrder($conn) {
             $sql_ins_h = "INSERT INTO CSTMORDR1 (
                             SALEORDER_NO, ORDER_CATEGORY, ORDER_TYPE, SALEORDER_DATE, INTENDSHIP_DATE, 
                             CSTMSPPL_ID, CURRENCY_ID, EXCHANGE_RATE, CTM1_PONO, SUPPLIER_MATCODE, 
-                            CUSTOMS_CODE, PAYMENT_ID, SHIPMENT_ID, CTM1_PORTLOADING, CTM1_PORTDISCHARGE, 
-                            CTM1_PLACEDESTINATION, CTM1_COUNTRYDESTINATION, CTM1_TAXPERCENT, 
-                            CTM1_TRANSPORTATION, CTM1_OVERSEAFREIGHT, CTM1_INSURANCE, 
+                            CUSTOMS_CODE, CTM1_CUSTOMERORDER, CTM1_CUSTOMERSALEORDER, CTM1_ENDCUSTOMERNAME, CTM1_ENDCUSTOMERPO,
+                            PAYMENT_ID, SHIPMENT_ID, CTM1_PORTLOADING, CTM1_PORTDISCHARGE, 
+                            CTM1_PLACEDESTINATION, CTM1_COUNTRYDESTINATION, CTM1_PACKING, CTM1_TOLERANCE, CTM1_SHIPPEDBY,
+                            CTM1_TAXPERCENT, CTM1_TRANSPORTATION, CTM1_OVERSEAFREIGHT, CTM1_INSURANCE, 
                             CTM1_FOBTOTALAMOUNT, CTM1_GRANDTOTALAMOUNT, CTM1_TOTALAMOUNT, 
                             CTM1_SERIALCODE, CTM1_WHOLEWEIGHT, CTM1_MARKSKID, CTM1_SCRAPWIRE,
                             CTM1_LMETYPE, CTM1_LMEDATE, CTM1_ORDERLME, CTM1_MJPDATE, CTM1_MJPPRICE,
                             CTM1_ORDERSTDV, CTM1_ORDERFACTOR, CTM1_ORDERSTDXFACTOR,
+                            CTM1_REMARK1, CTM1_REMARK2, CTM1_REMARK3,
                             CTM1_OPERATOR1, CTM1_OPERATEDATE
                           ) VALUES (
                             :sono, :order_cat, 'D', :so_date, :ship_date,
                             :cust_id, :currency, :exrate, :pono, :supplier_mat,
-                            :customs_code, :payment, :shipment, :portload, :portdis,
-                            :placedest, :countrydest, :tax,
-                            :transport, :freight, :insurance,
+                            :customs_code, :cust_order, :cust_so, :endcust_name, :endcust_po,
+                            :payment, :shipment, :portload, :portdis,
+                            :placedest, :countrydest, :packing, :tolerance, :shippedby,
+                            :tax, :transport, :freight, :insurance,
                             :fob, :grand, :total,
-                            0, 0, 0, 0,
+                            :serialcode, :wholeweight, :markskid, :scrapwire,
                             :lmetype, :lmedate, :orderlme, :mjpdate, :mjpprice,
                             :stdv, :factor, :stdxfactor,
+                            :remark1, :remark2, :remark3,
                             :user, :opdate
                           )";
             
@@ -430,19 +427,30 @@ function saveSalesOrder($conn) {
                 ':pono'         => $h['CTM1_PONO'],
                 ':supplier_mat' => $h['SUPPLIER_MATCODE'] ?? '',
                 ':customs_code' => $h['CUSTOMS_CODE'] ?? '',
+                ':cust_order'   => $h['CTM1_CUSTOMERORDER'] ?? '',
+                ':cust_so'      => $h['CTM1_CUSTOMERSALEORDER'] ?? '',
+                ':endcust_name' => $h['CTM1_ENDCUSTOMERNAME'] ?? '',
+                ':endcust_po'   => $h['CTM1_ENDCUSTOMERPO'] ?? '',
                 ':payment'      => $h['PAYMENT_ID'] ?? '',
                 ':shipment'     => $h['SHIPMENT_ID'] ?? '',
                 ':portload'     => $h['CTM1_PORTLOADING'] ?? '',
                 ':portdis'      => $h['CTM1_PORTDISCHARGE'] ?? '',
                 ':placedest'    => $place_dest,
                 ':countrydest'  => $country_dest,
+                ':packing'      => $h['CTM1_PACKING'] ?? '',
+                ':tolerance'    => $h['CTM1_TOLERANCE'] ?? '',
+                ':shippedby'    => $h['CTM1_SHIPPEDBY'] ?? '',
                 ':tax'          => $h['CTM1_TAXPERCENT'] ?? 0,
-                ':transport'    => $h['CTM1_TRANSPORTATION'] ?? 0,
-                ':freight'      => $h['CTM1_OVERSEAFREIGHT'] ?? 0,
-                ':insurance'    => $h['CTM1_INSURANCE'] ?? 0,
-                ':fob'          => $h['CTM1_FOBTOTALAMOUNT'] ?? 0,
-                ':grand'        => $h['CTM1_GRANDTOTALAMOUNT'] ?? 0,
-                ':total'        => $h['CTM1_TOTALAMOUNT'] ?? 0,
+                ':transport'    => (float)($h['CTM1_TRANSPORTATION'] ?? 0),
+                ':freight'      => (float)($h['CTM1_OVERSEAFREIGHT'] ?? 0),
+                ':insurance'    => (float)($h['CTM1_INSURANCE'] ?? 0),
+                ':fob'          => (float)($h['CTM1_FOBTOTALAMOUNT'] ?? 0),
+                ':grand'        => (float)($h['CTM1_GRANDTOTALAMOUNT'] ?? 0),
+                ':total'        => (float)($h['CTM1_TOTALAMOUNT'] ?? 0),
+                ':serialcode'   => (int)($h['CTM1_SERIALCODE'] ?? 0),
+                ':wholeweight'  => (int)($h['CTM1_WHOLEWEIGHT'] ?? 0),
+                ':markskid'     => (int)($h['CTM1_MARKSKID'] ?? 0),
+                ':scrapwire'    => (int)($h['CTM1_SCRAPWIRE'] ?? 0),
                 ':lmetype'      => $h['CTM1_LMETYPE'] ?? 'M-MONTHLY',
                 ':lmedate'      => !empty($h['CTM1_LMEDATE']) ? $h['CTM1_LMEDATE'] : date('Y-m-d'),
                 ':orderlme'     => $h['CTM1_ORDERLME'] ?? 0,
@@ -451,6 +459,9 @@ function saveSalesOrder($conn) {
                 ':stdv'         => (float)($h['CTM1_ORDERSTDV'] ?? 0),
                 ':factor'       => (float)($h['CTM1_ORDERFACTOR'] ?? 0),
                 ':stdxfactor'   => (float)($h['CTM1_ORDERSTDXFACTOR'] ?? 0),
+                ':remark1'      => $h['CTM1_REMARK1'] ?? '',
+                ':remark2'      => $h['CTM1_REMARK2'] ?? '',
+                ':remark3'      => $h['CTM1_REMARK3'] ?? '',
                 ':user'         => $user,
                 ':opdate'       => date('Y-m-d H:i:s')
             ]);
@@ -458,6 +469,12 @@ function saveSalesOrder($conn) {
             $sql_upd_h = "UPDATE CSTMORDR1 SET 
                             ORDER_CATEGORY          = :order_cat, 
                             CSTMSPPL_ID             = :cust_id,
+                            SUPPLIER_MATCODE        = :supplier_mat,
+                            CUSTOMS_CODE            = :customs_code,
+                            CTM1_CUSTOMERORDER      = :cust_order,
+                            CTM1_CUSTOMERSALEORDER  = :cust_so,
+                            CTM1_ENDCUSTOMERNAME    = :endcust_name,
+                            CTM1_ENDCUSTOMERPO      = :endcust_po,
                             CURRENCY_ID             = :currency,
                             SALEORDER_DATE          = :so_date, 
                             INTENDSHIP_DATE         = :ship_date, 
@@ -469,6 +486,9 @@ function saveSalesOrder($conn) {
                             CTM1_PORTDISCHARGE      = :portdis, 
                             CTM1_PLACEDESTINATION   = :placedest,
                             CTM1_COUNTRYDESTINATION = :countrydest,
+                            CTM1_PACKING            = :packing,
+                            CTM1_TOLERANCE          = :tolerance,
+                            CTM1_SHIPPEDBY          = :shippedby,
                             CTM1_TAXPERCENT         = :tax, 
                             CTM1_LMETYPE            = :lmetype,
                             CTM1_LMEDATE            = :lmedate,
@@ -478,6 +498,13 @@ function saveSalesOrder($conn) {
                             CTM1_ORDERSTDV          = :stdv,
                             CTM1_ORDERFACTOR        = :factor,
                             CTM1_ORDERSTDXFACTOR    = :stdxfactor,
+                            CTM1_SERIALCODE         = :serialcode,
+                            CTM1_WHOLEWEIGHT        = :wholeweight,
+                            CTM1_MARKSKID           = :markskid,
+                            CTM1_SCRAPWIRE          = :scrapwire,
+                            CTM1_REMARK1            = :remark1,
+                            CTM1_REMARK2            = :remark2,
+                            CTM1_REMARK3            = :remark3,
                             CTM1_TRANSPORTATION     = :transport,
                             CTM1_OVERSEAFREIGHT     = :freight, 
                             CTM1_INSURANCE          = :insurance,
@@ -491,6 +518,12 @@ function saveSalesOrder($conn) {
             $stmt->execute([
                 ':order_cat'   => $h['ORDER_CATEGORY'],
                 ':cust_id'     => $h['CSTMSPPL_ID'],
+                ':supplier_mat'=> $h['SUPPLIER_MATCODE'] ?? '',
+                ':customs_code'=> $h['CUSTOMS_CODE'] ?? '',
+                ':cust_order'  => $h['CTM1_CUSTOMERORDER'] ?? '',
+                ':cust_so'     => $h['CTM1_CUSTOMERSALEORDER'] ?? '',
+                ':endcust_name'=> $h['CTM1_ENDCUSTOMERNAME'] ?? '',
+                ':endcust_po'  => $h['CTM1_ENDCUSTOMERPO'] ?? '',
                 ':currency'    => $h['CURRENCY_ID'],
                 ':so_date'     => $h['SALEORDER_DATE'],
                 ':ship_date'   => $h['INTENDSHIP_DATE'],
@@ -502,6 +535,9 @@ function saveSalesOrder($conn) {
                 ':portdis'     => $h['CTM1_PORTDISCHARGE'] ?? '',
                 ':placedest'   => $h['CTM1_PLACEDESTINATION'] ?? '',
                 ':countrydest' => $h['CTM1_COUNTRYDESTINATION'] ?? $h['CTM1_PLACEDESTINATION'] ?? '',
+                ':packing'     => $h['CTM1_PACKING'] ?? '',
+                ':tolerance'   => $h['CTM1_TOLERANCE'] ?? '',
+                ':shippedby'   => $h['CTM1_SHIPPEDBY'] ?? '',
                 ':tax'         => $h['CTM1_TAXPERCENT'] ?? 0,
                 ':lmetype'     => $h['CTM1_LMETYPE'] ?? 'M-MONTHLY',
                 ':lmedate'     => !empty($h['CTM1_LMEDATE']) ? $h['CTM1_LMEDATE'] : date('Y-m-d'),
@@ -511,12 +547,19 @@ function saveSalesOrder($conn) {
                 ':stdv'        => (float)($h['CTM1_ORDERSTDV'] ?? 0),
                 ':factor'      => (float)($h['CTM1_ORDERFACTOR'] ?? 0),
                 ':stdxfactor'  => (float)($h['CTM1_ORDERSTDXFACTOR'] ?? 0),
-                ':transport'   => $h['CTM1_TRANSPORTATION'] ?? 0,
-                ':freight'     => $h['CTM1_OVERSEAFREIGHT'] ?? 0,
-                ':insurance'   => $h['CTM1_INSURANCE'] ?? 0,
-                ':fob'         => $h['CTM1_FOBTOTALAMOUNT'] ?? 0,
-                ':grand'       => $h['CTM1_GRANDTOTALAMOUNT'] ?? 0,
-                ':total'       => $h['CTM1_TOTALAMOUNT'] ?? 0,
+                ':serialcode'  => (int)($h['CTM1_SERIALCODE'] ?? 0),
+                ':wholeweight' => (int)($h['CTM1_WHOLEWEIGHT'] ?? 0),
+                ':markskid'    => (int)($h['CTM1_MARKSKID'] ?? 0),
+                ':scrapwire'   => (int)($h['CTM1_SCRAPWIRE'] ?? 0),
+                ':remark1'     => $h['CTM1_REMARK1'] ?? '',
+                ':remark2'     => $h['CTM1_REMARK2'] ?? '',
+                ':remark3'     => $h['CTM1_REMARK3'] ?? '',
+                ':transport'   => (float)($h['CTM1_TRANSPORTATION'] ?? 0),
+                ':freight'     => (float)($h['CTM1_OVERSEAFREIGHT'] ?? 0),
+                ':insurance'   => (float)($h['CTM1_INSURANCE'] ?? 0),
+                ':fob'         => (float)($h['CTM1_FOBTOTALAMOUNT'] ?? 0),
+                ':grand'       => (float)($h['CTM1_GRANDTOTALAMOUNT'] ?? 0),
+                ':total'       => (float)($h['CTM1_TOTALAMOUNT'] ?? 0),
                 ':user'        => $user,
                 ':opdate'      => date('Y-m-d H:i:s'),
                 ':sono'        => $sono
@@ -540,18 +583,18 @@ function saveSalesOrder($conn) {
             $conn->prepare("DELETE FROM CSTMORDR2 WHERE SALEORDER_NO = ?")->execute([$sono]);
         }
 
-        // บันทึก/อัปเดตแต่ละ Item พร้อม SUBCONTACT = 'N' และบันทึก STDV/Factor
+        // บันทึก/อัปเดตแต่ละ Item (บันทึกข้อมูลทุกฟิลด์ของ CSTMORDR2 ครบถ้วนตาม S1)
         foreach ($items as $it) {
             $so_item = trim($it['SALEORDER_ITEM']);
             $order_wt = (float)($it['CTM2_ORDERWEIGHT'] ?? 0);
             $order_pc = (int)($it['CTM2_ORDERPIECE'] ?? 0);
             $actual_price = (float)($it['CTM2_ACTUALPRICE'] ?? 0);
             $prod_id = trim($it['PRODUCT_ID'] ?? '');
-            $prod_model = ($prod_id === 'CC') ? 'CIRCLE' : (($prod_id === 'SH') ? 'SHEET' : 'COIL');
+            $prod_model = !empty($it['PRODUCT_MODEL']) ? trim($it['PRODUCT_MODEL']) : (($prod_id === 'CC') ? 'CIRCLE' : (($prod_id === 'SH') ? 'SHEET' : 'COIL'));
 
-            $item_stdv        = (float)($h['CTM1_ORDERSTDV'] ?? 0);
-            $item_factor      = (float)($h['CTM1_ORDERFACTOR'] ?? 0);
-            $item_stdx_factor = (float)($h['CTM1_ORDERSTDXFACTOR'] ?? 0);
+            $item_stdv        = (float)($it['CTM2_ORDERSTDV'] ?? 0);
+            $item_factor      = (float)($it['CTM2_ORDERFACTOR'] ?? 0);
+            $item_stdx_factor = (float)($it['CTM2_ORDERSTDXFACTOR'] ?? 0);
 
             $chk = $conn->prepare("SELECT COUNT(*) FROM CSTMORDR2 WHERE SALEORDER_NO = ? AND SALEORDER_ITEM = ?");
             $chk->execute([$sono, $so_item]);
@@ -560,6 +603,7 @@ function saveSalesOrder($conn) {
                 $sql_ins_d = "INSERT INTO CSTMORDR2 (
                                 SALEORDER_NO, SALEORDER_ITEM, CSTMSPPL_ID, ORDER_CATEGORY, ORDER_TYPE,
                                 MATERIAL_IN, COIL_FROM, FULL_COIL, CTM2_PONO, CTM2_POITEM, CTM2_PODATE,
+                                CTM2_CUSTOMERORDER, CTM2_CUSTOMERSALEORDER, CTM2_ENDCUSTOMERNAME, CTM2_ENDCUSTOMERPO,
                                 PRICE_PERIOD, PRODUCT_ID, PRODUCT_MODEL, SUBCONTACT, ALLOY, TEMPER, 
                                 SURFACE_GRADE, METALLURGICAL_GRADE, T5_TEMPERATURE,
                                 THICKNESS, WIDTH, LENGTH, CTM2_UOMDIMENSION,
@@ -570,12 +614,15 @@ function saveSalesOrder($conn) {
                                 CTM2_ACTUALPRICE, CTM2_LMETYPE, CTM2_LMEDATE, CTM2_ORDERLME,
                                 CTM2_MJPDATE, CTM2_MJPPRICE, CTM2_ORDERSTDV, CTM2_ORDERFACTOR, CTM2_ORDERSTDXFACTOR,
                                 CTM2_MAXTOLERANCE, CTM2_MINTOLERANCE,
+                                CTM2_REJECTWEIGHT, CTM2_REJECTPIECE, CTM2_REPLACEWEIGHT, CTM2_REPLACEPIECE,
+                                CTM2_WHOLEWEIGHT, CTM2_MARKSKID, CTM2_SERIALCODE, CTM2_SCRAPWIRE,
                                 CTM2_DESCRIPTION, CTM2_REMARK,
                                 CTM2_SPECIALLABEL1, CTM2_SPECIALLABEL2, CTM2_SPECIALLABEL3, CTM2_SPECIALLABEL4,
                                 CTM2_STATUS, CTM2_OPERATOR, CTM2_OPERATEDATE
                               ) VALUES (
                                 :sono, :item, :cust, :cat, 'D',
                                 :mat_in, :coil_from, :full_coil, :pono, :poitem, :podate,
+                                :cust_order, :cust_so, :endcust_name, :endcust_po,
                                 :period, :prod, :model, :subcontact, :alloy, :temper,
                                 :sg, :mg, :t5,
                                 :thk, :wd, :len, 'mm.',
@@ -586,72 +633,97 @@ function saveSalesOrder($conn) {
                                 :price, :lmetype, :lmedate, :orderlme,
                                 :mjpdate, :mjpprice, :stdv, :factor, :stdxfactor,
                                 :maxtol, :mintol,
+                                :reject_wt, :reject_pc, :replace_wt, :replace_pc,
+                                :wholeweight, :markskid, :serialcode, :scrapwire,
                                 :desc, :remark,
                                 :lbl1, :lbl2, :lbl3, :lbl4,
-                                'OP', :user, :opdate
+                                :status, :user, :opdate
                               )";
                 $stmt_d = $conn->prepare($sql_ins_d);
                 $stmt_d->execute([
-                    ':sono'      => $sono,
-                    ':item'      => $so_item,
-                    ':cust'      => $h['CSTMSPPL_ID'],
-                    ':cat'       => $h['ORDER_CATEGORY'],
-                    ':mat_in'    => $it['MATERIAL_IN'] ?? 'BOI-MAT1',
-                    ':coil_from' => $it['COIL_FROM'] ?? 'MAT',
-                    ':full_coil' => $it['FULL_COIL'] ?? 'F',
-                    ':pono'      => $h['CTM1_PONO'],
-                    ':poitem'    => $so_item,
-                    ':podate'    => $h['SALEORDER_DATE'],
-                    ':period'    => !empty($it['PRICE_PERIOD']) ? $it['PRICE_PERIOD'] : 'NONE',
-                    ':prod'      => $prod_id,
-                    ':model'     => $prod_model,
-                    ':subcontact'=> 'N', // บันทึก N แก้ไขปัญหา Cannot insert NULL
-                    ':alloy'     => $it['ALLOY'],
-                    ':temper'    => $it['TEMPER'],
-                    ':sg'        => $it['SURFACE_GRADE'] ?? 'SG3',
-                    ':mg'        => $it['METALLURGICAL_GRADE'] ?? 'MG3',
-                    ':t5'        => $it['T5_TEMPERATURE'] ?? '',
-                    ':thk'       => $it['THICKNESS'],
-                    ':wd'        => $it['WIDTH'],
-                    ':len'       => $it['LENGTH'],
-                    ':ct_thk'    => $it['CT2U_THICKNESS'] ?? 0,
-                    ':ct_wd'     => $it['CT2U_WIDTH'] ?? 0,
-                    ':ct_len'    => $it['CT2U_LENGTH'] ?? 0,
-                    ':ct_dim'    => $it['CT2U_UOMDIMENSION'] ?? 'inch',
-                    ':wt_pc'     => $it['WEIGHT_PIECE'] ?? 0,
-                    ':req_d'     => $h['INTENDSHIP_DATE'],
-                    ':conf_d'    => $h['INTENDSHIP_DATE'],
-                    ':part_no'   => $it['CTM2_CUSTOMERPARTNO'] ?? '',
-                    ':ord_wt'    => $order_wt,
-                    ':ord_pc'    => $order_pc,
-                    ':ct_uom_wt' => $it['CT2U_UOMWEIGHT'] ?? 'lbs.',
-                    ':ct_wt'     => $it['CT2U_ORDERWEIGHT'] ?? $order_wt,
-                    ':ct_pc'     => $it['CT2U_ORDERPIECE'] ?? $order_pc,
-                    ':price'     => $actual_price,
-                    ':lmetype'   => $h['CTM1_LMETYPE'] ?? 'M-MONTHLY',
-                    ':lmedate'   => !empty($h['CTM1_LMEDATE']) ? $h['CTM1_LMEDATE'] : date('Y-m-d'),
-                    ':orderlme'  => $h['CTM1_ORDERLME'] ?? 0,
-                    ':mjpdate'   => !empty($h['CTM1_MJPDATE']) ? $h['CTM1_MJPDATE'] : date('Y-m-d'),
-                    ':mjpprice'  => $h['CTM1_MJPPRICE'] ?? 0,
-                    ':stdv'      => $item_stdv,
-                    ':factor'    => $item_factor,
-                    ':stdxfactor'=> $item_stdx_factor,
-                    ':maxtol'    => (int)($it['CTM2_MAXTOLERANCE'] ?? 0),
-                    ':mintol'    => (int)($it['CTM2_MINTOLERANCE'] ?? 0),
-                    ':desc'      => $it['CTM2_DESCRIPTION'] ?? '',
-                    ':remark'    => $it['CTM2_REMARK'] ?? '',
-                    ':lbl1'      => $it['CTM2_SPECIALLABEL1'] ?? '',
-                    ':lbl2'      => $it['CTM2_SPECIALLABEL2'] ?? '',
-                    ':lbl3'      => $it['CTM2_SPECIALLABEL3'] ?? '',
-                    ':lbl4'      => $it['CTM2_SPECIALLABEL4'] ?? '',
-                    ':user'      => $user,
-                    ':opdate'    => date('Y-m-d H:i:s')
+                    ':sono'        => $sono,
+                    ':item'        => $so_item,
+                    ':cust'        => $h['CSTMSPPL_ID'],
+                    ':cat'         => $h['ORDER_CATEGORY'],
+                    ':mat_in'      => $it['MATERIAL_IN'] ?? 'BOI-MAT1',
+                    ':coil_from'   => $it['COIL_FROM'] ?? 'MAT',
+                    ':full_coil'   => $it['FULL_COIL'] ?? 'F',
+                    ':pono'        => !empty($it['CTM2_PONO']) ? $it['CTM2_PONO'] : $h['CTM1_PONO'],
+                    ':poitem'      => !empty($it['CTM2_POITEM']) ? $it['CTM2_POITEM'] : $so_item,
+                    ':podate'      => !empty($it['CTM2_PODATE']) ? $it['CTM2_PODATE'] : $h['SALEORDER_DATE'],
+                    ':cust_order'  => !empty($it['CTM2_CUSTOMERORDER']) ? $it['CTM2_CUSTOMERORDER'] : ($h['CTM1_CUSTOMERORDER'] ?? ''),
+                    ':cust_so'     => !empty($it['CTM2_CUSTOMERSALEORDER']) ? $it['CTM2_CUSTOMERSALEORDER'] : ($h['CTM1_CUSTOMERSALEORDER'] ?? ''),
+                    ':endcust_name'=> !empty($it['CTM2_ENDCUSTOMERNAME']) ? $it['CTM2_ENDCUSTOMERNAME'] : ($h['CTM1_ENDCUSTOMERNAME'] ?? ''),
+                    ':endcust_po'  => !empty($it['CTM2_ENDCUSTOMERPO']) ? $it['CTM2_ENDCUSTOMERPO'] : ($h['CTM1_ENDCUSTOMERPO'] ?? ''),
+                    ':period'      => !empty($it['PRICE_PERIOD']) ? $it['PRICE_PERIOD'] : 'NONE',
+                    ':prod'        => $prod_id,
+                    ':model'       => $prod_model,
+                    ':subcontact'  => 'N',
+                    ':alloy'       => $it['ALLOY'],
+                    ':temper'      => $it['TEMPER'],
+                    ':sg'          => $it['SURFACE_GRADE'] ?? 'SG3',
+                    ':mg'          => $it['METALLURGICAL_GRADE'] ?? 'MG3',
+                    ':t5'          => $it['T5_TEMPERATURE'] ?? '',
+                    ':thk'         => $it['THICKNESS'],
+                    ':wd'          => $it['WIDTH'],
+                    ':len'         => $it['LENGTH'],
+                    ':ct_thk'      => $it['CT2U_THICKNESS'] ?? 0,
+                    ':ct_wd'       => $it['CT2U_WIDTH'] ?? 0,
+                    ':ct_len'      => $it['CT2U_LENGTH'] ?? 0,
+                    ':ct_dim'      => $it['CT2U_UOMDIMENSION'] ?? 'inch',
+                    ':wt_pc'       => $it['WEIGHT_PIECE'] ?? 0,
+                    ':req_d'       => !empty($it['REQUEST_DATE']) ? $it['REQUEST_DATE'] : $h['INTENDSHIP_DATE'],
+                    ':conf_d'      => !empty($it['CONFIRM_DATE']) ? $it['CONFIRM_DATE'] : $h['INTENDSHIP_DATE'],
+                    ':part_no'     => $it['CTM2_CUSTOMERPARTNO'] ?? '',
+                    ':ord_wt'      => $order_wt,
+                    ':ord_pc'      => $order_pc,
+                    ':ct_uom_wt'   => $it['CT2U_UOMWEIGHT'] ?? 'lbs.',
+                    ':ct_wt'       => $it['CT2U_ORDERWEIGHT'] ?? $order_wt,
+                    ':ct_pc'       => $it['CT2U_ORDERPIECE'] ?? $order_pc,
+                    ':price'       => $actual_price,
+                    ':lmetype'     => !empty($it['CTM2_LMETYPE']) ? $it['CTM2_LMETYPE'] : ($h['CTM1_LMETYPE'] ?? 'M-MONTHLY'),
+                    ':lmedate'     => !empty($it['CTM2_LMEDATE']) ? $it['CTM2_LMEDATE'] : (!empty($h['CTM1_LMEDATE']) ? $h['CTM1_LMEDATE'] : date('Y-m-d')),
+                    ':orderlme'    => isset($it['CTM2_ORDERLME']) ? (float)$it['CTM2_ORDERLME'] : (float)($h['CTM1_ORDERLME'] ?? 0),
+                    ':mjpdate'     => !empty($it['CTM2_MJPDATE']) ? $it['CTM2_MJPDATE'] : (!empty($h['CTM1_MJPDATE']) ? $h['CTM1_MJPDATE'] : date('Y-m-d')),
+                    ':mjpprice'    => isset($it['CTM2_MJPPRICE']) ? (float)$it['CTM2_MJPPRICE'] : (float)($h['CTM1_MJPPRICE'] ?? 0),
+                    ':stdv'        => $item_stdv,
+                    ':factor'      => $item_factor,
+                    ':stdxfactor'  => $item_stdx_factor,
+                    ':maxtol'      => (int)($it['CTM2_MAXTOLERANCE'] ?? 0),
+                    ':mintol'      => (int)($it['CTM2_MINTOLERANCE'] ?? 0),
+                    ':reject_wt'   => (float)($it['CTM2_REJECTWEIGHT'] ?? 0),
+                    ':reject_pc'   => (int)($it['CTM2_REJECTPIECE'] ?? 0),
+                    ':replace_wt'  => (float)($it['CTM2_REPLACEWEIGHT'] ?? 0),
+                    ':replace_pc'  => (int)($it['CTM2_REPLACEPIECE'] ?? 0),
+                    ':wholeweight' => (int)($h['CTM1_WHOLEWEIGHT'] ?? 0),
+                    ':markskid'    => (int)($h['CTM1_MARKSKID'] ?? 0),
+                    ':serialcode'  => (int)($h['CTM1_SERIALCODE'] ?? 0),
+                    ':scrapwire'   => (int)($h['CTM1_SCRAPWIRE'] ?? 0),
+                    ':desc'        => $it['CTM2_DESCRIPTION'] ?? '',
+                    ':remark'      => $it['CTM2_REMARK'] ?? '',
+                    ':lbl1'        => $it['CTM2_SPECIALLABEL1'] ?? '',
+                    ':lbl2'        => $it['CTM2_SPECIALLABEL2'] ?? '',
+                    ':lbl3'        => $it['CTM2_SPECIALLABEL3'] ?? '',
+                    ':lbl4'        => $it['CTM2_SPECIALLABEL4'] ?? '',
+                    ':status'      => !empty($it['CTM2_STATUS']) ? $it['CTM2_STATUS'] : 'OP',
+                    ':user'        => $user,
+                    ':opdate'      => date('Y-m-d H:i:s')
                 ]);
             } else {
                 $sql_upd_d = "UPDATE CSTMORDR2 SET 
                                 CSTMSPPL_ID       = :cust,
                                 ORDER_CATEGORY    = :cat,
+                                CTM2_STATUS       = :status,
                                 CTM2_PONO         = :pono,
+                                CTM2_POITEM       = :poitem,
+                                CTM2_PODATE       = :podate,
+                                CTM2_CUSTOMERORDER = :cust_order,
+                                CTM2_CUSTOMERSALEORDER = :cust_so,
+                                CTM2_ENDCUSTOMERNAME = :endcust_name,
+                                CTM2_ENDCUSTOMERPO = :endcust_po,
+                                REQUEST_DATE      = :req_d,
+                                CONFIRM_DATE      = :conf_d,
+                                CTM2_CUSTOMERPARTNO = :part_no,
                                 MATERIAL_IN       = :mat_in,
                                 COIL_FROM         = :coil_from,
                                 FULL_COIL         = :full_coil,
@@ -662,6 +734,7 @@ function saveSalesOrder($conn) {
                                 TEMPER            = :temper,
                                 SURFACE_GRADE     = :sg,
                                 METALLURGICAL_GRADE = :mg,
+                                T5_TEMPERATURE    = :t5,
                                 THICKNESS         = :thk,
                                 WIDTH             = :wd,
                                 LENGTH            = :len,
@@ -686,6 +759,14 @@ function saveSalesOrder($conn) {
                                 CTM2_ORDERSTDXFACTOR = :stdxfactor,
                                 CTM2_MAXTOLERANCE = :maxtol,
                                 CTM2_MINTOLERANCE = :mintol,
+                                CTM2_REJECTWEIGHT = :reject_wt,
+                                CTM2_REJECTPIECE  = :reject_pc,
+                                CTM2_REPLACEWEIGHT= :replace_wt,
+                                CTM2_REPLACEPIECE = :replace_pc,
+                                CTM2_WHOLEWEIGHT  = :wholeweight,
+                                CTM2_MARKSKID     = :markskid,
+                                CTM2_SERIALCODE   = :serialcode,
+                                CTM2_SCRAPWIRE    = :scrapwire,
                                 CTM2_DESCRIPTION  = :desc,
                                 CTM2_REMARK       = :remark,
                                 CTM2_SPECIALLABEL1 = :lbl1,
@@ -697,68 +778,91 @@ function saveSalesOrder($conn) {
                               WHERE SALEORDER_NO = :sono AND SALEORDER_ITEM = :item";
                 $stmt_d = $conn->prepare($sql_upd_d);
                 $stmt_d->execute([
-                    ':cust'      => $h['CSTMSPPL_ID'],
-                    ':cat'       => $h['ORDER_CATEGORY'],
-                    ':pono'      => $h['CTM1_PONO'],
-                    ':mat_in'    => $it['MATERIAL_IN'] ?? 'BOI-MAT1',
-                    ':coil_from' => $it['COIL_FROM'] ?? 'MAT',
-                    ':full_coil' => $it['FULL_COIL'] ?? 'F',
-                    ':period'    => !empty($it['PRICE_PERIOD']) ? $it['PRICE_PERIOD'] : 'NONE',
-                    ':prod'      => $prod_id,
-                    ':model'     => $prod_model,
-                    ':alloy'     => $it['ALLOY'],
-                    ':temper'    => $it['TEMPER'],
-                    ':sg'        => $it['SURFACE_GRADE'] ?? 'SG3',
-                    ':mg'        => $it['METALLURGICAL_GRADE'] ?? 'MG3',
-                    ':thk'       => $it['THICKNESS'],
-                    ':wd'        => $it['WIDTH'],
-                    ':len'       => $it['LENGTH'],
-                    ':ct_thk'    => $it['CT2U_THICKNESS'] ?? 0,
-                    ':ct_wd'     => $it['CT2U_WIDTH'] ?? 0,
-                    ':ct_len'    => $it['CT2U_LENGTH'] ?? 0,
-                    ':ct_dim'    => $it['CT2U_UOMDIMENSION'] ?? 'inch',
-                    ':wt_pc'     => $it['WEIGHT_PIECE'] ?? 0,
-                    ':ord_wt'    => $order_wt,
-                    ':ord_pc'    => $order_pc,
-                    ':ct_uom_wt' => $it['CT2U_UOMWEIGHT'] ?? 'lbs.',
-                    ':ct_wt'     => $it['CT2U_ORDERWEIGHT'] ?? $order_wt,
-                    ':ct_pc'     => $it['CT2U_ORDERPIECE'] ?? $order_pc,
-                    ':price'     => $actual_price,
-                    ':lmetype'   => $h['CTM1_LMETYPE'] ?? 'M-MONTHLY',
-                    ':lmedate'   => !empty($h['CTM1_LMEDATE']) ? $h['CTM1_LMEDATE'] : date('Y-m-d'),
-                    ':orderlme'  => $h['CTM1_ORDERLME'] ?? 0,
-                    ':mjpdate'   => !empty($h['CTM1_MJPDATE']) ? $h['CTM1_MJPDATE'] : date('Y-m-d'),
-                    ':mjpprice'  => $h['CTM1_MJPPRICE'] ?? 0,
-                    ':stdv'      => $item_stdv,
-                    ':factor'    => $item_factor,
-                    ':stdxfactor'=> $item_stdx_factor,
-                    ':maxtol'    => (int)($it['CTM2_MAXTOLERANCE'] ?? 0),
-                    ':mintol'    => (int)($it['CTM2_MINTOLERANCE'] ?? 0),
-                    ':desc'      => $it['CTM2_DESCRIPTION'] ?? '',
-                    ':remark'    => $it['CTM2_REMARK'] ?? '',
-                    ':lbl1'      => $it['CTM2_SPECIALLABEL1'] ?? '',
-                    ':lbl2'      => $it['CTM2_SPECIALLABEL2'] ?? '',
-                    ':lbl3'      => $it['CTM2_SPECIALLABEL3'] ?? '',
-                    ':lbl4'      => $it['CTM2_SPECIALLABEL4'] ?? '',
-                    ':user'      => $user,
-                    ':opdate'    => date('Y-m-d H:i:s'),
-                    ':sono'      => $sono,
-                    ':item'      => $so_item
+                    ':cust'        => $h['CSTMSPPL_ID'],
+                    ':cat'         => $h['ORDER_CATEGORY'],
+                    ':status'      => !empty($it['CTM2_STATUS']) ? $it['CTM2_STATUS'] : 'OP',
+                    ':pono'        => !empty($it['CTM2_PONO']) ? $it['CTM2_PONO'] : $h['CTM1_PONO'],
+                    ':poitem'      => !empty($it['CTM2_POITEM']) ? $it['CTM2_POITEM'] : $so_item,
+                    ':podate'      => !empty($it['CTM2_PODATE']) ? $it['CTM2_PODATE'] : $h['SALEORDER_DATE'],
+                    ':cust_order'  => !empty($it['CTM2_CUSTOMERORDER']) ? $it['CTM2_CUSTOMERORDER'] : ($h['CTM1_CUSTOMERORDER'] ?? ''),
+                    ':cust_so'     => !empty($it['CTM2_CUSTOMERSALEORDER']) ? $it['CTM2_CUSTOMERSALEORDER'] : ($h['CTM1_CUSTOMERSALEORDER'] ?? ''),
+                    ':endcust_name'=> !empty($it['CTM2_ENDCUSTOMERNAME']) ? $it['CTM2_ENDCUSTOMERNAME'] : ($h['CTM1_ENDCUSTOMERNAME'] ?? ''),
+                    ':endcust_po'  => !empty($it['CTM2_ENDCUSTOMERPO']) ? $it['CTM2_ENDCUSTOMERPO'] : ($h['CTM1_ENDCUSTOMERPO'] ?? ''),
+                    ':req_d'       => !empty($it['REQUEST_DATE']) ? $it['REQUEST_DATE'] : $h['INTENDSHIP_DATE'],
+                    ':conf_d'      => !empty($it['CONFIRM_DATE']) ? $it['CONFIRM_DATE'] : $h['INTENDSHIP_DATE'],
+                    ':part_no'     => $it['CTM2_CUSTOMERPARTNO'] ?? '',
+                    ':mat_in'      => $it['MATERIAL_IN'] ?? 'BOI-MAT1',
+                    ':coil_from'   => $it['COIL_FROM'] ?? 'MAT',
+                    ':full_coil'   => $it['FULL_COIL'] ?? 'F',
+                    ':period'      => !empty($it['PRICE_PERIOD']) ? $it['PRICE_PERIOD'] : 'NONE',
+                    ':prod'        => $prod_id,
+                    ':model'       => $prod_model,
+                    ':alloy'       => $it['ALLOY'],
+                    ':temper'      => $it['TEMPER'],
+                    ':sg'          => $it['SURFACE_GRADE'] ?? 'SG3',
+                    ':mg'          => $it['METALLURGICAL_GRADE'] ?? 'MG3',
+                    ':t5'          => $it['T5_TEMPERATURE'] ?? '',
+                    ':thk'         => $it['THICKNESS'],
+                    ':wd'          => $it['WIDTH'],
+                    ':len'         => $it['LENGTH'],
+                    ':ct_thk'      => $it['CT2U_THICKNESS'] ?? 0,
+                    ':ct_wd'       => $it['CT2U_WIDTH'] ?? 0,
+                    ':ct_len'      => $it['CT2U_LENGTH'] ?? 0,
+                    ':ct_dim'      => $it['CT2U_UOMDIMENSION'] ?? 'inch',
+                    ':wt_pc'       => $it['WEIGHT_PIECE'] ?? 0,
+                    ':ord_wt'      => $order_wt,
+                    ':ord_pc'      => $order_pc,
+                    ':ct_uom_wt'   => $it['CT2U_UOMWEIGHT'] ?? 'lbs.',
+                    ':ct_wt'       => $it['CT2U_ORDERWEIGHT'] ?? $order_wt,
+                    ':ct_pc'       => $it['CT2U_ORDERPIECE'] ?? $order_pc,
+                    ':price'       => $actual_price,
+                    ':lmetype'     => !empty($it['CTM2_LMETYPE']) ? $it['CTM2_LMETYPE'] : ($h['CTM1_LMETYPE'] ?? 'M-MONTHLY'),
+                    ':lmedate'     => !empty($it['CTM2_LMEDATE']) ? $it['CTM2_LMEDATE'] : (!empty($h['CTM1_LMEDATE']) ? $h['CTM1_LMEDATE'] : date('Y-m-d')),
+                    ':orderlme'    => isset($it['CTM2_ORDERLME']) ? (float)$it['CTM2_ORDERLME'] : (float)($h['CTM1_ORDERLME'] ?? 0),
+                    ':mjpdate'     => !empty($it['CTM2_MJPDATE']) ? $it['CTM2_MJPDATE'] : (!empty($h['CTM1_MJPDATE']) ? $h['CTM1_MJPDATE'] : date('Y-m-d')),
+                    ':mjpprice'    => isset($it['CTM2_MJPPRICE']) ? (float)$it['CTM2_MJPPRICE'] : (float)($h['CTM1_MJPPRICE'] ?? 0),
+                    ':stdv'        => $item_stdv,
+                    ':factor'      => $item_factor,
+                    ':stdxfactor'  => $item_stdx_factor,
+                    ':maxtol'      => (int)($it['CTM2_MAXTOLERANCE'] ?? 0),
+                    ':mintol'      => (int)($it['CTM2_MINTOLERANCE'] ?? 0),
+                    ':reject_wt'   => (float)($it['CTM2_REJECTWEIGHT'] ?? 0),
+                    ':reject_pc'   => (int)($it['CTM2_REJECTPIECE'] ?? 0),
+                    ':replace_wt'  => (float)($it['CTM2_REPLACEWEIGHT'] ?? 0),
+                    ':replace_pc'  => (int)($it['CTM2_REPLACEPIECE'] ?? 0),
+                    ':wholeweight' => (int)($h['CTM1_WHOLEWEIGHT'] ?? 0),
+                    ':markskid'    => (int)($h['CTM1_MARKSKID'] ?? 0),
+                    ':serialcode'  => (int)($h['CTM1_SERIALCODE'] ?? 0),
+                    ':scrapwire'   => (int)($h['CTM1_SCRAPWIRE'] ?? 0),
+                    ':desc'        => $it['CTM2_DESCRIPTION'] ?? '',
+                    ':remark'      => $it['CTM2_REMARK'] ?? '',
+                    ':lbl1'        => $it['CTM2_SPECIALLABEL1'] ?? '',
+                    ':lbl2'        => $it['CTM2_SPECIALLABEL2'] ?? '',
+                    ':lbl3'        => $it['CTM2_SPECIALLABEL3'] ?? '',
+                    ':lbl4'        => $it['CTM2_SPECIALLABEL4'] ?? '',
+                    ':user'        => $user,
+                    ':opdate'      => date('Y-m-d H:i:s'),
+                    ':sono'        => $sono,
+                    ':item'        => $so_item
                 ]);
             }
 
             // Cascading Updates ตาม S1
             $conn->prepare("UPDATE INVCPRCS2 SET 
                             CUSTOMS_CODE = :cust_code, INV2_EXCHANGERATE = :ex, INV2_DEBITPRICE = :prc, 
-                            INV2_PONO = :po, INV2_POITEM = :item, INV2_UOMDIMENSION = 'mm.', 
-                            IN2U_UOMDIMENSION = :ct_dim, INV2_UOMWEIGHT = 'kg.', IN2U_UOMWEIGHT = :ct_uom_wt 
+                            INV2_PONO = :po, INV2_POITEM = :item, INV2_CUSTOMERORDER = :cust_ord,
+                            INV2_CUSTOMERSALEORDER = :cust_so, INV2_ENDCUSTOMERNAME = :end_name,
+                            INV2_UOMDIMENSION = 'mm.', IN2U_UOMDIMENSION = :ct_dim, INV2_UOMWEIGHT = 'kg.', IN2U_UOMWEIGHT = :ct_uom_wt 
                             WHERE SALEORDER_NO = :so AND SALEORDER_ITEM = :it")
                  ->execute([
                      ':cust_code' => $h['CUSTOMS_CODE'] ?? '',
                      ':ex'        => $exrate,
                      ':prc'       => $actual_price,
-                     ':po'        => $h['CTM1_PONO'],
-                     ':item'      => $so_item,
+                     ':po'        => !empty($it['CTM2_PONO']) ? $it['CTM2_PONO'] : $h['CTM1_PONO'],
+                     ':item'      => !empty($it['CTM2_POITEM']) ? $it['CTM2_POITEM'] : $so_item,
+                     ':cust_ord'  => !empty($it['CTM2_CUSTOMERORDER']) ? $it['CTM2_CUSTOMERORDER'] : ($h['CTM1_CUSTOMERORDER'] ?? ''),
+                     ':cust_so'   => !empty($it['CTM2_CUSTOMERSALEORDER']) ? $it['CTM2_CUSTOMERSALEORDER'] : ($h['CTM1_CUSTOMERSALEORDER'] ?? ''),
+                     ':end_name'  => !empty($it['CTM2_ENDCUSTOMERNAME']) ? $it['CTM2_ENDCUSTOMERNAME'] : ($h['CTM1_ENDCUSTOMERNAME'] ?? ''),
                      ':ct_dim'    => $it['CT2U_UOMDIMENSION'] ?? 'inch',
                      ':ct_uom_wt' => $it['CT2U_UOMWEIGHT'] ?? 'lbs.',
                      ':so'        => $sono,
@@ -768,17 +872,28 @@ function saveSalesOrder($conn) {
             $conn->prepare("UPDATE INVCPRCS3 SET 
                             INV3_DEBITPRICE = :prc, INV3_PONO = :po, INV3_POITEM = :item 
                             WHERE SALEORDER_NO = :so AND SALEORDER_ITEM = :it")
-                 ->execute([':prc' => $actual_price, ':po' => $h['CTM1_PONO'], ':item' => $so_item, ':so' => $sono, ':it' => $so_item]);
+                 ->execute([
+                     ':prc'  => $actual_price, 
+                     ':po'   => !empty($it['CTM2_PONO']) ? $it['CTM2_PONO'] : $h['CTM1_PONO'], 
+                     ':item' => !empty($it['CTM2_POITEM']) ? $it['CTM2_POITEM'] : $so_item, 
+                     ':so'   => $sono, 
+                     ':it'   => $so_item
+                 ]);
 
             $conn->prepare("UPDATE PACKPROD1 SET PACK_PONO = :po, PACK_POITEM = :item WHERE SALEORDER_NO = :so AND SALEORDER_ITEM = :it")
-                 ->execute([':po' => $h['CTM1_PONO'], ':item' => $so_item, ':so' => $sono, ':it' => $so_item]);
+                 ->execute([
+                     ':po'   => !empty($it['CTM2_PONO']) ? $it['CTM2_PONO'] : $h['CTM1_PONO'], 
+                     ':item' => !empty($it['CTM2_POITEM']) ? $it['CTM2_POITEM'] : $so_item, 
+                     ':so'   => $sono, 
+                     ':it'   => $so_item
+                 ]);
 
             $conn->prepare("UPDATE PRODSCHD1 SET ETD_DATE = :etd WHERE SALEORDER_NO = :so AND SALEORDER_ITEM = :it")
-                 ->execute([':etd' => $h['INTENDSHIP_DATE'], ':so' => $sono, ':it' => $so_item]);
+                 ->execute([':etd' => !empty($it['CONFIRM_DATE']) ? $it['CONFIRM_DATE'] : $h['INTENDSHIP_DATE'], ':so' => $sono, ':it' => $so_item]);
 
             $conn->prepare("UPDATE JOBORDER1 SET 
                             MATERIAL_IN = :mat, PRODUCT_ID = :prod, PRODUCT_MODEL = :model, 
-                            SURFACE_GRADE = :sg, METALLURGICAL_GRADE = :mg, SCHEDULE_DATE = :etd 
+                            SURFACE_GRADE = :sg, METALLURGICAL_GRADE = :mg, T5_TEMPERATURE = :t5, SCHEDULE_DATE = :etd 
                             WHERE SALEORDER_NO = :so AND SALEORDER_ITEM = :it")
                  ->execute([
                      ':mat'   => $it['MATERIAL_IN'] ?? 'BOI-MAT1',
@@ -786,7 +901,8 @@ function saveSalesOrder($conn) {
                      ':model' => $prod_model,
                      ':sg'    => $it['SURFACE_GRADE'] ?? 'SG3',
                      ':mg'    => $it['METALLURGICAL_GRADE'] ?? 'MG3',
-                     ':etd'   => $h['INTENDSHIP_DATE'],
+                     ':t5'    => $it['T5_TEMPERATURE'] ?? '',
+                     ':etd'   => !empty($it['CONFIRM_DATE']) ? $it['CONFIRM_DATE'] : $h['INTENDSHIP_DATE'],
                      ':so'    => $sono,
                      ':it'    => $so_item
                  ]);
@@ -804,9 +920,7 @@ function saveSalesOrder($conn) {
     }
 }
 
-// =========================================================================
 // 6. Delete Sales Order
-// =========================================================================
 function deleteSalesOrder($conn) {
     $sono = isset($_POST['sono']) ? trim($_POST['sono']) : '';
     $force_delete = isset($_POST['force_delete']) ? (int)$_POST['force_delete'] : 0;

@@ -187,13 +187,13 @@ $all_working = RT_CoilWorking();
                             <div class="absolute -top-3 left-4 bg-blue-600 text-white px-3 py-0.5 rounded-full text-[14px] font-bold uppercase tracking-wider">
                                 Sales & Planning
                             </div>
-                            
+                            <br>
                             <div class="flex flex-col gap-3 mt-2">
                                 <a href="saleorder_list_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
                                     <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                     <div>
                                         <div class="text-bg font-bold text-blue-900">Sale Order</div>
-                                        <div class="text-[10px] text-blue-600 uppercase">12 Pending Tasks</div>
+                                        <div class="text-[10px] text-blue-600 uppercase">FUNCTION</div>
                                     </div>
                                 </a>
 
@@ -201,11 +201,11 @@ $all_working = RT_CoilWorking();
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
                                 </div>
                                 
-                                <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=job" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                <a href="job_order_list_mats.php?func=<?php echo $folder_func; ?>&type=job" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
                                     <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                     <div>
                                         <div class="text-bg font-bold text-blue-900">Job Order</div>
-                                        <div class="text-[10px] text-blue-600 uppercase">12 Pending Tasks</div>
+                                        <div class="text-[10px] text-blue-600 uppercase">FUNCTION</div>
                                     </div>
                                 </a>
                                 
@@ -217,7 +217,7 @@ $all_working = RT_CoilWorking();
                                     <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                     <div>
                                         <div class="text-bg font-bold text-blue-900">Plan Order</div>
-                                        <div class="text-[10px] text-blue-600 uppercase">Production Planning and Sale Planning</div>
+                                        <div class="text-[10px] text-blue-600 uppercase">FUNCTION</div>
                                     </div>
                                 </a>
                             </div>
@@ -242,7 +242,7 @@ $all_working = RT_CoilWorking();
                                 <div class="space-y-3 text-center">
                                     <h4 class="text-[14px] font-bold text-slate-400 uppercase">Input</h4>
                                     <a href="packing_list_process_mats.php?func=<?php echo $folder_func; ?>" class="flow-card block p-4 bg-indigo-600 text-white rounded-xl shadow-sm no-underline hover:no-underline">
-                                        <div class="text-bg font-bold leading-tight">Receive Material</div>
+                                        <div class="text-bg font-bold leading-tight">Material Receive (Ingots)</div>
                                     </a>
                                     <a href="template_mats.php?func=<?php echo $folder_func; ?>" class="flow-card block p-4 bg-white border border-slate-200 rounded-lg text-bg text-slate-700 font-medium no-underline hover:no-underline">
                                         Quality Inspection

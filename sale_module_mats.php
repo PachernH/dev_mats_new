@@ -79,7 +79,7 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
                             </div>
                             &nbsp;
                             <div class="flex flex-col gap-3 mt-2">
-                                <a href="customer_order_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                <a href="saleorder_list_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
                                     <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                     <div>
                                         <div class="text-bg font-bold text-blue-900">Customer Order (Sale Order)</div>

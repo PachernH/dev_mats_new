@@ -71,33 +71,36 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
             border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;
         }
 
-        /* Sub-Card Blocks inside Header */
         .header-subcard {
             background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
-            padding: 14px 16px; height: 100%; min-height: 285px; display: flex; flex-direction: column; justify-content: space-between;
+            padding: 14px 16px; height: 100%; display: flex; flex-direction: column; justify-content: space-between;
         }
         .subcard-heading {
             font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;
             letter-spacing: 0.6px; margin-bottom: 10px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px;
         }
 
-        .form-group-custom { margin-bottom: 8px; }
+        .form-group-custom { margin-bottom: 7px; }
         .form-group-custom label {
-            font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 3px;
+            font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 2px;
             text-transform: uppercase; display: block;
         }
         .form-control-sm {
-            height: 32px !important; padding: 4px 8px !important; font-size: 12px !important;
-            border-radius: 6px !important; border: 1px solid #cbd5e1 !important; color: #1e293b; background: #ffffff;
+            height: 30px !important; padding: 3px 7px !important; font-size: 12px !important;
+            border-radius: 5px !important; border: 1px solid #cbd5e1 !important; color: #1e293b; background: #ffffff;
         }
         .form-control-sm:focus { border-color: #2563eb !important; outline: none; box-shadow: 0 0 0 1px #2563eb; }
 
         .uom-group-box {
             background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px;
-            padding: 10px 12px; margin-bottom: 10px;
+            padding: 8px 10px; margin-bottom: 8px;
         }
         .uom-group-title {
-            font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; margin-bottom: 6px;
+            font-size: 10.5px; font-weight: 700; color: #b45309; text-transform: uppercase; margin-bottom: 4px;
+        }
+
+        .vb-display-blue {
+            background-color: #00008b !important; color: #ffffff !important; font-weight: 700; text-align: right; border: 1px solid #000066 !important;
         }
 
         #entry_item_table th {
@@ -129,6 +132,12 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
             height: 36px; display: inline-flex; align-items: center;
         }
         .btn-top-cancel:hover { background-color: #475569; color: #ffffff; }
+
+        .checkbox-label {
+            font-size: 11.5px; font-weight: 600; color: #475569; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 5px; margin-right: 15px; margin-bottom: 4px;
+        }
+        .checkbox-label input[type="checkbox"] { margin: 0; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -158,20 +167,24 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
         <div class="container-fluid" style="padding-top: 15px;">
             <form id="soForm" onsubmit="return false;">
                 
-<!-- SECTION 1: ORDER HEADER (ปรับ Layout ใหม่แบบ 2 แถว กว้าง โปร่ง สบายตา) -->
+                <!-- SECTION 1: ORDER HEADER -->
                 <div class="entry-card">
                     <div class="section-title">
                         <span>📋 Order Header Information</span>
-                        <span style="font-size: 11px; color:#64748b; font-weight:normal;">* Fields are structured with clear spacing</span>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                            <label class="checkbox-label"><input type="checkbox" id="h_chk_wholeweight"/> Whole Weight</label>
+                            <label class="checkbox-label"><input type="checkbox" id="h_chk_markskid"/> Shipping Mark with Skid No.</label>
+                            <label class="checkbox-label"><input type="checkbox" id="h_chk_serialcode"/> Serial Code</label>
+                            <label class="checkbox-label"><input type="checkbox" id="h_chk_scrapwire"/> Show Scrap Wire</label>
+                        </div>
                     </div>
 
-                    <!-- แถวที่ 1: ข้อมูลลูกค้าและออร์เดอร์ (ซ้าย) คู่กับ กำหนดเวลาและสกุลเงิน (ขวา) -->
+                    <!-- Header Row 1 -->
                     <div class="row">
-                        <!-- Card 1: Basic & Customer -->
                         <div class="col-md-6" style="margin-bottom: 16px;">
-                            <div class="header-subcard" style="min-height: auto;">
+                            <div class="header-subcard">
                                 <div>
-                                    <div class="subcard-heading">🏢 Customer & Order Info</div>
+                                    <div class="subcard-heading">🏢 Customer & Order Reference</div>
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group-custom">
@@ -202,34 +215,86 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="form-group-custom">
-                                        <label>Customer</label>
-                                        <select class="form-control form-control-sm" id="h_customer" onchange="on_change_customer()">
-                                            <option value="">-- Select Customer --</option>
-                                            <?php foreach ($customers as $c): ?>
-                                                <option value="<?php echo htmlspecialchars($c['CSTMSPPL_ID']); ?>">
-                                                    <?php echo htmlspecialchars($c['CSTMSPPL_ID'] . ' : ' . $c['CONSIGNEE_COMPANY']); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
+
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <div class="form-group-custom">
+                                                <label>Customer</label>
+                                                <select class="form-control form-control-sm" id="h_customer" onchange="on_change_customer()">
+                                                    <option value="">-- Select Customer --</option>
+                                                    <?php foreach ($customers as $c): ?>
+                                                        <option value="<?php echo htmlspecialchars($c['CSTMSPPL_ID']); ?>">
+                                                            <?php echo htmlspecialchars($c['CSTMSPPL_ID'] . ' : ' . $c['CONSIGNEE_COMPANY']); ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group-custom">
+                                                <label>Supplier MAT Code</label>
+                                                <input type="text" class="form-control form-control-sm" id="h_supplier_mat" placeholder="Supplier MAT Code..."/>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="form-group-custom" style="margin-bottom: 0;">
-                                    <label>Purchase Order (PO No)</label>
-                                    <input type="text" class="form-control form-control-sm" id="h_po_no" placeholder="Enter PO Number..."/>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group-custom">
+                                                <label>Purchase Order (PO No)</label>
+                                                <input type="text" class="form-control form-control-sm" id="h_po_no" placeholder="PO Number..."/>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group-custom">
+                                                <label>Customs Code</label>
+                                                <input type="text" class="form-control form-control-sm" id="h_customs_code" placeholder="Customs Code..."/>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group-custom">
+                                                <label>Customer Order</label>
+                                                <input type="text" class="form-control form-control-sm" id="h_cust_order" placeholder="Customer Order No..."/>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group-custom">
+                                                <label>Customer Sale Order</label>
+                                                <input type="text" class="form-control form-control-sm" id="h_cust_so" placeholder="Customer Sale Order..."/>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group-custom" style="margin-bottom:0;">
+                                                <label>End Customer Name</label>
+                                                <input type="text" class="form-control form-control-sm" id="h_endcust_name" placeholder="End Customer Name..."/>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group-custom" style="margin-bottom:0;">
+                                                <label>End Customer PO. No.</label>
+                                                <input type="text" class="form-control form-control-sm" id="h_endcust_po" placeholder="End Customer PO..."/>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Card 2: Date & Currency -->
                         <div class="col-md-6" style="margin-bottom: 16px;">
-                            <div class="header-subcard" style="min-height: auto;">
+                            <div class="header-subcard">
                                 <div>
-                                    <div class="subcard-heading">📅 Schedule & Currency</div>
+                                    <div class="subcard-heading">📅 Schedule, Currency & Shipped By</div>
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group-custom">
-                                                <label>Order Date</label>
+                                                <label>Sale Order Date</label>
                                                 <input type="date" class="form-control form-control-sm" id="h_so_date" value="<?php echo date('Y-m-d'); ?>"/>
                                             </div>
                                         </div>
@@ -240,55 +305,71 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                             </div>
                                         </div>
                                     </div>
+
                                     <div class="row">
-                                        <div class="col-md-8">
+                                        <div class="col-md-4">
                                             <div class="form-group-custom">
-                                                <label>Currency & Exchange Rate</label>
-                                                <div style="display:flex; gap:6px;">
-                                                    <select class="form-control form-control-sm" id="h_currency" style="width: 45%;">
-                                                        <?php foreach ($currencies as $cur): ?>
-                                                            <option value="<?php echo htmlspecialchars($cur['CURRENCY_ID']); ?>">
-                                                                <?php echo htmlspecialchars($cur['CURRENCY_ID']); ?>
-                                                            </option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                    <input type="number" step="0.00001" class="form-control form-control-sm" id="h_exrate" value="1.00000" style="width: 55%;"/>
-                                                </div>
+                                                <label>Currency</label>
+                                                <select class="form-control form-control-sm" id="h_currency">
+                                                    <?php foreach ($currencies as $cur): ?>
+                                                        <option value="<?php echo htmlspecialchars($cur['CURRENCY_ID']); ?>">
+                                                            <?php echo htmlspecialchars($cur['CURRENCY_ID']); ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
                                             </div>
                                         </div>
                                         <div class="col-md-4">
-                                            <div class="form-group-custom" style="margin-bottom: 0;">
+                                            <div class="form-group-custom">
+                                                <label>Exchange Rate</label>
+                                                <input type="number" step="0.00001" class="form-control form-control-sm" id="h_exrate" value="1.00000"/>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group-custom">
                                                 <label>Tax Percent (%)</label>
                                                 <input type="number" class="form-control form-control-sm" id="h_tax" value="0"/>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    <div class="form-group-custom">
+                                        <label>Shipped By</label>
+                                        <input type="text" class="form-control form-control-sm" id="h_shippedby" placeholder="e.g. TRUCK, VESSEL, AIR..."/>
+                                    </div>
+
+                                    <div class="form-group-custom" style="margin-bottom:0;">
+                                        <label>General Remark (CTM1_REMARK1)</label>
+                                        <input type="text" class="form-control form-control-sm" id="h_remark1" placeholder="Header Remark 1..."/>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- แถวที่ 2: การขนส่งและท่าเรือ (ซ้าย) คู่กับ โครงสร้างราคาและ LME Basis (ขวา) -->
+                    <!-- Header Row 2 -->
                     <div class="row">
-                        <!-- Card 3: Shipping & Logistics -->
+                        <!-- Card 3: Shipping Data & Logistics -->
                         <div class="col-md-6" style="margin-bottom: 12px;">
-                            <div class="header-subcard" style="min-height: auto;">
+                            <div class="header-subcard">
                                 <div>
-                                    <div class="subcard-heading">🚢 Shipping & Logistics</div>
+                                    <div class="subcard-heading">🚢 Shipping Data & Logistics</div>
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group-custom">
-                                                <label>Shipment Term</label>
-                                                <select class="form-control form-control-sm" id="h_shipment">
-                                                    <option value="">-- None --</option>
-                                                    <?php foreach ($shipments as $s): ?>
-                                                        <option value="<?php echo htmlspecialchars($s['SHIPMENT_ID']); ?>">
-                                                            <?php echo htmlspecialchars($s['SHIPMENT_ID'] . ': ' . $s['DESCRIPTION']); ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
+                                                <label>Tolerance</label>
+                                                <input type="text" class="form-control form-control-sm" id="h_tolerance" placeholder="Tolerance text (e.g. +/-10%)..."/>
                                             </div>
                                         </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group-custom">
+                                                <label>Packing</label>
+                                                <input type="text" class="form-control form-control-sm" id="h_packing" placeholder="Packing text (e.g. EYE TO SKY)..."/>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group-custom">
                                                 <label>Payment Term</label>
@@ -302,7 +383,21 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                                 </select>
                                             </div>
                                         </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group-custom">
+                                                <label>Shipment Term</label>
+                                                <select class="form-control form-control-sm" id="h_shipment">
+                                                    <option value="">-- None --</option>
+                                                    <?php foreach ($shipments as $s): ?>
+                                                        <option value="<?php echo htmlspecialchars($s['SHIPMENT_ID']); ?>">
+                                                            <?php echo htmlspecialchars($s['SHIPMENT_ID'] . ': ' . $s['DESCRIPTION']); ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
                                     </div>
+
                                     <div class="form-group-custom">
                                         <label>Port Load / Port Discharge</label>
                                         <div style="display:flex; gap:6px;">
@@ -320,22 +415,31 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                             </select>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="form-group-custom" style="margin-bottom: 0;">
-                                    <label>Place & Country Destination</label>
-                                    <div style="display:flex; gap:6px;">
-                                        <select class="form-control form-control-sm" id="h_placedest" style="width:50%;" onchange="sync_country_dest()">
-                                            <option value="">000: NONE</option>
-                                            <?php foreach ($places as $pl): ?>
-                                                <option value="<?php echo htmlspecialchars($pl['PLACE_ID']); ?>"><?php echo htmlspecialchars($pl['PLACE_ID'] . ': ' . $pl['DESCRIPTION']); ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <select class="form-control form-control-sm" id="h_countrydest" style="width:50%;">
-                                            <option value="">000: NONE</option>
-                                            <?php foreach ($places as $pl): ?>
-                                                <option value="<?php echo htmlspecialchars($pl['PLACE_ID']); ?>"><?php echo htmlspecialchars($pl['PLACE_ID'] . ': ' . $pl['DESCRIPTION']); ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
+
+                                    <div class="form-group-custom">
+                                        <label>Place & Country Destination</label>
+                                        <div style="display:flex; gap:6px;">
+                                            <select class="form-control form-control-sm" id="h_placedest" style="width:50%;" onchange="sync_country_dest()">
+                                                <option value="">000: NONE</option>
+                                                <?php foreach ($places as $pl): ?>
+                                                    <option value="<?php echo htmlspecialchars($pl['PLACE_ID']); ?>"><?php echo htmlspecialchars($pl['PLACE_ID'] . ': ' . $pl['DESCRIPTION']); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <select class="form-control form-control-sm" id="h_countrydest" style="width:50%;">
+                                                <option value="">000: NONE</option>
+                                                <?php foreach ($places as $pl): ?>
+                                                    <option value="<?php echo htmlspecialchars($pl['PLACE_ID']); ?>"><?php echo htmlspecialchars($pl['PLACE_ID'] . ': ' . $pl['DESCRIPTION']); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group-custom" style="margin-bottom:0;">
+                                        <label>Shipping Remarks (CTM1_REMARK2, 3)</label>
+                                        <div style="display:flex; gap:6px;">
+                                            <input type="text" class="form-control form-control-sm" id="h_remark2" placeholder="Shipping Remark 1..." style="width:50%;"/>
+                                            <input type="text" class="form-control form-control-sm" id="h_remark3" placeholder="Shipping Remark 2..." style="width:50%;"/>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -343,39 +447,57 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
 
                         <!-- Card 4: Pricing Basis & Totals -->
                         <div class="col-md-6" style="margin-bottom: 12px;">
-                            <div class="header-subcard" style="background:#f0fdf4; border-color:#bbf7d0; min-height: auto;">
+                            <div class="header-subcard" style="background:#f0fdf4; border-color:#bbf7d0;">
                                 <div>
                                     <div class="subcard-heading" style="color:#166534; border-color:#86efac;">💰 Pricing Basis & Totals</div>
+                                    
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group-custom">
-                                                <label>LME Type & Date</label>
-                                                <div style="display:flex; gap:6px;">
-                                                    <select class="form-control form-control-sm" id="h_lmetype" style="width: 52%;" onchange="on_change_lme()">
-                                                        <option value="D-DAILY">D-DAILY</option>
-                                                        <option value="B-WBP LME">B-WBP LME</option>
-                                                        <option value="W-WBP">W-WBP</option>
-                                                        <option value="M-MONTHLY">M-MONTHLY</option>
-                                                        <option value="O-MANUALLY">O-MANUALLY</option>
-                                                        <option value="D-DAILY CASH">D-DAILY CASH</option>
-                                                        <option value="M-MONTHLY CASH">M-MONTHLY CASH</option>
-                                                    </select>
-                                                    <input type="date" class="form-control form-control-sm" id="h_lmedate" value="<?php echo date('Y-m-d'); ?>" style="width: 48%;" onchange="on_change_lme()"/>
-                                                </div>
+                                                <label>LME Type</label>
+                                                <select class="form-control form-control-sm" id="h_lmetype" onchange="on_change_lme()">
+                                                    <option value="D-DAILY">D-DAILY</option>
+                                                    <option value="B-WBP LME">B-WBP LME</option>
+                                                    <option value="W-WBP">W-WBP</option>
+                                                    <option value="M-MONTHLY">M-MONTHLY</option>
+                                                    <option value="O-MANUALLY">O-MANUALLY</option>
+                                                    <option value="D-DAILY CASH">D-DAILY CASH</option>
+                                                    <option value="M-MONTHLY CASH">M-MONTHLY CASH</option>
+                                                </select>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group-custom">
-                                                <label>Order LME / MJP Price</label>
-                                                <div style="display:flex; gap:6px;">
-                                                    <input type="number" step="0.01" class="form-control form-control-sm" id="h_orderlme" placeholder="LME" value="0.00" style="width: 50%;"/>
-                                                    <input type="number" step="0.01" class="form-control form-control-sm" id="h_mjpprice" placeholder="MJP" value="0.00" style="width: 50%;"/>
-                                                </div>
+                                                <label>LME Date</label>
+                                                <input type="date" class="form-control form-control-sm" id="h_lmedate" value="<?php echo date('Y-m-d'); ?>" onchange="on_change_lme()"/>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- แถวแสดง Stdv / Factor / STDxFactor (เต็มกว้าง เห็นตัวเลขชัดเจน) -->
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group-custom">
+                                                <label>Order LME</label>
+                                                <input type="number" step="0.01" class="form-control form-control-sm" id="h_orderlme" placeholder="LME" value="0.00"/>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group-custom">
+                                                <label style="color:#047857;">MJP Date</label>
+                                                <input type="date" class="form-control form-control-sm" id="h_mjpdate" value="<?php echo date('Y-m-d'); ?>" onchange="on_change_mjp()"/>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group-custom">
+                                                <label>MJP Price</label>
+                                                <input type="number" step="0.01" class="form-control form-control-sm" id="h_mjpprice" placeholder="MJP" value="0.00"/>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="form-group-custom">
                                         <label style="color: #1e40af;">Standard Deviation / Factor / STDxFactor</label>
                                         <div style="display:flex; gap:8px;">
@@ -392,25 +514,47 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                     </div>
 
                                     <div class="row">
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="form-group-custom">
-                                                <label>Freight / Insurance</label>
-                                                <div style="display:flex; gap:6px;">
-                                                    <input type="number" step="0.01" class="form-control form-control-sm" id="h_freight" placeholder="Freight" value="0.00" style="width: 50%;" oninput="calculate_header_total()"/>
-                                                    <input type="number" step="0.01" class="form-control form-control-sm" id="h_insurance" placeholder="Insur." value="0.00" style="width: 50%;" oninput="calculate_header_total()"/>
-                                                </div>
+                                                <label style="color:#1d4ed8;">Total Amount (Items)</label>
+                                                <input type="text" class="form-control form-control-sm" id="h_total_amount" value="0.00" readonly style="background:#e0e7ff; font-weight:700; color:#1e40af; text-align:right;"/>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group-custom" style="margin-bottom: 0;">
-                                                <label>FOB / Grand Total</label>
-                                                <div style="display:flex; gap:6px;">
-                                                    <input type="text" class="form-control form-control-sm" id="h_fob" value="0.00" readonly style="background:#ffffff; width: 50%; font-weight:600;"/>
-                                                    <input type="text" class="form-control form-control-sm" id="h_grand_total" value="0.00" readonly style="background:#dcfce7; font-weight:800; color:#15803d; width: 50%;"/>
-                                                </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group-custom">
+                                                <label>Transportation</label>
+                                                <input type="number" step="0.01" class="form-control form-control-sm" id="h_transport" placeholder="Transport" value="0.00" style="text-align:right;"/>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group-custom">
+                                                <label>Total FOB</label>
+                                                <input type="number" step="0.01" class="form-control form-control-sm" id="h_fob" placeholder="Total FOB" value="0.00" style="text-align:right; font-weight:600;"/>
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group-custom">
+                                                <label>Oversea Freight</label>
+                                                <input type="number" step="0.01" class="form-control form-control-sm" id="h_freight" placeholder="Freight" value="0.00" oninput="calculate_header_total()" style="text-align:right;"/>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group-custom">
+                                                <label>Insurance</label>
+                                                <input type="number" step="0.01" class="form-control form-control-sm" id="h_insurance" placeholder="Insurance" value="0.00" oninput="calculate_header_total()" style="text-align:right;"/>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group-custom" style="margin-bottom:0;">
+                                                <label style="color:#047857;">Grand Total</label>
+                                                <input type="text" class="form-control form-control-sm" id="h_grand_total" value="0.00" readonly style="background:#dcfce7; font-weight:800; color:#15803d; text-align:right;"/>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
@@ -460,217 +604,517 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
     </div>
 </div>
 
-<!-- MODAL: ADD / EDIT ITEM SPECIFICATION -->
+<!-- MODAL: ADD / EDIT ITEM SPECIFICATION (ปรับปรุงตรงตามหน้าจอ VB6 S1 Item Detail 100%) -->
 <div class="modal fade" id="itemEditModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg" style="width: 90%; max-width: 1300px;" role="document">
+    <div class="modal-dialog modal-lg" style="width: 95%; max-width: 1350px;" role="document">
         <div class="modal-content" style="border-radius:10px; overflow:hidden;">
-            <div class="modal-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:12px 20px;">
+            <div class="modal-header" style="background:#f1f5f9; border-bottom:1px solid #cbd5e1; padding:10px 18px;">
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title" style="font-weight:700; color:#1e293b;">
-                    <span id="item_modal_action_title">Add</span> Item Specification
+                <h4 class="modal-title" style="font-weight:800; color:#0f172a; font-size:15px;">
+                    Sale Order (<span id="item_modal_action_title">Add</span> Item Detail) [ACSTMORDR1 - S1]
                 </h4>
             </div>
             
-            <div class="modal-body" style="padding:18px 22px;">
+            <div class="modal-body" style="padding:14px 18px; background:#f8fafc;">
                 <input type="hidden" id="edit_index" value="-1"/>
 
+                <!-- กล่องที่ 1: Detail Reference (ตรงตามแถวบนของ S1) -->
+                <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; margin-bottom:12px;">
+                    <div style="font-weight:800; font-size:11px; color:#4338ca; text-transform:uppercase; margin-bottom:8px; border-bottom:1px solid #e0e7ff; padding-bottom:3px;">
+                        📌 Item Header & Customer Reference
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="form-group-custom">
+                                <label style="color:#dc2626;">Sale Order Item</label>
+                                <input type="text" class="form-control form-control-sm" id="i_item_no" value="001" readonly style="background:#fef2f2; font-weight:800; color:#dc2626; text-align:center;"/>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group-custom">
+                                <label>Status</label>
+                                <select class="form-control form-control-sm" id="i_status">
+                                    <option value="OP">OP: OPEN</option>
+                                    <option value="HL">HL: HOLD</option>
+                                    <option value="CP">CP: COMPLETE</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group-custom">
+                                <label>Material In</label>
+                                <select class="form-control form-control-sm" id="i_mat_in" onchange="auto_gen_desc()">
+                                    <option value="BOI-MAT1">BOI-MAT1</option>
+                                    <option value="BOI-MAT2">BOI-MAT2</option>
+                                    <option value="BOI-GRS1">BOI-GRS1</option>
+                                    <option value="BOI-IMP1">BOI-IMP1</option>
+                                    <option value="BOI-IMP2">BOI-IMP2</option>
+                                    <option value="NONE-BOI">NONE-BOI</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group-custom">
+                                <label>Purchase Order No.</label>
+                                <input type="text" class="form-control form-control-sm" id="i_pono" placeholder="PO Number..."/>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group-custom">
+                                <label>PO Item</label>
+                                <input type="text" class="form-control form-control-sm" id="i_poitem" value="001" placeholder="001"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group-custom">
+                                <label>Customer Order</label>
+                                <input type="text" class="form-control form-control-sm" id="i_cust_order" placeholder="Customer Order..."/>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group-custom">
+                                <label>Customer Sale Order</label>
+                                <input type="text" class="form-control form-control-sm" id="i_cust_so" placeholder="Customer Sale Order..."/>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group-custom">
+                                <label>End Customer Name</label>
+                                <input type="text" class="form-control form-control-sm" id="i_endcust_name" placeholder="End Customer Name..."/>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group-custom">
+                                <label>End Customer PO. No.</label>
+                                <input type="text" class="form-control form-control-sm" id="i_endcust_po" placeholder="End Customer PO..."/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group-custom">
+                                <label>PO Date</label>
+                                <input type="date" class="form-control form-control-sm" id="i_podate" value="<?php echo date('Y-m-d'); ?>"/>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group-custom">
+                                <label>Price Period</label>
+                                <select class="form-control form-control-sm" id="i_price_period">
+                                    <option value="">-- None --</option>
+                                    <?php foreach ($periods as $prd): ?>
+                                        <option value="<?php echo htmlspecialchars($prd['PRICE_PERIOD']); ?>"><?php echo htmlspecialchars($prd['PRICE_PERIOD']); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group-custom">
+                                <label>Request Date</label>
+                                <input type="date" class="form-control form-control-sm" id="i_req_date" value="<?php echo date('Y-m-d'); ?>"/>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group-custom">
+                                <label>Confirm Date</label>
+                                <input type="date" class="form-control form-control-sm" id="i_conf_date" value="<?php echo date('Y-m-d'); ?>"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group-custom" style="margin-bottom:0;">
+                                <label>Customer Part No.</label>
+                                <input type="text" class="form-control form-control-sm" id="i_cust_part" placeholder="Customer Part No..."/>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group-custom" style="margin-bottom:0;">
+                                <label>Use Coil From</label>
+                                <select class="form-control form-control-sm" id="i_coil_from">
+                                    <?php foreach ($use_coil_suppliers as $sup): ?>
+                                        <option value="<?php echo htmlspecialchars($sup['CSTMSPPL_ID']); ?>">
+                                            <?php echo htmlspecialchars($sup['CSTMSPPL_ID'] . ': ' . $sup['CONSIGNEE_COMPANY']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group-custom" style="margin-bottom:0;">
+                                <label>Full Coil</label>
+                                <select class="form-control form-control-sm" id="i_full_coil">
+                                    <option value="F">F: FULL COIL</option>
+                                    <option value="N">N: NOT FULL COIL</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- กล่องที่ 2: 3 คอลัมน์หลัก (Production Spec, Unit Price, Order) ตาม S1 -->
                 <div class="row">
-                    <!-- Column 1 -->
-                    <div class="col-md-3">
-                        <div class="form-group-custom">
-                            <label>Item No</label>
-                            <input type="text" class="form-control form-control-sm" id="i_item_no" value="001" readonly style="background:#f1f5f9; font-weight:700;"/>
-                        </div>
-                        <div class="form-group-custom">
-                            <label>Product ID (PRODMSTR1)</label>
-                            <select class="form-control form-control-sm" id="i_product" onchange="on_change_product()">
-                                <?php foreach ($products as $pr): ?>
-                                    <option value="<?php echo htmlspecialchars($pr['PRODUCT_ID']); ?>">
-                                        <?php echo htmlspecialchars($pr['PRODUCT_ID'] . ' : ' . $pr['PRODUCT_MODEL']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="form-group-custom">
-                            <label>Alloy & Temper</label>
-                            <div style="display:flex; gap:6px;">
-                                <select class="form-control form-control-sm" id="i_alloy" style="width:55%;" onchange="auto_gen_desc()">
-                                    <?php foreach ($alloys as $a): ?>
-                                        <option value="<?php echo htmlspecialchars($a['ALLOY']); ?>"><?php echo htmlspecialchars($a['ALLOY']); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <select class="form-control form-control-sm" id="i_temper" style="width:45%;" onchange="auto_gen_desc()">
-                                    <?php foreach ($tempers as $t): ?>
-                                        <option value="<?php echo htmlspecialchars($t['TEMPER']); ?>"><?php echo htmlspecialchars($t['TEMPER']); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
+                    <!-- Column 1: Specification Production & UOM Conversion -->
+                    <div class="col-md-4">
+                        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; height:100%;">
+                            <div style="font-weight:800; font-size:11px; color:#b91c1c; text-transform:uppercase; margin-bottom:8px; border-bottom:1px solid #fee2e2; padding-bottom:3px;">
+                                ⚙️ Specification Production
                             </div>
-                        </div>
-                        <div class="form-group-custom">
-                            <label>Surface / Metallurgical Grade</label>
-                            <div style="display:flex; gap:6px;">
-                                <select class="form-control form-control-sm" id="i_sg" style="width:50%;">
-                                    <?php foreach ($sgs as $sg): ?>
-                                        <option value="<?php echo htmlspecialchars($sg['SURFACE_GRADE']); ?>"><?php echo htmlspecialchars($sg['SURFACE_GRADE']); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <select class="form-control form-control-sm" id="i_mg" style="width:50%;">
-                                    <?php foreach ($mgs as $mg): ?>
-                                        <option value="<?php echo htmlspecialchars($mg['METALLURGICAL_GRADE']); ?>"><?php echo htmlspecialchars($mg['METALLURGICAL_GRADE']); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Product ID</label>
+                                        <select class="form-control form-control-sm" id="i_product" onchange="on_change_product()">
+                                            <?php foreach ($products as $pr): ?>
+                                                <option value="<?php echo htmlspecialchars($pr['PRODUCT_ID']); ?>">
+                                                    <?php echo htmlspecialchars($pr['PRODUCT_ID'] . ' : ' . $pr['PRODUCT_MODEL']); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Product Model</label>
+                                        <input type="text" class="form-control form-control-sm" id="i_prod_model" value="CIRCLE" readonly style="background:#00008b; color:#fff; font-weight:700;"/>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group-custom">
-                            <label>Full Coil (FULL_COIL)</label>
-                            <select class="form-control form-control-sm" id="i_full_coil">
-                                <option value="F">F: FULL COIL</option>
-                                <option value="N">N: NOT FULL COIL</option>
-                            </select>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Alloy</label>
+                                        <select class="form-control form-control-sm" id="i_alloy" onchange="auto_gen_desc()">
+                                            <?php foreach ($alloys as $a): ?>
+                                                <option value="<?php echo htmlspecialchars($a['ALLOY']); ?>"><?php echo htmlspecialchars($a['ALLOY']); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Temper</label>
+                                        <select class="form-control form-control-sm" id="i_temper" onchange="auto_gen_desc()">
+                                            <?php foreach ($tempers as $t): ?>
+                                                <option value="<?php echo htmlspecialchars($t['TEMPER']); ?>"><?php echo htmlspecialchars($t['TEMPER']); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Surface Grade (SG)</label>
+                                        <select class="form-control form-control-sm" id="i_sg">
+                                            <?php foreach ($sgs as $sg): ?>
+                                                <option value="<?php echo htmlspecialchars($sg['SURFACE_GRADE']); ?>"><?php echo htmlspecialchars($sg['SURFACE_GRADE']); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Metallurgical Grade (MG)</label>
+                                        <select class="form-control form-control-sm" id="i_mg">
+                                            <?php foreach ($mgs as $mg): ?>
+                                                <option value="<?php echo htmlspecialchars($mg['METALLURGICAL_GRADE']); ?>"><?php echo htmlspecialchars($mg['METALLURGICAL_GRADE']); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Thickness (mm)</label>
+                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_thickness" value="2.800" oninput="sync_metric_to_dim2(); calculate_item_weight(); auto_gen_desc();"/>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Width (mm)</label>
+                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_width" value="290.000" oninput="sync_metric_to_dim2(); calculate_item_weight(); auto_gen_desc();"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Length (mm)</label>
+                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_length" value="0.000" oninput="sync_metric_to_dim2(); calculate_item_weight(); auto_gen_desc();"/>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>T5 Temperature</label>
+                                        <input type="text" class="form-control form-control-sm" id="i_t5" placeholder="T5 Temp..."/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- For Different UOM of Dimension -->
+                            <div class="uom-group-box">
+                                <div class="uom-group-title">For Different UOM of Dimension</div>
+                                <div class="row">
+                                    <div class="col-md-6" style="padding-right:4px;">
+                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_ct2u_thk" placeholder="Thk" oninput="sync_dim2_to_metric()"/>
+                                    </div>
+                                    <div class="col-md-6" style="padding-left:4px;">
+                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_ct2u_wd" placeholder="Width" oninput="sync_dim2_to_metric()"/>
+                                    </div>
+                                </div>
+                                <div class="row" style="margin-top:4px;">
+                                    <div class="col-md-7" style="padding-right:4px;">
+                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_ct2u_len" placeholder="Length" oninput="sync_dim2_to_metric()"/>
+                                    </div>
+                                    <div class="col-md-5" style="padding-left:4px;">
+                                        <select class="form-control form-control-sm" id="i_ct2u_uom_dim" onchange="sync_metric_to_dim2()">
+                                            <option value="inch">inch</option>
+                                            <option value="mm.">mm.</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- For Different UOM of Weight -->
+                            <div class="uom-group-box" style="margin-bottom:0;">
+                                <div class="uom-group-title">For Different UOM of Weight</div>
+                                <div class="row">
+                                    <div class="col-md-4" style="padding-right:3px;">
+                                        <input type="number" step="1" class="form-control form-control-sm" id="i_ct2u_order_wt" placeholder="Weight" oninput="sync_wt2_to_wt()"/>
+                                    </div>
+                                    <div class="col-md-4" style="padding-left:3px; padding-right:3px;">
+                                        <input type="number" step="1" class="form-control form-control-sm" id="i_ct2u_order_pc" placeholder="Pieces" readonly style="background:#f8fafc;"/>
+                                    </div>
+                                    <div class="col-md-4" style="padding-left:3px;">
+                                        <select class="form-control form-control-sm" id="i_ct2u_uom_wt" onchange="sync_wt_to_wt2()">
+                                            <option value="lbs.">lbs.</option>
+                                            <option value="kg.">kg.</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
 
-                    <!-- Column 2 -->
-                    <div class="col-md-3">
-                        <div class="form-group-custom">
-                            <label>Thickness (mm)</label>
-                            <input type="number" step="0.001" class="form-control form-control-sm" id="i_thickness" value="2.800" oninput="sync_metric_to_dim2(); calculate_item_weight(); auto_gen_desc();"/>
-                        </div>
-                        <div class="form-group-custom">
-                            <label>Width / Diameter (mm)</label>
-                            <input type="number" step="0.001" class="form-control form-control-sm" id="i_width" value="290.000" oninput="sync_metric_to_dim2(); calculate_item_weight(); auto_gen_desc();"/>
-                        </div>
-                        <div class="form-group-custom">
-                            <label>Length (mm)</label>
-                            <input type="number" step="0.001" class="form-control form-control-sm" id="i_length" value="0.000" oninput="sync_metric_to_dim2(); calculate_item_weight(); auto_gen_desc();"/>
-                        </div>
-
-                        <div class="uom-group-box">
-                            <div class="uom-group-title">Different UOM of Dimension</div>
-                            <div style="display:flex; gap:4px; margin-bottom:4px;">
-                                <input type="number" step="0.001" class="form-control form-control-sm" id="i_ct2u_thk" placeholder="Thk (inch)" oninput="sync_dim2_to_metric()"/>
-                                <input type="number" step="0.001" class="form-control form-control-sm" id="i_ct2u_wd" placeholder="Width (inch)" oninput="sync_dim2_to_metric()"/>
+                    <!-- Column 2: Unit Price (LME & MJP Spec for Item) -->
+                    <div class="col-md-4">
+                        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; height:100%;">
+                            <div style="font-weight:800; font-size:11px; color:#15803d; text-transform:uppercase; margin-bottom:8px; border-bottom:1px solid #dcfce7; padding-bottom:3px;">
+                                💵 Unit Price & LME Specification
                             </div>
-                            <div style="display:flex; gap:4px;">
-                                <input type="number" step="0.001" class="form-control form-control-sm" id="i_ct2u_len" placeholder="Len (inch)" style="width:65%;" oninput="sync_dim2_to_metric()"/>
-                                <select class="form-control form-control-sm" id="i_ct2u_uom_dim" style="width:35%;" onchange="sync_metric_to_dim2()">
-                                    <option value="inch">inch</option>
-                                    <option value="mm.">mm.</option>
-                                </select>
+
+                            <div class="form-group-custom">
+                                <label>Actual Price</label>
+                                <div style="display:flex; gap:6px;">
+                                    <input type="number" step="0.0001" class="form-control form-control-sm" id="i_price" value="0.0000" oninput="calculate_item_amount()" style="font-weight:700;"/>
+                                    <button type="button" class="btn btn-xs btn-default" onclick="calc_price_from_backend()" title="Calculate Price from S1 Logic">
+                                        ⚙️ Calc
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>LME Type</label>
+                                        <select class="form-control form-control-sm" id="i_lmetype" onchange="on_change_item_lme()">
+                                            <option value="D-DAILY">D-DAILY</option>
+                                            <option value="B-WBP LME">B-WBP LME</option>
+                                            <option value="W-WBP">W-WBP</option>
+                                            <option value="M-MONTHLY">M-MONTHLY</option>
+                                            <option value="O-MANUALLY">O-MANUALLY</option>
+                                            <option value="D-DAILY CASH">D-DAILY CASH</option>
+                                            <option value="M-MONTHLY CASH">M-MONTHLY CASH</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>LME Date</label>
+                                        <input type="date" class="form-control form-control-sm" id="i_lmedate" value="<?php echo date('Y-m-d'); ?>" onchange="on_change_item_lme()"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group-custom">
+                                <label>Order LME</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm" id="i_orderlme" value="0.00"/>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>MJP Date</label>
+                                        <input type="date" class="form-control form-control-sm" id="i_mjpdate" value="<?php echo date('Y-m-d'); ?>" onchange="on_change_item_mjp()"/>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>MJP Price</label>
+                                        <input type="number" step="0.01" class="form-control form-control-sm" id="i_mjpprice" value="0.00"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group-custom">
+                                        <label>Stdv</label>
+                                        <input type="text" class="form-control form-control-sm" id="i_stdv" value="0.00" readonly style="background:#eff6ff; text-align:right;"/>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group-custom">
+                                        <label>Factor</label>
+                                        <input type="text" class="form-control form-control-sm" id="i_factor" value="0.00" readonly style="background:#eff6ff; text-align:right;"/>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group-custom">
+                                        <label>STDxFactor</label>
+                                        <input type="text" class="form-control form-control-sm" id="i_stdxfactor" value="0.00" readonly style="background:#dbeafe; font-weight:700; text-align:right;"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group-custom" style="margin-top:10px; margin-bottom:0;">
+                                <label style="color:#047857; font-size:12px;">Amount</label>
+                                <input type="text" class="form-control form-control-sm vb-display-blue" id="i_amount" value="0.00" readonly style="height:38px !important; font-size:16px !important;"/>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Column 3 -->
-                    <div class="col-md-3">
-                        <div class="form-group-custom">
-                            <label>Weight Per Piece (kg)</label>
-                            <input type="number" step="0.0001" class="form-control form-control-sm" id="i_wt_piece" value="0.5014" oninput="calculate_item_qty_from_pcs()"/>
-                        </div>
-                        <div class="form-group-custom">
-                            <label>Order Weight (kg)</label>
-                            <input type="number" step="1" class="form-control form-control-sm" id="i_weight" value="1000" oninput="sync_wt_to_wt2(); calculate_item_pcs_from_wt();"/>
-                        </div>
-                        <div class="form-group-custom">
-                            <label>Order Pieces (pcs)</label>
-                            <input type="number" step="1" class="form-control form-control-sm" id="i_pieces" value="1994" oninput="sync_wt_to_wt2(); calculate_item_qty_from_pcs();"/>
-                        </div>
-
-                        <div class="uom-group-box">
-                            <div class="uom-group-title">Different UOM of Weight</div>
-                            <div style="display:flex; gap:4px; margin-bottom:4px;">
-                                <input type="number" step="1" class="form-control form-control-sm" id="i_ct2u_order_wt" placeholder="Order Wt" oninput="sync_wt2_to_wt()"/>
-                                <input type="number" step="1" class="form-control form-control-sm" id="i_ct2u_order_pc" placeholder="Order Pc" readonly style="background:#f8fafc;"/>
+                    <!-- Column 3: Order (Weights, Tolerances, Reject/Replace, S1 Labels) -->
+                    <div class="col-md-4">
+                        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; height:100%;">
+                            <div style="font-weight:800; font-size:11px; color:#1d4ed8; text-transform:uppercase; margin-bottom:8px; border-bottom:1px solid #dbeafe; padding-bottom:3px;">
+                                📦 Order, Tolerance & Quantities
                             </div>
-                            <select class="form-control form-control-sm" id="i_ct2u_uom_wt" onchange="sync_wt_to_wt2()">
-                                <option value="lbs.">lbs.</option>
-                                <option value="kg.">kg.</option>
-                            </select>
-                        </div>
-                    </div>
 
-                    <!-- Column 4 -->
-                    <div class="col-md-3">
-                        <div class="form-group-custom">
-                            <label>Material In</label>
-                            <select class="form-control form-control-sm" id="i_mat_in" onchange="auto_gen_desc()">
-                                <option value="BOI-MAT1">BOI-MAT1</option>
-                                <option value="BOI-MAT2">BOI-MAT2</option>
-                                <option value="BOI-GRS1">BOI-GRS1</option>
-                                <option value="BOI-IMP1">BOI-IMP1</option>
-                                <option value="BOI-IMP2">BOI-IMP2</option>
-                                <option value="NONE-BOI">NONE-BOI</option>
-                            </select>
-                        </div>
-                        <div class="form-group-custom">
-                            <label>Use Coil From (CSSPMSTR1)</label>
-                            <select class="form-control form-control-sm" id="i_coil_from">
-                                <?php foreach ($use_coil_suppliers as $sup): ?>
-                                    <option value="<?php echo htmlspecialchars($sup['CSTMSPPL_ID']); ?>">
-                                        <?php echo htmlspecialchars($sup['CSTMSPPL_ID'] . ': ' . $sup['CONSIGNEE_COMPANY']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="form-group-custom">
-                            <label>Price Period</label>
-                            <select class="form-control form-control-sm" id="i_price_period">
-                                <option value="">-- None --</option>
-                                <?php foreach ($periods as $prd): ?>
-                                    <option value="<?php echo htmlspecialchars($prd['PRICE_PERIOD']); ?>"><?php echo htmlspecialchars($prd['PRICE_PERIOD']); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="form-group-custom">
-                            <label>Actual Price / Unit</label>
-                            <div style="display:flex; gap:6px;">
-                                <input type="number" step="0.0001" class="form-control form-control-sm" id="i_price" value="0.0000" oninput="calculate_item_amount()"/>
-                                <button type="button" class="btn btn-xs btn-default" onclick="calc_price_from_backend()" title="Calculate Price from Base & Premiums">
-                                    ⚙️ Calc
-                                </button>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Weight per Piece (kg)</label>
+                                        <input type="number" step="0.0001" class="form-control form-control-sm" id="i_wt_piece" value="0.0000" oninput="calculate_item_qty_from_pcs()"/>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Max - Min Tolerance (%)</label>
+                                        <div style="display:flex; gap:4px;">
+                                            <input type="number" class="form-control form-control-sm" id="i_maxtol" value="0" placeholder="Max" oninput="update_s1_calculated_totals()"/>
+                                            <input type="number" class="form-control form-control-sm" id="i_mintol" value="0" placeholder="Min" oninput="update_s1_calculated_totals()"/>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group-custom">
-                            <label>Item Amount</label>
-                            <input type="text" class="form-control form-control-sm" id="i_amount" value="0.00" readonly style="background:#f1f5f9; font-weight:700; color:#047857;"/>
+
+                            <!-- Order Qty (Wt - Pc) -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Order Wt (kg)</label>
+                                        <input type="number" step="1" class="form-control form-control-sm" id="i_weight" value="0" oninput="sync_wt_to_wt2(); calculate_item_pcs_from_wt();"/>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Order Pc</label>
+                                        <input type="number" step="1" class="form-control form-control-sm" id="i_pieces" value="0" oninput="sync_wt_to_wt2(); calculate_item_qty_from_pcs();"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Reject Qty (Wt - Pc) -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Reject Wt (kg)</label>
+                                        <input type="number" step="1" class="form-control form-control-sm" id="i_reject_wt" value="0" oninput="update_s1_calculated_totals()"/>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Reject Pc</label>
+                                        <input type="number" step="1" class="form-control form-control-sm" id="i_reject_pc" value="0" oninput="update_s1_calculated_totals()"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Replace Qty (Wt - Pc) -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Replace Wt (kg)</label>
+                                        <input type="number" step="1" class="form-control form-control-sm" id="i_replace_wt" value="0" oninput="update_s1_calculated_totals()"/>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group-custom">
+                                        <label>Replace Pc</label>
+                                        <input type="number" step="1" class="form-control form-control-sm" id="i_replace_pc" value="0" oninput="update_s1_calculated_totals()"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- S1 Calculated Labels: Maximum / Total / Minimum Order Qty -->
+                            <div style="background:#00008b; color:#ffffff; border-radius:6px; padding:6px 10px; margin-top:4px;">
+                                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:2px;">
+                                    <span>Max Order Qty:</span>
+                                    <span><b id="lbl_max_wt">0</b> kg / <b id="lbl_max_pc">0</b> pc</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:2px;">
+                                    <span>Total Order Qty:</span>
+                                    <span><b id="lbl_tot_wt">0</b> kg / <b id="lbl_tot_pc">0</b> pc</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; font-size:11px;">
+                                    <span>Min Order Qty:</span>
+                                    <span><b id="lbl_min_wt">0</b> kg / <b id="lbl_min_pc">0</b> pc</span>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
 
-                <!-- Description & Remark -->
-                <div class="row" style="margin-top: 6px;">
-                    <div class="col-md-6">
-                        <div class="form-group-custom">
-                            <label>Description</label>
-                            <input type="text" class="form-control form-control-sm" id="i_desc" placeholder="Product specification description..."/>
-                        </div>
+                <!-- กล่องที่ 3: Description, Remark & Special Label (4 ช่อง) ตาม S1 -->
+                <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; margin-top:12px;">
+                    <div class="form-group-custom">
+                        <label>Description</label>
+                        <input type="text" class="form-control form-control-sm" id="i_desc" placeholder="Product specification description..."/>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group-custom">
-                            <label>Item Remark</label>
-                            <input type="text" class="form-control form-control-sm" id="i_remark" placeholder="Special item instructions..."/>
-                        </div>
+                    <div class="form-group-custom">
+                        <label>Remark</label>
+                        <input type="text" class="form-control form-control-sm" id="i_remark" placeholder="Special item instructions..."/>
                     </div>
-                </div>
-
-                <!-- Special Label 4 ช่อง -->
-                <div class="row" style="margin-top: 4px;">
-                    <div class="col-md-12">
-                        <div class="form-group-custom">
-                            <label style="color:#2563eb;">Special Label (4 lines)</label>
-                            <div class="row" style="margin: 0 -4px;">
-                                <div class="col-md-6" style="padding: 0 4px; margin-bottom: 4px;">
-                                    <input type="text" class="form-control form-control-sm" id="i_special_label1" placeholder="Special Label 1..."/>
-                                </div>
-                                <div class="col-md-6" style="padding: 0 4px; margin-bottom: 4px;">
-                                    <input type="text" class="form-control form-control-sm" id="i_special_label2" placeholder="Special Label 2..."/>
-                                </div>
-                                <div class="col-md-6" style="padding: 0 4px;">
-                                    <input type="text" class="form-control form-control-sm" id="i_special_label3" placeholder="Special Label 3..."/>
-                                </div>
-                                <div class="col-md-6" style="padding: 0 4px;">
-                                    <input type="text" class="form-control form-control-sm" id="i_special_label4" placeholder="Special Label 4..."/>
-                                </div>
+                    <div class="form-group-custom" style="margin-bottom:0;">
+                        <label style="color:#2563eb;">Special Label (4 lines)</label>
+                        <div class="row" style="margin: 0 -4px;">
+                            <div class="col-md-6" style="padding: 0 4px; margin-bottom: 4px;">
+                                <input type="text" class="form-control form-control-sm" id="i_special_label1" placeholder="Special Label 1..."/>
+                            </div>
+                            <div class="col-md-6" style="padding: 0 4px; margin-bottom: 4px;">
+                                <input type="text" class="form-control form-control-sm" id="i_special_label2" placeholder="Special Label 2..."/>
+                            </div>
+                            <div class="col-md-6" style="padding: 0 4px;">
+                                <input type="text" class="form-control form-control-sm" id="i_special_label3" placeholder="Special Label 3..."/>
+                            </div>
+                            <div class="col-md-6" style="padding: 0 4px;">
+                                <input type="text" class="form-control form-control-sm" id="i_special_label4" placeholder="Special Label 4..."/>
                             </div>
                         </div>
                     </div>
@@ -678,7 +1122,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
 
             </div>
             
-            <div class="modal-footer" style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:10px 20px;">
+            <div class="modal-footer" style="background:#f1f5f9; border-top:1px solid #cbd5e1; padding:10px 20px;">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" onclick="confirm_item_modal()" style="font-weight:700;">
                     ✓ Apply Item
@@ -701,9 +1145,45 @@ $(document).ready(function() {
         load_existing_so('<?php echo $sono; ?>');
     <?php else: ?>
         on_change_category();
+        check_mil_customer();
         on_change_lme();
+        on_change_mjp();
     <?php endif; ?>
 });
+
+function check_mil_customer() {
+    var cid = document.getElementById("h_customer").value.trim().toUpperCase();
+    var is_mil = (cid.substring(0, 3) === 'MIL');
+
+    var lmetype = document.getElementById("h_lmetype");
+    var lmedate = document.getElementById("h_lmedate");
+    var orderlme = document.getElementById("h_orderlme");
+    var mjpdate = document.getElementById("h_mjpdate");
+    var mjpprice = document.getElementById("h_mjpprice");
+
+    if (is_mil) {
+        lmetype.disabled = true;
+        lmedate.disabled = true;
+        orderlme.disabled = true;
+        mjpdate.disabled = true;
+        mjpprice.disabled = true;
+
+        orderlme.value = "0.00";
+        mjpprice.value = "0.00";
+        document.getElementById("h_stdv").value = "0.00";
+        document.getElementById("h_factor").value = "0.00";
+        document.getElementById("h_stdxfactor").value = "0.00";
+        cur_stdv = 0;
+        cur_factor = 0;
+        cur_stdxfactor = 0;
+    } else {
+        lmetype.disabled = false;
+        lmedate.disabled = false;
+        orderlme.disabled = false;
+        mjpdate.disabled = false;
+        mjpprice.disabled = false;
+    }
+}
 
 function on_change_category() {
     var cat = document.getElementById("h_order_cat").value;
@@ -712,7 +1192,7 @@ function on_change_category() {
     var prefixField = document.getElementById("h_so_prefix");
     if (prefixField) {
         if (cat === 'ORSP') prefixField.value = 'TT';
-        else if (cat === 'SCRR') prefixField.value = 'RC';
+        else if (cat === 'SCRR' || cat === 'SCCC' || cat === 'SCCO' || cat === 'SCSC' || cat === 'SCCS' || cat === 'SCSH' || cat === 'ORSV') prefixField.value = 'RC';
         else prefixField.value = 'SO';
     }
     <?php endif; ?>
@@ -748,6 +1228,8 @@ function on_change_customer() {
         alert("Order Category: OVMI must be paired with customer starting with MIL");
     }
 
+    check_mil_customer();
+
     if (!cid) return;
 
     $.ajax({
@@ -770,21 +1252,44 @@ function on_change_customer() {
                 if (c.DEFAULT_EXCHANGE_RATE) document.getElementById("h_exrate").value = Number(c.DEFAULT_EXCHANGE_RATE).toFixed(5);
                 if (c.LMETYPE) document.getElementById("h_lmetype").value = c.LMETYPE;
 
+                if (!document.getElementById("h_supplier_mat").value) {
+                    document.getElementById("h_supplier_mat").value = c.SUPPLIER_MATCODE || '';
+                }
+                if (!document.getElementById("h_customs_code").value) {
+                    document.getElementById("h_customs_code").value = c.HARMONIZE_CODE || '';
+                }
+
                 document.getElementById("i_special_label1").value = c.SPECIAL_LABEL1 || '';
                 document.getElementById("i_special_label2").value = c.SPECIAL_LABEL2 || '';
                 document.getElementById("i_special_label3").value = c.SPECIAL_LABEL3 || '';
                 document.getElementById("i_special_label4").value = c.SPECIAL_LABEL4 || '';
 
-                on_change_lme();
+                if (cid.substring(0, 3) !== 'MIL') {
+                    on_change_lme();
+                    on_change_mjp();
+                }
             }
         }
     });
 }
 
 function on_change_lme() {
+    var cid = document.getElementById("h_customer").value.trim().toUpperCase();
+    if (cid.substring(0, 3) === 'MIL') return;
+
     var lme_type = document.getElementById("h_lmetype").value;
     var lme_date = document.getElementById("h_lmedate").value;
-    if (!lme_date || lme_type === 'O-MANUALLY') return;
+    if (!lme_date) return;
+
+    if (lme_type === 'O-MANUALLY' || lme_type === 'D-DAILY CASH' || lme_type === 'M-MONTHLY CASH') {
+        document.getElementById("h_stdv").value = "0.00";
+        document.getElementById("h_factor").value = "0.00";
+        document.getElementById("h_stdxfactor").value = "0.00";
+        cur_stdv = 0;
+        cur_factor = 0;
+        cur_stdxfactor = 0;
+        return;
+    }
 
     $.ajax({
         url: 'model/so_service_mats.php',
@@ -794,9 +1299,6 @@ function on_change_lme() {
         success: function(res) {
             if (res.success) {
                 document.getElementById("h_orderlme").value = parseFloat(res.order_lme || 0).toFixed(2);
-                document.getElementById("h_mjpprice").value = parseFloat(res.mjp_price || 0).toFixed(2);
-
-                // แสดงผล Stdv / Factor / STDxFactor บนหน้าจอทันที
                 document.getElementById("h_stdv").value = parseFloat(res.stdev || 0).toFixed(2);
                 document.getElementById("h_factor").value = parseFloat(res.factor || 0).toFixed(2);
                 document.getElementById("h_stdxfactor").value = parseFloat(res.stdx_factor || 0).toFixed(2);
@@ -805,6 +1307,7 @@ function on_change_lme() {
                 cur_factor = parseFloat(res.factor || 0);
                 cur_stdxfactor = parseFloat(res.stdx_factor || 0);
             } else {
+                document.getElementById("h_orderlme").value = "0.00";
                 document.getElementById("h_stdv").value = "0.00";
                 document.getElementById("h_factor").value = "0.00";
                 document.getElementById("h_stdxfactor").value = "0.00";
@@ -816,19 +1319,116 @@ function on_change_lme() {
     });
 }
 
+function on_change_mjp() {
+    var cid = document.getElementById("h_customer").value.trim().toUpperCase();
+    if (cid.substring(0, 3) === 'MIL') return;
+
+    var mjp_date = document.getElementById("h_mjpdate").value;
+    if (!mjp_date) return;
+
+    $.ajax({
+        url: 'model/so_service_mats.php',
+        type: 'GET',
+        data: { action: 'get_lme_rates', type: 'MJP', date: mjp_date },
+        dataType: 'json',
+        success: function(res) {
+            if (res.success) {
+                document.getElementById("h_mjpprice").value = parseFloat(res.mjp_price || 0).toFixed(2);
+            } else {
+                document.getElementById("h_mjpprice").value = "0.00";
+            }
+        }
+    });
+}
+
+// Event LME & MJP ภายใน Item Modal
+function on_change_item_lme() {
+    var cid = document.getElementById("h_customer").value.trim().toUpperCase();
+    if (cid.substring(0, 3) === 'MIL') return;
+
+    var lme_type = document.getElementById("i_lmetype").value;
+    var lme_date = document.getElementById("i_lmedate").value;
+    if (!lme_date) return;
+
+    if (lme_type === 'O-MANUALLY' || lme_type === 'D-DAILY CASH' || lme_type === 'M-MONTHLY CASH') {
+        document.getElementById("i_stdv").value = "0.00";
+        document.getElementById("i_factor").value = "0.00";
+        document.getElementById("i_stdxfactor").value = "0.00";
+        return;
+    }
+
+    $.ajax({
+        url: 'model/so_service_mats.php',
+        type: 'GET',
+        data: { action: 'get_lme_rates', type: lme_type, date: lme_date },
+        dataType: 'json',
+        success: function(res) {
+            if (res.success) {
+                document.getElementById("i_orderlme").value = parseFloat(res.order_lme || 0).toFixed(2);
+                document.getElementById("i_stdv").value = parseFloat(res.stdev || 0).toFixed(2);
+                document.getElementById("i_factor").value = parseFloat(res.factor || 0).toFixed(2);
+                document.getElementById("i_stdxfactor").value = parseFloat(res.stdx_factor || 0).toFixed(2);
+            }
+        }
+    });
+}
+
+function on_change_item_mjp() {
+    var cid = document.getElementById("h_customer").value.trim().toUpperCase();
+    if (cid.substring(0, 3) === 'MIL') return;
+
+    var mjp_date = document.getElementById("i_mjpdate").value;
+    if (!mjp_date) return;
+
+    $.ajax({
+        url: 'model/so_service_mats.php',
+        type: 'GET',
+        data: { action: 'get_lme_rates', type: 'MJP', date: mjp_date },
+        dataType: 'json',
+        success: function(res) {
+            if (res.success) {
+                document.getElementById("i_mjpprice").value = parseFloat(res.mjp_price || 0).toFixed(2);
+            }
+        }
+    });
+}
+
 function on_change_product() {
     var prod = document.getElementById("i_product").value;
     var lenField = document.getElementById("i_length");
     var lenCtField = document.getElementById("i_ct2u_len");
+    var prodModelField = document.getElementById("i_prod_model");
+    var maxtol = document.getElementById("i_maxtol");
+    var mintol = document.getElementById("i_mintol");
 
-    if (prod === 'CO' || prod === 'CC') {
+    if (prod === 'CO') {
+        prodModelField.value = "COIL";
         lenField.value = "0.000";
         lenCtField.value = "0.000";
         lenField.disabled = true;
         lenCtField.disabled = true;
-    } else {
+        maxtol.disabled = true;
+        mintol.disabled = true;
+    } else if (prod === 'CC') {
+        prodModelField.value = "CIRCLE";
+        lenField.value = "0.000";
+        lenCtField.value = "0.000";
+        lenField.disabled = true;
+        lenCtField.disabled = true;
+        maxtol.disabled = false;
+        mintol.disabled = false;
+    } else if (prod === 'SH') {
+        prodModelField.value = "SHEET";
         lenField.disabled = false;
         lenCtField.disabled = false;
+        maxtol.disabled = false;
+        mintol.disabled = false;
+    } else {
+        prodModelField.value = prod;
+        lenField.disabled = false;
+        lenCtField.disabled = false;
+        maxtol.disabled = false;
+        mintol.disabled = false;
     }
 
     calculate_item_weight();
@@ -847,29 +1447,51 @@ function load_existing_so(sono) {
                 document.getElementById("h_so_no").value = h.SALEORDER_NO;
                 document.getElementById("h_order_cat").value = h.ORDER_CATEGORY || 'ORDR';
                 document.getElementById("h_customer").value = h.CSTMSPPL_ID || '';
+                document.getElementById("h_supplier_mat").value = h.SUPPLIER_MATCODE || '';
                 document.getElementById("h_po_no").value = h.CTM1_PONO || '';
+                document.getElementById("h_customs_code").value = h.CUSTOMS_CODE || '';
+                document.getElementById("h_cust_order").value = h.CTM1_CUSTOMERORDER || '';
+                document.getElementById("h_cust_so").value = h.CTM1_CUSTOMERSALEORDER || '';
+                document.getElementById("h_endcust_name").value = h.CTM1_ENDCUSTOMERNAME || '';
+                document.getElementById("h_endcust_po").value = h.CTM1_ENDCUSTOMERPO || '';
+
                 document.getElementById("h_so_date").value = h.SALEORDER_DATE ? h.SALEORDER_DATE.substring(0, 10) : '';
                 document.getElementById("h_ship_date").value = h.INTENDSHIP_DATE ? h.INTENDSHIP_DATE.substring(0, 10) : '';
                 document.getElementById("h_currency").value = h.CURRENCY_ID || 'USD';
                 document.getElementById("h_exrate").value = Number(h.EXCHANGE_RATE || 1).toFixed(5);
-                
                 document.getElementById("h_tax").value = h.CTM1_TAXPERCENT !== null ? h.CTM1_TAXPERCENT : 0;
+                document.getElementById("h_shippedby").value = h.CTM1_SHIPPEDBY || '';
+                document.getElementById("h_tolerance").value = h.CTM1_TOLERANCE || '';
+                document.getElementById("h_packing").value = h.CTM1_PACKING || '';
+
                 document.getElementById("h_payment").value = h.PAYMENT_ID || '';
                 document.getElementById("h_shipment").value = h.SHIPMENT_ID || '';
                 document.getElementById("h_portload").value = h.CTM1_PORTLOADING || '';
                 document.getElementById("h_portdis").value = h.CTM1_PORTDISCHARGE || '';
                 document.getElementById("h_placedest").value = h.CTM1_PLACEDESTINATION || '';
                 document.getElementById("h_countrydest").value = h.CTM1_COUNTRYDESTINATION || h.CTM1_PLACEDESTINATION || '';
+
+                document.getElementById("h_remark1").value = h.CTM1_REMARK1 || '';
+                document.getElementById("h_remark2").value = h.CTM1_REMARK2 || '';
+                document.getElementById("h_remark3").value = h.CTM1_REMARK3 || '';
+
+                // Checkboxes
+                document.getElementById("h_chk_wholeweight").checked = (h.CTM1_WHOLEWEIGHT == 1);
+                document.getElementById("h_chk_markskid").checked = (h.CTM1_MARKSKID == 1);
+                document.getElementById("h_chk_serialcode").checked = (h.CTM1_SERIALCODE == 1);
+                document.getElementById("h_chk_scrapwire").checked = (h.CTM1_SCRAPWIRE == 1);
+
                 document.getElementById("h_lmetype").value = h.CTM1_LMETYPE || 'M-MONTHLY';
-                
                 if (h.CTM1_LMEDATE) {
                     document.getElementById("h_lmedate").value = h.CTM1_LMEDATE.substring(0, 10);
+                }
+                if (h.CTM1_MJPDATE) {
+                    document.getElementById("h_mjpdate").value = h.CTM1_MJPDATE.substring(0, 10);
                 }
                 
                 document.getElementById("h_orderlme").value = Number(h.CTM1_ORDERLME || 0).toFixed(2);
                 document.getElementById("h_mjpprice").value = Number(h.CTM1_MJPPRICE || 0).toFixed(2);
 
-                // โหลดค่า Stdv / Factor / STDxFactor มาแสดงผล
                 document.getElementById("h_stdv").value = Number(h.CTM1_ORDERSTDV || 0).toFixed(2);
                 document.getElementById("h_factor").value = Number(h.CTM1_ORDERFACTOR || 0).toFixed(2);
                 document.getElementById("h_stdxfactor").value = Number(h.CTM1_ORDERSTDXFACTOR || 0).toFixed(2);
@@ -877,11 +1499,14 @@ function load_existing_so(sono) {
                 cur_factor = parseFloat(h.CTM1_ORDERFACTOR || 0);
                 cur_stdxfactor = parseFloat(h.CTM1_ORDERSTDXFACTOR || 0);
 
+                document.getElementById("h_transport").value = Number(h.CTM1_TRANSPORTATION || 0).toFixed(2);
+                document.getElementById("h_fob").value = Number(h.CTM1_FOBTOTALAMOUNT || 0).toFixed(2);
                 document.getElementById("h_freight").value = Number(h.CTM1_OVERSEAFREIGHT || 0).toFixed(2);
                 document.getElementById("h_insurance").value = Number(h.CTM1_INSURANCE || 0).toFixed(2);
 
                 orderItems = res.items || [];
                 render_items_grid();
+                check_mil_customer();
             }
         }
     });
@@ -889,12 +1514,12 @@ function load_existing_so(sono) {
 
 function render_items_grid() {
     var tbody = '';
-    var total_fob = 0;
+    var total_amount = 0;
 
     if (orderItems.length > 0) {
         orderItems.forEach(function(it, idx) {
             var amt = parseFloat(it.AMOUNT || (it.CTM2_ORDERWEIGHT * it.CTM2_ACTUALPRICE) || 0);
-            total_fob += amt;
+            total_amount += amt;
 
             tbody += '<tr>' +
                      '<td align="center"><b>' + it.SALEORDER_ITEM + '</b></td>' +
@@ -921,15 +1546,16 @@ function render_items_grid() {
     }
 
     document.getElementById("entry_item_body").innerHTML = tbody;
-    document.getElementById("h_fob").value = total_fob.toLocaleString(undefined, {minimumFractionDigits: 2});
+    document.getElementById("h_total_amount").value = total_amount.toLocaleString(undefined, {minimumFractionDigits: 2});
     calculate_header_total();
 }
 
 function calculate_header_total() {
-    var raw_fob = parseFloat(document.getElementById("h_fob").value.replace(/,/g, '')) || 0;
+    var raw_total_amount = parseFloat(document.getElementById("h_total_amount").value.replace(/,/g, '')) || 0;
     var freight = parseFloat(document.getElementById("h_freight").value) || 0;
     var insur   = parseFloat(document.getElementById("h_insurance").value) || 0;
-    var grand   = raw_fob + freight + insur;
+    
+    var grand = raw_total_amount + freight + insur;
     document.getElementById("h_grand_total").value = grand.toLocaleString(undefined, {minimumFractionDigits: 2});
 }
 
@@ -994,17 +1620,53 @@ function sync_wt2_to_wt() {
     calculate_item_pcs_from_wt();
 }
 
+// เปิดหน้าต่าง Modal เพื่อเพิ่ม Item พร้อมสืบทอดค่าเริ่มต้นจาก Header เหมือน S1
 function open_item_modal() {
     document.getElementById("edit_index").value = "-1";
     document.getElementById("item_modal_action_title").innerText = "Add";
 
     var next_no = (orderItems.length + 1).toString().padStart(3, '0');
     document.getElementById("i_item_no").value = next_no;
+    document.getElementById("i_status").value = "OP";
+    document.getElementById("i_poitem").value = next_no;
+
+    // สืบทอดค่าจาก Header ตาม S1
+    document.getElementById("i_pono").value = document.getElementById("h_po_no").value;
+    document.getElementById("i_cust_order").value = document.getElementById("h_cust_order").value;
+    document.getElementById("i_cust_so").value = document.getElementById("h_cust_so").value;
+    document.getElementById("i_endcust_name").value = document.getElementById("h_endcust_name").value;
+    document.getElementById("i_endcust_po").value = document.getElementById("h_endcust_po").value;
+    document.getElementById("i_podate").value = document.getElementById("h_so_date").value;
+    document.getElementById("i_req_date").value = document.getElementById("h_ship_date").value;
+    document.getElementById("i_conf_date").value = document.getElementById("h_ship_date").value;
+
+    document.getElementById("i_lmetype").value = document.getElementById("h_lmetype").value;
+    document.getElementById("i_lmedate").value = document.getElementById("h_lmedate").value;
+    document.getElementById("i_orderlme").value = document.getElementById("h_orderlme").value;
+    document.getElementById("i_mjpdate").value = document.getElementById("h_mjpdate").value;
+    document.getElementById("i_mjpprice").value = document.getElementById("h_mjpprice").value;
+    document.getElementById("i_stdv").value = document.getElementById("h_stdv").value;
+    document.getElementById("i_factor").value = document.getElementById("h_factor").value;
+    document.getElementById("i_stdxfactor").value = document.getElementById("h_stdxfactor").value;
+
+    var cid = document.getElementById("h_customer").value.trim().toUpperCase();
+    var is_mil = (cid.substring(0, 3) === 'MIL');
+    document.getElementById("i_lmetype").disabled = is_mil;
+    document.getElementById("i_lmedate").disabled = is_mil;
+    document.getElementById("i_orderlme").disabled = is_mil;
+    document.getElementById("i_mjpdate").disabled = is_mil;
+    document.getElementById("i_mjpprice").disabled = is_mil;
+
+    document.getElementById("i_special_label1").value = document.getElementById("i_special_label1").value;
+    document.getElementById("i_special_label2").value = document.getElementById("i_special_label2").value;
+    document.getElementById("i_special_label3").value = document.getElementById("i_special_label3").value;
+    document.getElementById("i_special_label4").value = document.getElementById("i_special_label4").value;
 
     $('#itemEditModal').modal('show');
     on_change_product();
     sync_metric_to_dim2();
     sync_wt_to_wt2();
+    update_s1_calculated_totals();
 }
 
 function edit_item(idx) {
@@ -1015,34 +1677,65 @@ function edit_item(idx) {
     document.getElementById("item_modal_action_title").innerText = "Edit";
 
     document.getElementById("i_item_no").value = it.SALEORDER_ITEM;
+    document.getElementById("i_status").value = it.CTM2_STATUS || 'OP';
+    document.getElementById("i_mat_in").value = it.MATERIAL_IN || 'BOI-MAT1';
+    document.getElementById("i_pono").value = it.CTM2_PONO || document.getElementById("h_po_no").value;
+    document.getElementById("i_poitem").value = it.CTM2_POITEM || it.SALEORDER_ITEM;
+
+    document.getElementById("i_cust_order").value = it.CTM2_CUSTOMERORDER || '';
+    document.getElementById("i_cust_so").value = it.CTM2_CUSTOMERSALEORDER || '';
+    document.getElementById("i_endcust_name").value = it.CTM2_ENDCUSTOMERNAME || '';
+    document.getElementById("i_endcust_po").value = it.CTM2_ENDCUSTOMERPO || '';
+
+    if (it.CTM2_PODATE) document.getElementById("i_podate").value = it.CTM2_PODATE.substring(0, 10);
+    document.getElementById("i_price_period").value = it.PRICE_PERIOD || '';
+    if (it.REQUEST_DATE) document.getElementById("i_req_date").value = it.REQUEST_DATE.substring(0, 10);
+    if (it.CONFIRM_DATE) document.getElementById("i_conf_date").value = it.CONFIRM_DATE.substring(0, 10);
+    document.getElementById("i_cust_part").value = it.CTM2_CUSTOMERPARTNO || '';
+    document.getElementById("i_coil_from").value = it.COIL_FROM || 'MAT';
+    document.getElementById("i_full_coil").value = it.FULL_COIL || 'F';
+
     document.getElementById("i_product").value = it.PRODUCT_ID;
+    document.getElementById("i_prod_model").value = it.PRODUCT_MODEL || '';
     document.getElementById("i_alloy").value = it.ALLOY;
     document.getElementById("i_temper").value = it.TEMPER;
     document.getElementById("i_sg").value = it.SURFACE_GRADE || 'SG3';
     document.getElementById("i_mg").value = it.METALLURGICAL_GRADE || 'MG3';
-    document.getElementById("i_full_coil").value = it.FULL_COIL || 'F';
     document.getElementById("i_thickness").value = parseFloat(it.THICKNESS).toFixed(3);
     document.getElementById("i_width").value = parseFloat(it.WIDTH).toFixed(3);
     document.getElementById("i_length").value = parseFloat(it.LENGTH).toFixed(3);
+    document.getElementById("i_t5").value = it.T5_TEMPERATURE || '';
     
     document.getElementById("i_ct2u_thk").value = parseFloat(it.CT2U_THICKNESS || 0).toFixed(3);
     document.getElementById("i_ct2u_wd").value  = parseFloat(it.CT2U_WIDTH || 0).toFixed(3);
     document.getElementById("i_ct2u_len").value = parseFloat(it.CT2U_LENGTH || 0).toFixed(3);
     document.getElementById("i_ct2u_uom_dim").value = it.CT2U_UOMDIMENSION || 'inch';
 
-    document.getElementById("i_wt_piece").value = parseFloat(it.WEIGHT_PIECE || 0).toFixed(4);
-    document.getElementById("i_weight").value = it.CTM2_ORDERWEIGHT;
-    document.getElementById("i_pieces").value = it.CTM2_ORDERPIECE || 0;
-
     document.getElementById("i_ct2u_order_wt").value = it.CT2U_ORDERWEIGHT || it.CTM2_ORDERWEIGHT;
     document.getElementById("i_ct2u_order_pc").value = it.CT2U_ORDERPIECE || it.CTM2_ORDERPIECE;
     document.getElementById("i_ct2u_uom_wt").value  = it.CT2U_UOMWEIGHT || 'kg.';
 
-    document.getElementById("i_price_period").value = it.PRICE_PERIOD || '';
     document.getElementById("i_price").value = parseFloat(it.CTM2_ACTUALPRICE || 0).toFixed(4);
+    document.getElementById("i_lmetype").value = it.CTM2_LMETYPE || document.getElementById("h_lmetype").value;
+    if (it.CTM2_LMEDATE) document.getElementById("i_lmedate").value = it.CTM2_LMEDATE.substring(0, 10);
+    document.getElementById("i_orderlme").value = Number(it.CTM2_ORDERLME || 0).toFixed(2);
+    if (it.CTM2_MJPDATE) document.getElementById("i_mjpdate").value = it.CTM2_MJPDATE.substring(0, 10);
+    document.getElementById("i_mjpprice").value = Number(it.CTM2_MJPPRICE || 0).toFixed(2);
+    document.getElementById("i_stdv").value = Number(it.CTM2_ORDERSTDV || 0).toFixed(2);
+    document.getElementById("i_factor").value = Number(it.CTM2_ORDERFACTOR || 0).toFixed(2);
+    document.getElementById("i_stdxfactor").value = Number(it.CTM2_ORDERSTDXFACTOR || 0).toFixed(2);
     document.getElementById("i_amount").value = Number(it.AMOUNT || 0).toFixed(2);
-    document.getElementById("i_mat_in").value = it.MATERIAL_IN || 'BOI-MAT1';
-    document.getElementById("i_coil_from").value = it.COIL_FROM || 'MAT';
+
+    document.getElementById("i_wt_piece").value = parseFloat(it.WEIGHT_PIECE || 0).toFixed(4);
+    document.getElementById("i_maxtol").value = it.CTM2_MAXTOLERANCE || 0;
+    document.getElementById("i_mintol").value = it.CTM2_MINTOLERANCE || 0;
+    document.getElementById("i_weight").value = it.CTM2_ORDERWEIGHT || 0;
+    document.getElementById("i_pieces").value = it.CTM2_ORDERPIECE || 0;
+    document.getElementById("i_reject_wt").value = it.CTM2_REJECTWEIGHT || 0;
+    document.getElementById("i_reject_pc").value = it.CTM2_REJECTPIECE || 0;
+    document.getElementById("i_replace_wt").value = it.CTM2_REPLACEWEIGHT || 0;
+    document.getElementById("i_replace_pc").value = it.CTM2_REPLACEPIECE || 0;
+
     document.getElementById("i_desc").value = it.CTM2_DESCRIPTION || '';
     document.getElementById("i_remark").value = it.CTM2_REMARK || '';
 
@@ -1051,8 +1744,17 @@ function edit_item(idx) {
     document.getElementById("i_special_label3").value = it.CTM2_SPECIALLABEL3 || '';
     document.getElementById("i_special_label4").value = it.CTM2_SPECIALLABEL4 || '';
 
+    var cid = document.getElementById("h_customer").value.trim().toUpperCase();
+    var is_mil = (cid.substring(0, 3) === 'MIL');
+    document.getElementById("i_lmetype").disabled = is_mil;
+    document.getElementById("i_lmedate").disabled = is_mil;
+    document.getElementById("i_orderlme").disabled = is_mil;
+    document.getElementById("i_mjpdate").disabled = is_mil;
+    document.getElementById("i_mjpprice").disabled = is_mil;
+
     $('#itemEditModal').modal('show');
     on_change_product();
+    update_s1_calculated_totals();
 }
 
 function delete_item(idx) {
@@ -1065,6 +1767,34 @@ function delete_item(idx) {
     }
 }
 
+// สูตรคำนวณแถบสีน้ำเงิน Max/Total/Min Order Qty (ตาม S1 VerifyValue)
+function update_s1_calculated_totals() {
+    var order_wt = parseFloat(document.getElementById("i_weight").value) || 0;
+    var order_pc = parseInt(document.getElementById("i_pieces").value) || 0;
+    var replace_wt = parseFloat(document.getElementById("i_replace_wt").value) || 0;
+    var replace_pc = parseInt(document.getElementById("i_replace_pc").value) || 0;
+
+    var maxtol = parseFloat(document.getElementById("i_maxtol").value) || 0;
+    var mintol = parseFloat(document.getElementById("i_mintol").value) || 0;
+
+    var total_pc = order_pc + replace_pc;
+    var max_pc = Math.round(total_pc + (total_pc * maxtol / 100));
+    var min_pc = Math.round(total_pc - (total_pc * mintol / 100));
+
+    var total_wt = Math.round(order_wt + replace_wt);
+    var max_wt = Math.round(total_wt + (total_wt * maxtol / 100));
+    var min_wt = Math.round(total_wt - (total_wt * mintol / 100));
+
+    document.getElementById("lbl_max_wt").innerText = max_wt.toLocaleString();
+    document.getElementById("lbl_max_pc").innerText = max_pc.toLocaleString();
+
+    document.getElementById("lbl_tot_wt").innerText = total_wt.toLocaleString();
+    document.getElementById("lbl_tot_pc").innerText = total_pc.toLocaleString();
+
+    document.getElementById("lbl_min_wt").innerText = min_wt.toLocaleString();
+    document.getElementById("lbl_min_pc").innerText = min_pc.toLocaleString();
+}
+
 function confirm_item_modal() {
     var idx = parseInt(document.getElementById("edit_index").value);
     var wt  = parseFloat(document.getElementById("i_weight").value) || 0;
@@ -1073,40 +1803,71 @@ function confirm_item_modal() {
 
     var itemData = {
         SALEORDER_ITEM: document.getElementById("i_item_no").value,
+        CTM2_STATUS: document.getElementById("i_status").value,
+        MATERIAL_IN: document.getElementById("i_mat_in").value,
+        CTM2_PONO: document.getElementById("i_pono").value,
+        CTM2_POITEM: document.getElementById("i_poitem").value,
+        CTM2_CUSTOMERORDER: document.getElementById("i_cust_order").value,
+        CTM2_CUSTOMERSALEORDER: document.getElementById("i_cust_so").value,
+        CTM2_ENDCUSTOMERNAME: document.getElementById("i_endcust_name").value,
+        CTM2_ENDCUSTOMERPO: document.getElementById("i_endcust_po").value,
+        CTM2_PODATE: document.getElementById("i_podate").value,
+        PRICE_PERIOD: document.getElementById("i_price_period").value,
+        REQUEST_DATE: document.getElementById("i_req_date").value,
+        CONFIRM_DATE: document.getElementById("i_conf_date").value,
+        CTM2_CUSTOMERPARTNO: document.getElementById("i_cust_part").value,
+        COIL_FROM: document.getElementById("i_coil_from").value,
+        FULL_COIL: document.getElementById("i_full_coil").value,
+
         PRODUCT_ID: document.getElementById("i_product").value,
-        CTM2_UOMWEIGHT: 'kg.',
-        CTM2_ORDERWEIGHT: wt,
-        CTM2_ORDERPIECE: parseInt(document.getElementById("i_pieces").value) || 0,
-        CT2U_UOMWEIGHT: document.getElementById("i_ct2u_uom_wt").value,
-        CT2U_ORDERWEIGHT: parseFloat(document.getElementById("i_ct2u_order_wt").value) || wt,
-        CT2U_ORDERPIECE: parseInt(document.getElementById("i_ct2u_order_pc").value) || 0,
-        PRODUCT_MODEL: (document.getElementById("i_product").value === 'CC' ? 'CIRCLE' : (document.getElementById("i_product").value === 'SH' ? 'SHEET' : 'COIL')),
+        PRODUCT_MODEL: document.getElementById("i_prod_model").value,
         ALLOY: document.getElementById("i_alloy").value,
         TEMPER: document.getElementById("i_temper").value,
         SURFACE_GRADE: document.getElementById("i_sg").value,
         METALLURGICAL_GRADE: document.getElementById("i_mg").value,
-        FULL_COIL: document.getElementById("i_full_coil").value,
         THICKNESS: parseFloat(document.getElementById("i_thickness").value) || 0,
         WIDTH: parseFloat(document.getElementById("i_width").value) || 0,
         LENGTH: parseFloat(document.getElementById("i_length").value) || 0,
+        T5_TEMPERATURE: document.getElementById("i_t5").value,
         CTM2_UOMDIMENSION: 'mm.', 
+
         CT2U_THICKNESS: parseFloat(document.getElementById("i_ct2u_thk").value) || 0,
         CT2U_WIDTH: parseFloat(document.getElementById("i_ct2u_wd").value) || 0,
         CT2U_LENGTH: parseFloat(document.getElementById("i_ct2u_len").value) || 0,
         CT2U_UOMDIMENSION: document.getElementById("i_ct2u_uom_dim").value,
-        WEIGHT_PIECE: parseFloat(document.getElementById("i_wt_piece").value) || 0,
-        PRICE_PERIOD: document.getElementById("i_price_period").value,
+
+        CT2U_ORDERWEIGHT: parseFloat(document.getElementById("i_ct2u_order_wt").value) || wt,
+        CT2U_ORDERPIECE: parseInt(document.getElementById("i_ct2u_order_pc").value) || 0,
+        CT2U_UOMWEIGHT: document.getElementById("i_ct2u_uom_wt").value,
+
         CTM2_ACTUALPRICE: prc,
+        CTM2_LMETYPE: document.getElementById("i_lmetype").value,
+        CTM2_LMEDATE: document.getElementById("i_lmedate").value,
+        CTM2_ORDERLME: parseFloat(document.getElementById("i_orderlme").value) || 0,
+        CTM2_MJPDATE: document.getElementById("i_mjpdate").value,
+        CTM2_MJPPRICE: parseFloat(document.getElementById("i_mjpprice").value) || 0,
+        CTM2_ORDERSTDV: parseFloat(document.getElementById("i_stdv").value) || 0,
+        CTM2_ORDERFACTOR: parseFloat(document.getElementById("i_factor").value) || 0,
+        CTM2_ORDERSTDXFACTOR: parseFloat(document.getElementById("i_stdxfactor").value) || 0,
         AMOUNT: amt,
-        MATERIAL_IN: document.getElementById("i_mat_in").value,
-        COIL_FROM: document.getElementById("i_coil_from").value,
+
+        WEIGHT_PIECE: parseFloat(document.getElementById("i_wt_piece").value) || 0,
+        CTM2_MAXTOLERANCE: parseInt(document.getElementById("i_maxtol").value) || 0,
+        CTM2_MINTOLERANCE: parseInt(document.getElementById("i_mintol").value) || 0,
+        CTM2_ORDERWEIGHT: wt,
+        CTM2_ORDERPIECE: parseInt(document.getElementById("i_pieces").value) || 0,
+        CTM2_REJECTWEIGHT: parseFloat(document.getElementById("i_reject_wt").value) || 0,
+        CTM2_REJECTPIECE: parseInt(document.getElementById("i_reject_pc").value) || 0,
+        CTM2_REPLACEWEIGHT: parseFloat(document.getElementById("i_replace_wt").value) || 0,
+        CTM2_REPLACEPIECE: parseInt(document.getElementById("i_replace_pc").value) || 0,
+        CTM2_UOMWEIGHT: 'kg.',
+
         CTM2_DESCRIPTION: document.getElementById("i_desc").value,
         CTM2_REMARK: document.getElementById("i_remark").value,
         CTM2_SPECIALLABEL1: document.getElementById("i_special_label1").value,
         CTM2_SPECIALLABEL2: document.getElementById("i_special_label2").value,
         CTM2_SPECIALLABEL3: document.getElementById("i_special_label3").value,
-        CTM2_SPECIALLABEL4: document.getElementById("i_special_label4").value,
-        CTM2_STATUS: 'OP'
+        CTM2_SPECIALLABEL4: document.getElementById("i_special_label4").value
     };
 
     if (idx === -1) {
@@ -1154,6 +1915,7 @@ function calculate_item_pcs_from_wt() {
     }
     sync_wt_to_wt2();
     calculate_item_amount();
+    update_s1_calculated_totals();
 }
 
 function calculate_item_qty_from_pcs() {
@@ -1164,6 +1926,7 @@ function calculate_item_qty_from_pcs() {
     }
     sync_wt_to_wt2();
     calculate_item_amount();
+    update_s1_calculated_totals();
 }
 
 function calculate_item_amount() {
@@ -1217,7 +1980,7 @@ function calc_price_from_backend() {
         width: document.getElementById("i_width").value,
         length: document.getElementById("i_length").value,
         weight: document.getElementById("i_weight").value,
-        min_tol: 0,
+        min_tol: document.getElementById("i_mintol").value || 0,
         full_coil: document.getElementById("i_full_coil").value
     };
 
@@ -1306,8 +2069,8 @@ function save_entire_order() {
         }
     }
 
-    var raw_fob = parseFloat(document.getElementById("h_fob").value.replace(/,/g, '')) || 0;
-    var grand   = parseFloat(document.getElementById("h_grand_total").value.replace(/,/g, '')) || 0;
+    var raw_total_amount = parseFloat(document.getElementById("h_total_amount").value.replace(/,/g, '')) || 0;
+    var grand = parseFloat(document.getElementById("h_grand_total").value.replace(/,/g, '')) || 0;
 
     var payload = {
         header: {
@@ -1317,33 +2080,50 @@ function save_entire_order() {
             SALEORDER_DATE: document.getElementById("h_so_date").value,
             INTENDSHIP_DATE: document.getElementById("h_ship_date").value,
             CSTMSPPL_ID: cust,
+            SUPPLIER_MATCODE: document.getElementById("h_supplier_mat").value,
             CTM1_PONO: pono,
+            CUSTOMS_CODE: document.getElementById("h_customs_code").value,
+            CTM1_CUSTOMERORDER: document.getElementById("h_cust_order").value,
+            CTM1_CUSTOMERSALEORDER: document.getElementById("h_cust_so").value,
+            CTM1_ENDCUSTOMERNAME: document.getElementById("h_endcust_name").value,
+            CTM1_ENDCUSTOMERPO: document.getElementById("h_endcust_po").value,
             CURRENCY_ID: document.getElementById("h_currency").value,
             EXCHANGE_RATE: parseFloat(document.getElementById("h_exrate").value) || 1,
             PAYMENT_ID: document.getElementById("h_payment").value,
             SHIPMENT_ID: document.getElementById("h_shipment").value,
+            CTM1_SHIPPEDBY: document.getElementById("h_shippedby").value,
+            CTM1_TOLERANCE: document.getElementById("h_tolerance").value,
+            CTM1_PACKING: document.getElementById("h_packing").value,
             CTM1_PORTLOADING: document.getElementById("h_portload").value,
             CTM1_PORTDISCHARGE: document.getElementById("h_portdis").value,
             CTM1_PLACEDESTINATION: document.getElementById("h_placedest").value,
             CTM1_COUNTRYDESTINATION: document.getElementById("h_countrydest").value,
             CTM1_TAXPERCENT: parseInt(document.getElementById("h_tax").value) || 0,
+            
+            CTM1_REMARK1: document.getElementById("h_remark1").value,
+            CTM1_REMARK2: document.getElementById("h_remark2").value,
+            CTM1_REMARK3: document.getElementById("h_remark3").value,
+
+            CTM1_WHOLEWEIGHT: document.getElementById("h_chk_wholeweight").checked ? 1 : 0,
+            CTM1_MARKSKID: document.getElementById("h_chk_markskid").checked ? 1 : 0,
+            CTM1_SERIALCODE: document.getElementById("h_chk_serialcode").checked ? 1 : 0,
+            CTM1_SCRAPWIRE: document.getElementById("h_chk_scrapwire").checked ? 1 : 0,
+
             CTM1_LMETYPE: document.getElementById("h_lmetype").value,
             CTM1_LMEDATE: document.getElementById("h_lmedate").value,
             CTM1_ORDERLME: parseFloat(document.getElementById("h_orderlme").value) || 0,
-            CTM1_MJPDATE: document.getElementById("h_lmedate").value,
+            CTM1_MJPDATE: document.getElementById("h_mjpdate").value,
             CTM1_MJPPRICE: parseFloat(document.getElementById("h_mjpprice").value) || 0,
-            
-            // ส่งค่า Standard Deviation / Factor / STDxFactor ไปหลังบ้าน
             CTM1_ORDERSTDV: cur_stdv,
             CTM1_ORDERFACTOR: cur_factor,
             CTM1_ORDERSTDXFACTOR: cur_stdxfactor,
 
+            CTM1_TOTALAMOUNT: raw_total_amount,
+            CTM1_TRANSPORTATION: parseFloat(document.getElementById("h_transport").value) || 0,
+            CTM1_FOBTOTALAMOUNT: parseFloat(document.getElementById("h_fob").value) || 0,
             CTM1_OVERSEAFREIGHT: parseFloat(document.getElementById("h_freight").value) || 0,
             CTM1_INSURANCE: parseFloat(document.getElementById("h_insurance").value) || 0,
-            CTM1_TRANSPORTATION: 0,
-            CTM1_FOBTOTALAMOUNT: raw_fob,
-            CTM1_GRANDTOTALAMOUNT: grand,
-            CTM1_TOTALAMOUNT: grand
+            CTM1_GRANDTOTALAMOUNT: grand
         },
         items: orderItems
     };
