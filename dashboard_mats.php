@@ -226,8 +226,8 @@ $all_working = RT_CoilWorking();
                         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                             <h3 class="text-slate-400 text-[14px] font-bold uppercase tracking-wider mb-3">Price</h3>
                             <div class="grid grid-cols-2 gap-2">
-                                <a href="template_mats.php?func=<?php echo $folder_func; ?>" class="p-2 bg-emerald-50 text-emerald-700 rounded-md text-center text-bg font-medium hover:bg-emerald-100 transition-colors border border-emerald-100 no-underline hover:no-underline">Product Price</a>
-                                <a href="template_mats.php?func=<?php echo $folder_func; ?>" class="p-2 bg-emerald-50 text-emerald-700 rounded-md text-center text-bg font-medium hover:bg-emerald-100 transition-colors border border-emerald-100 no-underline hover:no-underline">Product Specification</a>
+                                <a href="price_period_list.php?func=<?php echo $folder_func; ?>" class="p-2 bg-emerald-50 text-emerald-700 rounded-md text-center text-bg font-medium hover:bg-emerald-100 transition-colors border border-emerald-100 no-underline hover:no-underline">Monthly Calculate Pricing</a>
+                                <a href="price_period_list.php?func=<?php echo $folder_func; ?>" class="p-2 bg-emerald-50 text-emerald-700 rounded-md text-center text-bg font-medium hover:bg-emerald-100 transition-colors border border-emerald-100 no-underline hover:no-underline">Base Cost and Premium</a>
                             </div>
                         </div>
                     </div>

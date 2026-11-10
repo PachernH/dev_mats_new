@@ -111,10 +111,9 @@ $is_old_record = !empty($job_no_param);
 </head>
 <body>
     
-<!-- Print Preview Modal ในหน้า job_order_view_mats.php และ job_order_mats.php -->
+<!-- Print Preview Modal -->
 <div id="printModal" style="display: none; position: fixed; z-index: 99999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(2px);">
     <div style="position: relative; background-color: #ffffff; margin: 1.5vh auto; width: 95%; height: 97vh; border-radius: 8px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); display: flex; flex-direction: column; overflow: hidden;">
-        <!-- Header มีปุ่มชุดเดียว -->
         <div style="padding: 10px 18px; background-color: #1e293b; color: #ffffff; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155;">
             <div style="font-weight: 700; font-size: 14px; letter-spacing: 0.5px;">
                 JOB ORDER REPORT PREVIEW (FM-07-009)
@@ -128,7 +127,6 @@ $is_old_record = !empty($job_no_param);
                 </button>
             </div>
         </div>
-        <!-- Iframe Body -->
         <div style="flex: 1; width: 100%; height: 100%; background-color: #e2e8f0; padding: 6px;">
             <iframe id="reportIframe" src="" style="width: 100%; height: 100%; border: none; background-color: #ffffff; border-radius: 4px;"></iframe>
         </div>
@@ -608,6 +606,14 @@ $is_old_record = !empty($job_no_param);
 <?php include 'include/footer.php'; ?>
 
 <script>
+const globalModelMap = {
+    'CC': 'CIRCLE',
+    'CO': 'COIL',
+    'SH': 'SHEET',
+    'NC': 'CIRCLE',
+    'WR': 'WIRE',
+    'RM': 'REMELT'
+};
 
 let currentLoadedSO = null;
 let isJobLoading = false;
@@ -623,7 +629,6 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
 });
 
-// โหลด Masters เข้า Dropdowns
 function loadInitialMastersAsync() {
     return fetch('model/get_jobdata_mats.php?action=get_initial_masters')
         .then(res => res.json())
@@ -695,7 +700,6 @@ function populateSimpleDropdown(elemId, arr, addNone = false) {
     });
 }
 
-// ฟังก์ชันเซ็ตค่า Dropdown พร้อมสร้าง Option อัตโนมัติหากไม่พบ
 function setDropdownValue(elemId, val, label) {
     if (val === null || val === undefined) return;
     const cleanVal = String(val).trim();
@@ -722,11 +726,9 @@ function setDropdownValue(elemId, val, label) {
     }
 }
 
-// กฎการล็อกฟิลด์ตาม J1 EnableField & ControlField
 function applyJ1FieldLocking(isOldRecord, soNo, soItem, productId, isSoLocked) {
     const hasSO = (soNo.length === 10 && soItem.length === 3);
 
-    // 1. Sale Order Locking (หาก Pack หรือ Invoice แล้ว)
     if (isSoLocked) {
         document.getElementById("sale_order_no").disabled = true;
         document.getElementById("sale_order_item").disabled = true;
@@ -735,14 +737,12 @@ function applyJ1FieldLocking(isOldRecord, soNo, soItem, productId, isSoLocked) {
         document.getElementById("sale_order_item").disabled = false;
     }
 
-    // 2. ถ้ามี Sale Order สเปกหลักถูกล็อก
     if (hasSO) {
         document.getElementById("product_id").disabled = true;
         document.getElementById("surface_grade").disabled = true;
         document.getElementById("metallurgical_grade").disabled = true;
         document.getElementById("weight_piece").readOnly = true;
 
-        // ล็อกสเปกยกเว้นกรณีค่าไม่ตรงกับ SO
         if (currentLoadedSO) {
             document.getElementById("alloy").disabled = (document.getElementById("alloy").value === currentLoadedSO.ALLOY);
             document.getElementById("temper").disabled = (document.getElementById("temper").value === currentLoadedSO.TEMPER);
@@ -757,7 +757,6 @@ function applyJ1FieldLocking(isOldRecord, soNo, soItem, productId, isSoLocked) {
             document.getElementById("length").readOnly = true;
         }
     } else {
-        // New Job ไม่มี SO เปิดให้กรอกอิสระ
         document.getElementById("product_id").disabled = false;
         document.getElementById("alloy").disabled = false;
         document.getElementById("temper").disabled = false;
@@ -768,7 +767,6 @@ function applyJ1FieldLocking(isOldRecord, soNo, soItem, productId, isSoLocked) {
         document.getElementById("length").readOnly = false;
     }
 
-    // 3. กฎตาม Product ID (CO vs CC/SH/NC)
     const pid = (productId || document.getElementById("product_id").value || '').substring(0, 2).toUpperCase();
     if (pid === 'CO') {
         document.getElementById("flatness_grade").disabled = true;
@@ -783,7 +781,7 @@ function applyJ1FieldLocking(isOldRecord, soNo, soItem, productId, isSoLocked) {
         document.getElementById("job_min_tolerance").disabled = false;
         document.getElementById("release_weight").readOnly = false;
         document.getElementById("release_piece").readOnly = true;
-    } else { // CC, NC
+    } else {
         document.getElementById("flatness_grade").disabled = true;
         document.getElementById("job_max_tolerance").disabled = false;
         document.getElementById("job_min_tolerance").disabled = false;
@@ -792,7 +790,6 @@ function applyJ1FieldLocking(isOldRecord, soNo, soItem, productId, isSoLocked) {
         document.getElementById("length").readOnly = true;
     }
 
-    // 4. ฟิลด์ที่เปิดให้แก้ไขได้เสมอ (Always Editable)
     document.getElementById("job_status").disabled = false;
     document.getElementById("priority").disabled = false;
     document.getElementById("material_in").disabled = false;
@@ -815,7 +812,6 @@ function applyJ1FieldLocking(isOldRecord, soNo, soItem, productId, isSoLocked) {
     document.getElementById("txtRemark3").readOnly = false;
 }
 
-// ดึงข้อมูล Job เก่ามาแสดง (Async/Await)
 async function loadJobOrderDataAsync(jobNo) {
     isJobLoading = true;
     hideAlerts();
@@ -856,12 +852,13 @@ async function loadJobOrderDataAsync(jobNo) {
             setDropdownValue('flatness_grade', d.FLATNESS_GRADE);
             document.getElementById("t5_temperature").value = d.T5_TEMPERATURE || '';
 
+            document.getElementById("product_model").value = d.PRODUCT_MODEL || globalModelMap[d.PRODUCT_ID] || '';
+
             document.getElementById("thickness").value = parseFloat(d.THICKNESS || 0).toFixed(3);
             document.getElementById("width").value = parseFloat(d.WIDTH || 0).toFixed(3);
             document.getElementById("length").value = parseFloat(d.LENGTH || 0).toFixed(3);
             document.getElementById("weight_piece").value = parseFloat(d.WEIGHT_PIECE || 0).toFixed(4);
 
-            // โหลดและเลือก Work Process Dropdown ตาม Product ID
             await loadWorkProcessesAsync(d.PRODUCT_ID || '', d.JOB_WORKPROCESS || '');
 
             document.getElementById("fixed_process").value = (d.FIXED_PROCESS || 'NO').trim();
@@ -972,8 +969,13 @@ async function loadSaleOrderItem() {
                 document.getElementById("material_in").value = d.MATERIAL_IN || '';
                 document.getElementById("release_weight").value = Math.round(d.CTM2_ORDERWEIGHT || 0);
 
-                // อัปเดตตัวเลือก Work Process Dropdown ตาม Product ID ของ SO
                 await loadWorkProcessesAsync(d.PRODUCT_ID || '', '');
+
+                if (globalModelMap[d.PRODUCT_ID]) {
+                    document.getElementById("product_model").value = globalModelMap[d.PRODUCT_ID];
+                } else if (d.PRODUCT_MODEL) {
+                    document.getElementById("product_model").value = d.PRODUCT_MODEL;
+                }
 
                 onDimensionChange();
                 loadCustomerRemark();
@@ -992,8 +994,11 @@ function onDimensionChange() {
     if (isJobLoading) return;
 
     const prodId = document.getElementById("product_id").value;
+
+    if (globalModelMap[prodId]) {
+        document.getElementById("product_model").value = globalModelMap[prodId];
+    }    
     
-    // โหลด Work Process Dropdown ให้ตรงกลุ่ม Product ID
     loadWorkProcessesAsync(prodId, document.getElementById("work_process").value);
 
     const w = parseFloat(document.getElementById("width").value) || 0;
@@ -1163,6 +1168,7 @@ function saveJobOrder() {
         priority: document.getElementById("priority").value,
         job_status: document.getElementById("job_status").value,
         product_id: document.getElementById("product_id").value,
+        product_model: document.getElementById("product_model").value,
         alloy: document.getElementById("alloy").value,
         temper: document.getElementById("temper").value,
         produce_temper1: document.getElementById("produce_temper1").value,
@@ -1177,6 +1183,7 @@ function saveJobOrder() {
         thickness: parseFloat(document.getElementById("thickness").value),
         width: parseFloat(document.getElementById("width").value),
         length: parseFloat(document.getElementById("length").value),
+        area_size: parseFloat(document.getElementById("area_size").value) || 0,
         work_process: document.getElementById("work_process").value,
         fixed_process: document.getElementById("fixed_process").value,
         use_for_process: document.getElementById("use_for_process").value,
@@ -1238,38 +1245,6 @@ function deleteJobOrder() {
     });
 }
 
-// ฟังก์ชันดึง Work Process ตาม Product ID
-async function loadWorkProcessesAsync(productId, selectedVal = '') {
-    const el = document.getElementById("work_process");
-    el.innerHTML = '<option value="">Loading...</option>';
-
-    try {
-        const res = await fetch(`model/get_jobdata_mats.php?action=get_work_processes&product_id=${encodeURIComponent(productId)}`);
-        const json = await res.json();
-
-        el.innerHTML = '<option value="">Select Work Process...</option>';
-        if (json.status === 'success' && json.data.length > 0) {
-            json.data.forEach(proc => {
-                const opt = document.createElement('option');
-                opt.value = proc.trim();
-                opt.text = proc.trim();
-                el.appendChild(opt);
-            });
-        }
-
-        // เซ็ตค่าเดิม (ถ้ามี)
-        if (selectedVal) {
-            setDropdownValue('work_process', selectedVal, selectedVal);
-        } else if (el.options.length > 1) {
-            el.selectedIndex = 1; // เลือกตัวแรกถ้าไม่มีค่า
-        }
-
-        onProcessChange();
-    } catch (err) {
-        console.error("Error loading work processes:", err);
-    }
-}
-
 function showAlert(msg, type) {
     const el = document.getElementById("alertBox");
     el.innerText = msg;
@@ -1291,7 +1266,6 @@ function resetForm() {
     window.location.assign('job_order_mats.php?func=' + encodeURIComponent(document.getElementById("func").value));
 }
 
-// ฟังก์ชันเปิด Modal Popup แสดงรายงาน
 function openPrintReport() {
     const jobNo = document.getElementById("job_order_no") 
         ? document.getElementById("job_order_no").value.trim() 
@@ -1305,20 +1279,17 @@ function openPrintReport() {
     const modal = document.getElementById("printModal");
     const iframe = document.getElementById("reportIframe");
 
-    // ใส่ URL ลง Iframe และสั่งเปิด Modal
     iframe.src = 'job_form_report_mats.php?jobno=' + encodeURIComponent(jobNo);
     modal.style.display = 'block';
 }
 
-// ฟังก์ชันปิด Popup
 function closePrintModal() {
     const modal = document.getElementById("printModal");
     const iframe = document.getElementById("reportIframe");
     modal.style.display = 'none';
-    iframe.src = ''; // เคลียร์ src เมื่อปิด
+    iframe.src = '';
 }
 
-// ฟังก์ชันสั่งพิมพ์จากใน Popup Iframe
 function printModalIframe() {
     const iframe = document.getElementById("reportIframe");
     if (iframe && iframe.contentWindow) {
@@ -1327,7 +1298,6 @@ function printModalIframe() {
     }
 }
 
-// ปิด Modal อัตโนมัติเมื่อกดแป้น Escape
 window.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closePrintModal();

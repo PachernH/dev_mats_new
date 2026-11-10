@@ -42,6 +42,22 @@ try {
         $so_no        = trim($input['sale_order_no'] ?? '');
         $so_item      = trim($input['sale_order_item'] ?? '');
         $product_id   = strtoupper(trim($input['product_id'] ?? ''));
+
+        // แมปชื่อเต็ม PRODUCT_MODEL อัตโนมัติจาก PRODUCT_ID ตามมาตรฐาน MAT
+        $model_map = [
+            'CC' => 'CIRCLE',
+            'CO' => 'COIL',
+            'SH' => 'SHEET',
+            'NC' => 'CIRCLE',
+            'WR' => 'WIRE',
+            'RM' => 'REMELT'
+        ];
+
+        $product_model = trim($input['product_model'] ?? '');
+        if (empty($product_model) && isset($model_map[$product_id])) {
+            $product_model = $model_map[$product_id];
+        }
+
         $alloy        = trim($input['alloy'] ?? '');
         $temper       = trim($input['temper'] ?? '');
         $thickness    = (float)($input['thickness'] ?? 0);
@@ -134,20 +150,18 @@ try {
         // รันเลขที่ Job Order รูปแบบ JB-YY-XXXX จากตาราง JOBORDER1
         // -------------------------------------------------------------
         if ($is_new) {
-            $year_suffix = date('y'); // เช่น '26'
-            $prefix = "JB-" . $year_suffix . "-"; // 'JB-26-' (ความยาว 6 หลัก)
+            $year_suffix = date('y');
+            $prefix = "JB-" . $year_suffix . "-";
 
-            // ค้นหา Job Order สูงสุดของปีปัจจุบันที่มีขีดคั่น
             $stmt = $conn->prepare("SELECT MAX(JOB_ORDER) FROM JOBORDER1 WHERE JOB_ORDER LIKE :pfx AND LEN(JOB_ORDER) = 10");
             $stmt->execute([':pfx' => $prefix . '%']);
             $max_job = $stmt->fetchColumn();
 
             $next_run = 1;
             if ($max_job && strlen($max_job) === 10) {
-                // ดึง 4 หลักท้าย (ตำแหน่งที่ 7 เป็นต้นไป)
                 $next_run = (int)substr($max_job, 6, 4) + 1;
             }
-            $job_order_no = $prefix . str_pad($next_run, 4, '0', STR_PAD_LEFT); // ได้ 'JB-26-XXXX'
+            $job_order_no = $prefix . str_pad($next_run, 4, '0', STR_PAD_LEFT);
 
             // บันทึกขนาดลง Master ตาราง THCKMSTR1, DMWDMSTR1, LNGTMSTR1 หากยังไม่เคยมี
             $conn->exec("IF NOT EXISTS (SELECT 1 FROM THCKMSTR1 WHERE THICKNESS = {$thickness}) INSERT INTO THCKMSTR1 (THICKNESS) VALUES ({$thickness})");
@@ -188,7 +202,7 @@ try {
                 ':st_date' => !empty($input['expect_start_date']) ? $input['expect_start_date'] : null,
                 ':fn_date' => !empty($input['expect_finish_date']) ? $input['expect_finish_date'] : null,
                 ':priority' => (int)($input['priority'] ?? 1), ':prod_id' => $product_id,
-                ':prod_model' => $input['product_model'] ?? '', ':area_size' => $area_size,
+                ':prod_model' => $product_model, ':area_size' => $area_size,
                 ':alloy' => $alloy, ':temper' => $temper,
                 ':ptemp1' => $input['produce_temper1'] ?? 'NONE', ':ptemp2' => $input['produce_temper2'] ?? 'NONE',
                 ':grade' => $input['grade'] ?? 'NONE', ':pgrade1' => $input['produce_grade1'] ?? 'NONE',
@@ -229,10 +243,12 @@ try {
         } else {
             // UPDATE กรณี Job เดิม
             $sql = "UPDATE JOBORDER1 SET 
-                        MATERIAL_IN = :mat_in, JOBORDER_DATE = :job_date, SCHEDULE_DATE = :sch_date, 
+                        MATERIAL_IN = :mat_in, JOBORDER_DATE = :job_date, SCHEDULE_DATE = :sch_date,
+                        PRODUCT_ID = :prod_id, PRODUCT_MODEL = :prod_model,
                         EXPECT_STARTDATE = :st_date, EXPECT_FINISHDATE = :fn_date, JOB_PRIORITY = :priority,
                         PRODUCE_TEMPER1 = :ptemp1, PRODUCE_TEMPER2 = :ptemp2, PRODUCE_GRADE1 = :pgrade1, PRODUCE_GRADE2 = :pgrade2,
                         SURFACE_GRADE = :sg, METALLURGICAL_GRADE = :mg, T5_TEMPERATURE = :t5, FLATNESS_GRADE = :flatness,
+                        THICKNESS = :thickness, WIDTH = :width, LENGTH = :length, WEIGHT_PIECE = :weight_piece,
                         CUT_WIDTH = :c_w, CUT_LENGTH = :c_l, CUT_WEIGHTPIECE = :c_wp,
                         JOB_WORKPROCESS = :work_proc, FIXED_PROCESS = :fixed_proc, USE_FORPROCESS = :use_proc,
                         OTHER_COILWIDTH = :other_w, SUGGEST_WIDTH = :sug_w, RECOVERY = :recov,
@@ -247,6 +263,8 @@ try {
                 ':mat_in' => $input['material_in'] ?? '',
                 ':job_date' => !empty($input['job_order_date']) ? $input['job_order_date'] : date('Y-m-d'),
                 ':sch_date' => !empty($input['schedule_date']) ? $input['schedule_date'] : date('Y-m-d'),
+                ':prod_id' => $product_id,
+                ':prod_model' => $product_model,
                 ':st_date' => !empty($input['expect_start_date']) ? $input['expect_start_date'] : null,
                 ':fn_date' => !empty($input['expect_finish_date']) ? $input['expect_finish_date'] : null,
                 ':priority' => (int)($input['priority'] ?? 1),
@@ -254,6 +272,7 @@ try {
                 ':pgrade1' => $input['produce_grade1'] ?? 'NONE', ':pgrade2' => $input['produce_grade2'] ?? 'NONE',
                 ':sg' => $input['surface_grade'] ?? '', ':mg' => $input['metallurgical_grade'] ?? '',
                 ':t5' => $input['t5_temperature'] ?? '', ':flatness' => $input['flatness_grade'] ?? '',
+                ':thickness' => $thickness, ':width' => $width, ':length' => $length, ':weight_piece' => $weight_piece,
                 ':c_w' => $cut_width, ':c_l' => $cut_length, ':c_wp' => $cut_weight_piece,
                 ':work_proc' => $work_process, ':fixed_proc' => $fixed_process,
                 ':use_proc' => $input['use_for_process'] ?? '',
@@ -281,7 +300,6 @@ try {
     if ($action === 'delete') {
         $job_order_no = trim($input['job_order_no'] ?? '');
 
-        // ตรวจสอบ Dependency ก่อนลบตาม J1
         $stmt = $conn->prepare("SELECT 1 FROM CRSHPROD1 WHERE JOB_ORDER = :j");
         $stmt->execute([':j' => $job_order_no]);
         if ($stmt->fetch()) throw new Exception("Cannot delete Job Order: Process records already exist in production tracking (CRSHPROD1).");
