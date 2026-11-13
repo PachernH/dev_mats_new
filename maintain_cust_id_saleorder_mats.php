@@ -552,12 +552,12 @@ function customer_order(){
 
 function maintain_month_cal_price(){   
     var data_fun = document.getElementById("func").value;
-    window.location.assign('maintain_month_cal_price_mats.php?func='+encodeURIComponent(data_fun)); 
+    window.location.assign('price_period_list.php?func='+encodeURIComponent(data_fun)); 
 }
 
 function maintain_base_cost(){   
     var data_fun = document.getElementById("func").value;
-    window.location.assign('maintain_base_cost_mats.php?func='+encodeURIComponent(data_fun)); 
+    window.location.assign('price_period_list.php?func='+encodeURIComponent(data_fun)); 
 }
 
 /* ========================================================

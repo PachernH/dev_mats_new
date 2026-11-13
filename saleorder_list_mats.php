@@ -144,7 +144,7 @@ $date_to   = isset($_GET['date_to']) ? htmlspecialchars(trim($_GET['date_to']), 
 <body>
 
 <div class="wrapper">
-    <?php $menu = 'SO'; ?>
+    <?php $menu = 'A1'; ?>
     <?php include 'include/'.$folder_func.'/navigation.php'; ?>
 
     <div class="main-panel">
@@ -255,7 +255,7 @@ $date_to   = isset($_GET['date_to']) ? htmlspecialchars(trim($_GET['date_to']), 
                                             FROM CSTMORDR1 h
                                             OUTER APPLY (
                                                 SELECT COUNT(d2.SALEORDER_ITEM) AS ITEM_COUNT,
-                                                       SUM(ISNULL(d2.CTM2_ORDERWEIGHT, 0)) AS TOTAL_WEIGHT,
+                                                       SUM(ISNULL(d2.CTM2_ORDERWEIGHT, 0) + ISNULL(d2.CTM2_REPLACEWEIGHT, 0)) AS TOTAL_WEIGHT,
                                                        MAX(d2.CTM2_STATUS) AS SO_STATUS
                                                 FROM CSTMORDR2 d2
                                                 WHERE d2.SALEORDER_NO = h.SALEORDER_NO

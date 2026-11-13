@@ -36,7 +36,7 @@ $ports      = $conn->query("SELECT PORT_ID, DESCRIPTION FROM PORTMSTR1 ORDER BY 
 $places     = $conn->query("SELECT PLACE_ID, DESCRIPTION FROM PLCEMSTR1 ORDER BY PLACE_ID ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 // 2. ดึง Master Data สำหรับ Item Specification
-$products     = $conn->query("SELECT PRODUCT_ID, PRODUCT_MODEL FROM PRODMSTR1 GROUP BY PRODUCT_ID, PRODUCT_MODEL ORDER BY PRODUCT_ID ASC")->fetchAll(PDO::FETCH_ASSOC);
+$products     = $conn->query("SELECT PRODUCT_ID, PRODUCT_MODEL, MAX(ISNULL(AREA_SIZE, 0)) AS AREA_SIZE, MAX(ISNULL(CUSTOMER_PARTNO, '')) AS CUSTOMER_PARTNO FROM PRODMSTR1 GROUP BY PRODUCT_ID, PRODUCT_MODEL ORDER BY PRODUCT_ID ASC")->fetchAll(PDO::FETCH_ASSOC);
 $alloys       = $conn->query("SELECT DISTINCT ALLOY FROM CMPSMSTR1 ORDER BY ALLOY ASC")->fetchAll(PDO::FETCH_ASSOC);
 $tempers      = $conn->query("SELECT DISTINCT TEMPER FROM TMPRMSTR1 ORDER BY TEMPER ASC")->fetchAll(PDO::FETCH_ASSOC);
 $sgs          = $conn->query("SELECT DISTINCT SURFACE_GRADE FROM SGRDMSTR1 ORDER BY SURFACE_GRADE ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -159,7 +159,8 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                     <?php if ($is_edit_mode): ?>
                         <button type="button" class="btn-top-delete" onclick="delete_current_so()">🗑️ Delete SO</button>
                     <?php endif; ?>
-                    <button type="button" class="btn-top-save" onclick="save_entire_order()">💾 Save Sales Order</button>
+                    <!-- 1. เพิ่ม id="btn_save_so" ที่ปุ่ม Save ด้านบน -->
+                    <button type="button" class="btn-top-save" id="btn_save_so" onclick="save_entire_order()">💾 Save Sales Order</button>
                 </div>
             </div>
         </nav>
@@ -604,7 +605,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
     </div>
 </div>
 
-<!-- MODAL: ADD / EDIT ITEM SPECIFICATION (ปรับปรุงตรงตามหน้าจอ VB6 S1 Item Detail 100%) -->
+<!-- MODAL: ADD / EDIT ITEM SPECIFICATION -->
 <div class="modal fade" id="itemEditModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg" style="width: 95%; max-width: 1350px;" role="document">
         <div class="modal-content" style="border-radius:10px; overflow:hidden;">
@@ -618,7 +619,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
             <div class="modal-body" style="padding:14px 18px; background:#f8fafc;">
                 <input type="hidden" id="edit_index" value="-1"/>
 
-                <!-- กล่องที่ 1: Detail Reference (ตรงตามแถวบนของ S1) -->
+                <!-- กล่องที่ 1: Detail Reference -->
                 <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; margin-bottom:12px;">
                     <div style="font-weight:800; font-size:11px; color:#4338ca; text-transform:uppercase; margin-bottom:8px; border-bottom:1px solid #e0e7ff; padding-bottom:3px;">
                         📌 Item Header & Customer Reference
@@ -644,7 +645,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                         <div class="col-md-3">
                             <div class="form-group-custom">
                                 <label>Material In</label>
-                                <select class="form-control form-control-sm" id="i_mat_in" onchange="auto_gen_desc()">
+                                <select class="form-control form-control-sm" id="i_mat_in" onchange="on_change_item_mat_in()">
                                     <option value="BOI-MAT1">BOI-MAT1</option>
                                     <option value="BOI-MAT2">BOI-MAT2</option>
                                     <option value="BOI-GRS1">BOI-GRS1</option>
@@ -698,14 +699,14 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                     <div class="row">
                         <div class="col-md-3">
                             <div class="form-group-custom">
-                                <label>PO Date</label>
-                                <input type="date" class="form-control form-control-sm" id="i_podate" value="<?php echo date('Y-m-d'); ?>"/>
+                                <label style="color:#047857;">PO Date (Auto Lookup Period)</label>
+                                <input type="date" class="form-control form-control-sm" id="i_podate" value="<?php echo date('Y-m-d'); ?>" onchange="on_change_item_podate()"/>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group-custom">
-                                <label>Price Period</label>
-                                <select class="form-control form-control-sm" id="i_price_period">
+                                <label style="color:#1d4ed8;">Price Period (PRICMSTR1)</label>
+                                <select class="form-control form-control-sm" id="i_price_period" onchange="on_change_price_period()">
                                     <option value="">-- None --</option>
                                     <?php foreach ($periods as $prd): ?>
                                         <option value="<?php echo htmlspecialchars($prd['PRICE_PERIOD']); ?>"><?php echo htmlspecialchars($prd['PRICE_PERIOD']); ?></option>
@@ -730,14 +731,14 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-group-custom" style="margin-bottom:0;">
-                                <label>Customer Part No.</label>
-                                <input type="text" class="form-control form-control-sm" id="i_cust_part" placeholder="Customer Part No..."/>
+                                <label style="color:#047857;">Customer Part No. (Auto Lookup PRODMSTR1)</label>
+                                <input type="text" class="form-control form-control-sm" id="i_cust_part" placeholder="Enter Customer Part No..." onchange="on_change_customer_partno()" style="text-transform:uppercase;" oninput="this.value = this.value.toUpperCase()"/>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group-custom" style="margin-bottom:0;">
                                 <label>Use Coil From</label>
-                                <select class="form-control form-control-sm" id="i_coil_from">
+                                <select class="form-control form-control-sm" id="i_coil_from" onchange="on_change_item_coil_from()">
                                     <?php foreach ($use_coil_suppliers as $sup): ?>
                                         <option value="<?php echo htmlspecialchars($sup['CSTMSPPL_ID']); ?>">
                                             <?php echo htmlspecialchars($sup['CSTMSPPL_ID'] . ': ' . $sup['CONSIGNEE_COMPANY']); ?>
@@ -749,7 +750,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                         <div class="col-md-4">
                             <div class="form-group-custom" style="margin-bottom:0;">
                                 <label>Full Coil</label>
-                                <select class="form-control form-control-sm" id="i_full_coil">
+                                <select class="form-control form-control-sm" id="i_full_coil" onchange="autoCalculateItemPrice()">
                                     <option value="F">F: FULL COIL</option>
                                     <option value="N">N: NOT FULL COIL</option>
                                 </select>
@@ -758,7 +759,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                     </div>
                 </div>
 
-                <!-- กล่องที่ 2: 3 คอลัมน์หลัก (Production Spec, Unit Price, Order) ตาม S1 -->
+                <!-- กล่องที่ 2: 3 คอลัมน์หลัก -->
                 <div class="row">
                     <!-- Column 1: Specification Production & UOM Conversion -->
                     <div class="col-md-4">
@@ -771,10 +772,19 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                 <div class="col-md-6">
                                     <div class="form-group-custom">
                                         <label>Product ID</label>
-                                        <select class="form-control form-control-sm" id="i_product" onchange="on_change_product()">
+                                        <select class="form-control form-control-sm" id="i_product" onchange="on_change_product(true)">
                                             <?php foreach ($products as $pr): ?>
-                                                <option value="<?php echo htmlspecialchars($pr['PRODUCT_ID']); ?>">
-                                                    <?php echo htmlspecialchars($pr['PRODUCT_ID'] . ' : ' . $pr['PRODUCT_MODEL']); ?>
+                                                <?php 
+                                                    $pid = trim($pr['PRODUCT_ID']);
+                                                    $pmodel = trim($pr['PRODUCT_MODEL']);
+                                                    $val = ($pid === 'NC') ? "{$pid}|{$pmodel}" : $pid;
+                                                ?>
+                                                <option value="<?php echo htmlspecialchars($val); ?>" 
+                                                        data-pid="<?php echo htmlspecialchars($pid); ?>"
+                                                        data-model="<?php echo htmlspecialchars($pmodel); ?>"
+                                                        data-area="<?php echo (float)$pr['AREA_SIZE']; ?>"
+                                                        data-partno="<?php echo htmlspecialchars(trim($pr['CUSTOMER_PARTNO'])); ?>">
+                                                    <?php echo htmlspecialchars("{$pid} : {$pmodel}"); ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
@@ -782,7 +792,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group-custom">
-                                        <label>Product Model</label>
+                                        <label>Product Model (Area: <span id="lbl_area_size">0</span>)</label>
                                         <input type="text" class="form-control form-control-sm" id="i_prod_model" value="CIRCLE" readonly style="background:#00008b; color:#fff; font-weight:700;"/>
                                     </div>
                                 </div>
@@ -792,7 +802,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                 <div class="col-md-6">
                                     <div class="form-group-custom">
                                         <label>Alloy</label>
-                                        <select class="form-control form-control-sm" id="i_alloy" onchange="auto_gen_desc()">
+                                        <select class="form-control form-control-sm" id="i_alloy" onchange="auto_gen_desc(); autoCalculateItemPrice();">
                                             <?php foreach ($alloys as $a): ?>
                                                 <option value="<?php echo htmlspecialchars($a['ALLOY']); ?>"><?php echo htmlspecialchars($a['ALLOY']); ?></option>
                                             <?php endforeach; ?>
@@ -802,7 +812,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                 <div class="col-md-6">
                                     <div class="form-group-custom">
                                         <label>Temper</label>
-                                        <select class="form-control form-control-sm" id="i_temper" onchange="auto_gen_desc()">
+                                        <select class="form-control form-control-sm" id="i_temper" onchange="auto_gen_desc(); autoCalculateItemPrice();">
                                             <?php foreach ($tempers as $t): ?>
                                                 <option value="<?php echo htmlspecialchars($t['TEMPER']); ?>"><?php echo htmlspecialchars($t['TEMPER']); ?></option>
                                             <?php endforeach; ?>
@@ -815,7 +825,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                 <div class="col-md-6">
                                     <div class="form-group-custom">
                                         <label>Surface Grade (SG)</label>
-                                        <select class="form-control form-control-sm" id="i_sg">
+                                        <select class="form-control form-control-sm" id="i_sg" onchange="autoCalculateItemPrice()">
                                             <?php foreach ($sgs as $sg): ?>
                                                 <option value="<?php echo htmlspecialchars($sg['SURFACE_GRADE']); ?>"><?php echo htmlspecialchars($sg['SURFACE_GRADE']); ?></option>
                                             <?php endforeach; ?>
@@ -825,7 +835,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                 <div class="col-md-6">
                                     <div class="form-group-custom">
                                         <label>Metallurgical Grade (MG)</label>
-                                        <select class="form-control form-control-sm" id="i_mg">
+                                        <select class="form-control form-control-sm" id="i_mg" onchange="autoCalculateItemPrice()">
                                             <?php foreach ($mgs as $mg): ?>
                                                 <option value="<?php echo htmlspecialchars($mg['METALLURGICAL_GRADE']); ?>"><?php echo htmlspecialchars($mg['METALLURGICAL_GRADE']); ?></option>
                                             <?php endforeach; ?>
@@ -838,13 +848,13 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                 <div class="col-md-6">
                                     <div class="form-group-custom">
                                         <label>Thickness (mm)</label>
-                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_thickness" value="2.800" oninput="sync_metric_to_dim2(); calculate_item_weight(); auto_gen_desc();"/>
+                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_thickness" value="2.800" oninput="sync_metric_to_dim2(); calculate_item_weight(); auto_gen_desc();" onchange="autoCalculateItemPrice()"/>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group-custom">
                                         <label>Width (mm)</label>
-                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_width" value="290.000" oninput="sync_metric_to_dim2(); calculate_item_weight(); auto_gen_desc();"/>
+                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_width" value="290.000" oninput="sync_metric_to_dim2(); calculate_item_weight(); auto_gen_desc();" onchange="autoCalculateItemPrice()"/>
                                     </div>
                                 </div>
                             </div>
@@ -853,7 +863,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                 <div class="col-md-6">
                                     <div class="form-group-custom">
                                         <label>Length (mm)</label>
-                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_length" value="0.000" oninput="sync_metric_to_dim2(); calculate_item_weight(); auto_gen_desc();"/>
+                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_length" value="0.000" oninput="sync_metric_to_dim2(); calculate_item_weight(); auto_gen_desc();" onchange="autoCalculateItemPrice()"/>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -869,15 +879,15 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                 <div class="uom-group-title">For Different UOM of Dimension</div>
                                 <div class="row">
                                     <div class="col-md-6" style="padding-right:4px;">
-                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_ct2u_thk" placeholder="Thk" oninput="sync_dim2_to_metric()"/>
+                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_ct2u_thk" placeholder="Thk" oninput="sync_dim2_to_metric()" onchange="autoCalculateItemPrice()"/>
                                     </div>
                                     <div class="col-md-6" style="padding-left:4px;">
-                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_ct2u_wd" placeholder="Width" oninput="sync_dim2_to_metric()"/>
+                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_ct2u_wd" placeholder="Width" oninput="sync_dim2_to_metric()" onchange="autoCalculateItemPrice()"/>
                                     </div>
                                 </div>
                                 <div class="row" style="margin-top:4px;">
                                     <div class="col-md-7" style="padding-right:4px;">
-                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_ct2u_len" placeholder="Length" oninput="sync_dim2_to_metric()"/>
+                                        <input type="number" step="0.001" class="form-control form-control-sm" id="i_ct2u_len" placeholder="Length" oninput="sync_dim2_to_metric()" onchange="autoCalculateItemPrice()"/>
                                     </div>
                                     <div class="col-md-5" style="padding-left:4px;">
                                         <select class="form-control form-control-sm" id="i_ct2u_uom_dim" onchange="sync_metric_to_dim2()">
@@ -893,7 +903,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                 <div class="uom-group-title">For Different UOM of Weight</div>
                                 <div class="row">
                                     <div class="col-md-4" style="padding-right:3px;">
-                                        <input type="number" step="1" class="form-control form-control-sm" id="i_ct2u_order_wt" placeholder="Weight" oninput="sync_wt2_to_wt()"/>
+                                        <input type="number" step="1" class="form-control form-control-sm" id="i_ct2u_order_wt" placeholder="Weight" oninput="sync_wt2_to_wt()" onchange="autoCalculateItemPrice()"/>
                                     </div>
                                     <div class="col-md-4" style="padding-left:3px; padding-right:3px;">
                                         <input type="number" step="1" class="form-control form-control-sm" id="i_ct2u_order_pc" placeholder="Pieces" readonly style="background:#f8fafc;"/>
@@ -910,7 +920,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                         </div>
                     </div>
 
-                    <!-- Column 2: Unit Price (LME & MJP Spec for Item) -->
+                    <!-- Column 2: Unit Price -->
                     <div class="col-md-4">
                         <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; height:100%;">
                             <div style="font-weight:800; font-size:11px; color:#15803d; text-transform:uppercase; margin-bottom:8px; border-bottom:1px solid #dcfce7; padding-bottom:3px;">
@@ -921,7 +931,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                 <label>Actual Price</label>
                                 <div style="display:flex; gap:6px;">
                                     <input type="number" step="0.0001" class="form-control form-control-sm" id="i_price" value="0.0000" oninput="calculate_item_amount()" style="font-weight:700;"/>
-                                    <button type="button" class="btn btn-xs btn-default" onclick="calc_price_from_backend()" title="Calculate Price from S1 Logic">
+                                    <button type="button" class="btn btn-xs btn-default" onclick="calc_price_from_backend(true)" title="Calculate Price from S1 Logic">
                                         ⚙️ Calc
                                     </button>
                                 </div>
@@ -998,7 +1008,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                         </div>
                     </div>
 
-                    <!-- Column 3: Order (Weights, Tolerances, Reject/Replace, S1 Labels) -->
+                    <!-- Column 3: Order -->
                     <div class="col-md-4">
                         <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; height:100%;">
                             <div style="font-weight:800; font-size:11px; color:#1d4ed8; text-transform:uppercase; margin-bottom:8px; border-bottom:1px solid #dbeafe; padding-bottom:3px;">
@@ -1016,30 +1026,30 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                     <div class="form-group-custom">
                                         <label>Max - Min Tolerance (%)</label>
                                         <div style="display:flex; gap:4px;">
-                                            <input type="number" class="form-control form-control-sm" id="i_maxtol" value="0" placeholder="Max" oninput="update_s1_calculated_totals()"/>
-                                            <input type="number" class="form-control form-control-sm" id="i_mintol" value="0" placeholder="Min" oninput="update_s1_calculated_totals()"/>
+                                            <input type="number" class="form-control form-control-sm" id="i_maxtol" value="0" placeholder="Max" oninput="update_s1_calculated_totals()" onchange="autoCalculateItemPrice()"/>
+                                            <input type="number" class="form-control form-control-sm" id="i_mintol" value="0" placeholder="Min" oninput="update_s1_calculated_totals()" onchange="autoCalculateItemPrice()"/>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Order Qty (Wt - Pc) -->
+                            <!-- Order Qty -->
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group-custom">
                                         <label>Order Wt (kg)</label>
-                                        <input type="number" step="1" class="form-control form-control-sm" id="i_weight" value="0" oninput="sync_wt_to_wt2(); calculate_item_pcs_from_wt();"/>
+                                        <input type="number" step="1" class="form-control form-control-sm" id="i_weight" value="0" oninput="sync_wt_to_wt2(); calculate_item_pcs_from_wt();" onchange="autoCalculateItemPrice()"/>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group-custom">
                                         <label>Order Pc</label>
-                                        <input type="number" step="1" class="form-control form-control-sm" id="i_pieces" value="0" oninput="sync_wt_to_wt2(); calculate_item_qty_from_pcs();"/>
+                                        <input type="number" step="1" class="form-control form-control-sm" id="i_pieces" value="0" oninput="sync_wt_to_wt2(); calculate_item_qty_from_pcs();" onchange="autoCalculateItemPrice()"/>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Reject Qty (Wt - Pc) -->
+                            <!-- Reject Qty -->
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group-custom">
@@ -1055,7 +1065,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                 </div>
                             </div>
 
-                            <!-- Replace Qty (Wt - Pc) -->
+                            <!-- Replace Qty -->
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group-custom">
@@ -1071,7 +1081,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                                 </div>
                             </div>
 
-                            <!-- S1 Calculated Labels: Maximum / Total / Minimum Order Qty -->
+                            <!-- S1 Calculated Labels -->
                             <div style="background:#00008b; color:#ffffff; border-radius:6px; padding:6px 10px; margin-top:4px;">
                                 <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:2px;">
                                     <span>Max Order Qty:</span>
@@ -1091,7 +1101,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
                     </div>
                 </div>
 
-                <!-- กล่องที่ 3: Description, Remark & Special Label (4 ช่อง) ตาม S1 -->
+                <!-- กล่องที่ 3: Description, Remark & Special Label -->
                 <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; margin-top:12px;">
                     <div class="form-group-custom">
                         <label>Description</label>
@@ -1139,6 +1149,7 @@ var orderItems = [];
 var cur_stdv = 0.00;
 var cur_factor = 0.00;
 var cur_stdxfactor = 0.00;
+var currentAreaSize = 0.0;
 
 $(document).ready(function() {
     <?php if ($is_edit_mode): ?>
@@ -1341,7 +1352,6 @@ function on_change_mjp() {
     });
 }
 
-// Event LME & MJP ภายใน Item Modal
 function on_change_item_lme() {
     var cid = document.getElementById("h_customer").value.trim().toUpperCase();
     if (cid.substring(0, 3) === 'MIL') return;
@@ -1393,46 +1403,243 @@ function on_change_item_mjp() {
     });
 }
 
-function on_change_product() {
-    var prod = document.getElementById("i_product").value;
+// =========================================================================
+// เงื่อนไข S1: การจัดการ Price Period และตาราง PRICMSTR1
+// =========================================================================
+function validatePricePeriodConsistency() {
+    var cat = document.getElementById("h_order_cat").value.substring(0, 4);
+    var cid = document.getElementById("h_customer").value.trim().toUpperCase();
+    var matIn = document.getElementById("i_mat_in").value;
+    var coilFrom = document.getElementById("i_coil_from").value.trim().toUpperCase();
+    var period = document.getElementById("i_price_period").value.trim();
+
+    if (cat === 'ORDR') {
+        if (matIn === 'BOI-IMP1' || matIn === 'BOI-IMP2') {
+            alert("ข้อมูล Material In กับ Order Category ไม่สอดคล้องกัน ระบบจะปรับเปลี่ยน Material In เป็น BOI-MAT1 ให้ถูกต้อง");
+            document.getElementById("i_mat_in").value = 'BOI-MAT1';
+            matIn = 'BOI-MAT1';
+            if (coilFrom !== 'MAT') {
+                document.getElementById("i_coil_from").value = 'MAT';
+            }
+        } else if (matIn === 'NONE-BOI') {
+            if (cid.substring(0, 3) === 'MIL' && period !== '' && period.length >= 9) {
+                var suffix = parseInt(period.substring(7, 9), 10);
+                if (!isNaN(suffix) && suffix < 50) {
+                    alert("ข้อมูล Material In (NONE-BOI) กับ Order Category กับ Price Period ไม่สอดคล้องกัน (เลขงวดราคาควร >= 50) กรุณาตรวจสอบ");
+                }
+            }
+        } else if (['BOI-MAT1', 'BOI-MAT2', 'BOI-GRS1'].includes(matIn)) {
+            if (cid.substring(0, 3) === 'MIL' && period !== '' && period.length >= 9) {
+                var suffix = parseInt(period.substring(7, 9), 10);
+                if (!isNaN(suffix) && suffix >= 50) {
+                    alert("ข้อมูล Material In กับ Order Category กับ Price Period ไม่สอดคล้องกัน (เลขงวดราคาควร < 50) กรุณาตรวจสอบ");
+                }
+            }
+            if (coilFrom !== 'MAT') {
+                alert("ข้อมูล Order Category กับ Material In กับ Coil From ไม่สอดคล้องกัน ระบบจะปรับ Coil From เป็น MAT");
+                document.getElementById("i_coil_from").value = 'MAT';
+            }
+        }
+    } else if (cat === 'ORD1' || cat === 'ORD2') {
+        var expectedMat = (cat === 'ORD1') ? 'BOI-IMP1' : 'BOI-IMP2';
+        if (matIn !== expectedMat) {
+            alert("ข้อมูล Material In กับ Order Category ไม่สอดคล้องกัน ระบบจะปรับเปลี่ยน Material In เป็น " + expectedMat);
+            document.getElementById("i_mat_in").value = expectedMat;
+        }
+        if (coilFrom === 'MAT') {
+            alert("ข้อมูล Order Category กับ Material In กับ Coil From ไม่สอดคล้องกัน ระบบจะปรับ Coil From เป็น MAL");
+            document.getElementById("i_coil_from").value = 'MAL';
+        }
+        if (cid.substring(0, 3) === 'MIL' && period !== '' && period.length >= 9) {
+            var suffix = parseInt(period.substring(7, 9), 10);
+            if (!isNaN(suffix) && suffix < 50) {
+                alert("ข้อมูล Material In กับ Order Category กับ Price Period ไม่สอดคล้องกัน (เลขงวดราคาควร >= 50) กรุณาตรวจสอบ");
+            }
+        }
+    } else if (cat === 'OVMI') {
+        if (!['BOI-MAT1', 'BOI-MAT2', 'BOI-GRS1'].includes(matIn)) {
+            alert("ข้อมูล Material In กับ Order Category ไม่สอดคล้องกัน ระบบจะปรับเปลี่ยน Material In เป็น BOI-MAT1");
+            document.getElementById("i_mat_in").value = 'BOI-MAT1';
+        }
+        if (coilFrom !== 'MAT') {
+            alert("ข้อมูล Order Category กับ Coil From ไม่สอดคล้องกัน ระบบจะปรับ Coil From เป็น MAT");
+            document.getElementById("i_coil_from").value = 'MAT';
+        }
+        if (cid.substring(0, 3) === 'MIL') {
+            if (period !== '' && period.length >= 9) {
+                var suffix = parseInt(period.substring(7, 9), 10);
+                if (!isNaN(suffix) && suffix >= 50) {
+                    alert("ข้อมูล Material In กับ Order Category กับ Price Period ไม่สอดคล้องกัน (เลขงวดราคาควร < 50) กรุณาตรวจสอบ");
+                }
+            }
+        } else {
+            alert("Order Category OVMI ต้องใช้กับลูกค้ากลุ่ม MIL เท่านั้น");
+        }
+    }
+}
+
+function on_change_item_podate() {
+    var cid = document.getElementById("h_customer").value.trim().toUpperCase();
+    var cat = document.getElementById("h_order_cat").value.substring(0, 4);
+    var period = document.getElementById("i_price_period").value;
+    var poDate = document.getElementById("i_podate").value;
+    var matIn = document.getElementById("i_mat_in").value;
+
+    // เงื่อนไข S1: เมื่อเปลี่ยน PO Date และ Price Period ยังว่าง (สำหรับลูกค้า MIL และไม่ใช่ ORSV) ให้ค้นหาจาก PRICMSTR1 อัตโนมัติ
+    if (period === '' && cid.substring(0, 3) === 'MIL' && cat !== 'ORSV' && poDate !== '') {
+        $.ajax({
+            url: 'model/so_service_mats.php',
+            type: 'GET',
+            data: { action: 'get_price_period_by_podate', cust_id: cid, mat_in: matIn, po_date: poDate },
+            dataType: 'json',
+            success: function(res) {
+                if (res.success && res.price_period) {
+                    document.getElementById("i_price_period").value = res.price_period;
+                    autoCalculateItemPrice();
+                } else {
+                    autoCalculateItemPrice();
+                }
+            }
+        });
+    } else {
+        autoCalculateItemPrice();
+    }
+}
+
+function on_change_price_period() {
+    validatePricePeriodConsistency();
+    autoCalculateItemPrice();
+}
+
+function on_change_item_mat_in() {
+    auto_gen_desc();
+    validatePricePeriodConsistency();
+}
+
+function on_change_item_coil_from() {
+    validatePricePeriodConsistency();
+    autoCalculateItemPrice();
+}
+
+// ฟังก์ชันคำนวณราคาอัตโนมัติตาม S1 เมื่อมีมิติ น้ำหนัก และ Price Period ครบถ้วน
+function autoCalculateItemPrice() {
+    var thk = parseFloat(document.getElementById("i_thickness").value) || 0;
+    var wd = parseFloat(document.getElementById("i_width").value) || 0;
+    var wt = parseFloat(document.getElementById("i_weight").value) || 0;
+    var period = document.getElementById("i_price_period").value;
+    var cat = document.getElementById("h_order_cat").value.substring(0, 4);
+
+    if (thk > 0 && wd > 0 && wt > 0 && period !== '' && cat !== 'ORSV') {
+        calc_price_from_backend(false);
+    }
+}
+
+// =========================================================================
+// ฟังก์ชันค้นหาข้อมูลจาก PRODMSTR1 เมื่อกรอก Customer Part No.
+// =========================================================================
+function on_change_customer_partno() {
+    var partNo = document.getElementById("i_cust_part").value.trim();
+    if (!partNo) return;
+
+    $.ajax({
+        url: 'model/so_service_mats.php',
+        type: 'GET',
+        data: { action: 'get_product_by_partno', part_no: partNo },
+        dataType: 'json',
+        success: function(res) {
+            if (res.success) {
+                var pid = res.product_id;
+                var pmodel = res.product_model;
+                var targetVal = (pid === 'NC') ? (pid + '|' + pmodel) : pid;
+
+                var prodSelect = document.getElementById("i_product");
+                for (var i = 0; i < prodSelect.options.length; i++) {
+                    if (prodSelect.options[i].value === targetVal || prodSelect.options[i].getAttribute('data-pid') === pid) {
+                        prodSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+
+                document.getElementById("i_prod_model").value = pmodel;
+                currentAreaSize = parseFloat(res.area_size || 0);
+                document.getElementById("lbl_area_size").innerText = currentAreaSize;
+
+                on_change_product(false);
+            }
+        }
+    });
+}
+
+function on_change_product(is_manual_change) {
+    var prodSelect = document.getElementById("i_product");
+    var selectedOpt = prodSelect.options[prodSelect.selectedIndex];
+    var pid = selectedOpt ? selectedOpt.getAttribute('data-pid') : prodSelect.value;
+    var pmodel = selectedOpt ? selectedOpt.getAttribute('data-model') : '';
+    var optArea = selectedOpt ? parseFloat(selectedOpt.getAttribute('data-area') || 0) : 0;
+    var optPartNo = selectedOpt ? (selectedOpt.getAttribute('data-partno') || '') : '';
+
     var lenField = document.getElementById("i_length");
     var lenCtField = document.getElementById("i_ct2u_len");
     var prodModelField = document.getElementById("i_prod_model");
     var maxtol = document.getElementById("i_maxtol");
     var mintol = document.getElementById("i_mintol");
 
-    if (prod === 'CO') {
+    if (pid === 'CO') {
         prodModelField.value = "COIL";
+        currentAreaSize = 0;
         lenField.value = "0.000";
         lenCtField.value = "0.000";
         lenField.disabled = true;
         lenCtField.disabled = true;
         maxtol.disabled = true;
         mintol.disabled = true;
-    } else if (prod === 'CC') {
+    } else if (pid === 'CC') {
         prodModelField.value = "CIRCLE";
+        currentAreaSize = 0;
         lenField.value = "0.000";
         lenCtField.value = "0.000";
         lenField.disabled = true;
         lenCtField.disabled = true;
         maxtol.disabled = false;
         mintol.disabled = false;
-    } else if (prod === 'SH') {
+    } else if (pid === 'SH') {
         prodModelField.value = "SHEET";
+        currentAreaSize = 0;
         lenField.disabled = false;
         lenCtField.disabled = false;
         maxtol.disabled = false;
         mintol.disabled = false;
+    } else if (pid === 'NC') {
+        prodModelField.value = pmodel;
+        if (is_manual_change) {
+            currentAreaSize = optArea;
+        }
+        lenField.disabled = false;
+        lenCtField.disabled = false;
+        maxtol.disabled = false;
+        mintol.disabled = false;
+
+        var cid = document.getElementById("h_customer").value.trim().toUpperCase();
+        var custPart = document.getElementById("i_cust_part").value.trim();
+        if (is_manual_change && cid.substring(0, 3) === 'MIL' && optPartNo !== '' && custPart !== optPartNo) {
+            alert("Customer Part No.: '" + custPart + "' does not match PRODMSTR1: '" + optPartNo + "'");
+            document.getElementById("i_cust_part").focus();
+        }
     } else {
-        prodModelField.value = prod;
+        prodModelField.value = pmodel || pid;
+        currentAreaSize = 0;
         lenField.disabled = false;
         lenCtField.disabled = false;
         maxtol.disabled = false;
         mintol.disabled = false;
     }
 
+    document.getElementById("lbl_area_size").innerText = currentAreaSize;
     calculate_item_weight();
     auto_gen_desc();
+    if (is_manual_change) {
+        autoCalculateItemPrice();
+    }
 }
 
 function load_existing_so(sono) {
@@ -1475,7 +1682,6 @@ function load_existing_so(sono) {
                 document.getElementById("h_remark2").value = h.CTM1_REMARK2 || '';
                 document.getElementById("h_remark3").value = h.CTM1_REMARK3 || '';
 
-                // Checkboxes
                 document.getElementById("h_chk_wholeweight").checked = (h.CTM1_WHOLEWEIGHT == 1);
                 document.getElementById("h_chk_markskid").checked = (h.CTM1_MARKSKID == 1);
                 document.getElementById("h_chk_serialcode").checked = (h.CTM1_SERIALCODE == 1);
@@ -1518,8 +1724,11 @@ function render_items_grid() {
 
     if (orderItems.length > 0) {
         orderItems.forEach(function(it, idx) {
-            var amt = parseFloat(it.AMOUNT || (it.CTM2_ORDERWEIGHT * it.CTM2_ACTUALPRICE) || 0);
-            total_amount += amt;
+            //var amt = parseFloat(it.AMOUNT || (it.CTM2_ORDERWEIGHT * it.CTM2_ACTUALPRICE) || 0);
+            //total_amount += amt;
+            var base_wt = (it.CT2U_ORDERWEIGHT !== undefined && it.CT2U_ORDERWEIGHT !== null) ? it.CT2U_ORDERWEIGHT : it.CTM2_ORDERWEIGHT;
+            var amt = parseFloat(it.AMOUNT || (base_wt * it.CTM2_ACTUALPRICE) || 0);
+            total_amount += amt;            
 
             tbody += '<tr>' +
                      '<td align="center"><b>' + it.SALEORDER_ITEM + '</b></td>' +
@@ -1620,7 +1829,6 @@ function sync_wt2_to_wt() {
     calculate_item_pcs_from_wt();
 }
 
-// เปิดหน้าต่าง Modal เพื่อเพิ่ม Item พร้อมสืบทอดค่าเริ่มต้นจาก Header เหมือน S1
 function open_item_modal() {
     document.getElementById("edit_index").value = "-1";
     document.getElementById("item_modal_action_title").innerText = "Add";
@@ -1629,8 +1837,10 @@ function open_item_modal() {
     document.getElementById("i_item_no").value = next_no;
     document.getElementById("i_status").value = "OP";
     document.getElementById("i_poitem").value = next_no;
+    document.getElementById("i_cust_part").value = "";
+    document.getElementById("i_price_period").value = "";
+    currentAreaSize = 0;
 
-    // สืบทอดค่าจาก Header ตาม S1
     document.getElementById("i_pono").value = document.getElementById("h_po_no").value;
     document.getElementById("i_cust_order").value = document.getElementById("h_cust_order").value;
     document.getElementById("i_cust_so").value = document.getElementById("h_cust_so").value;
@@ -1657,16 +1867,12 @@ function open_item_modal() {
     document.getElementById("i_mjpdate").disabled = is_mil;
     document.getElementById("i_mjpprice").disabled = is_mil;
 
-    document.getElementById("i_special_label1").value = document.getElementById("i_special_label1").value;
-    document.getElementById("i_special_label2").value = document.getElementById("i_special_label2").value;
-    document.getElementById("i_special_label3").value = document.getElementById("i_special_label3").value;
-    document.getElementById("i_special_label4").value = document.getElementById("i_special_label4").value;
-
     $('#itemEditModal').modal('show');
-    on_change_product();
+    on_change_product(true);
     sync_metric_to_dim2();
     sync_wt_to_wt2();
     update_s1_calculated_totals();
+    on_change_item_podate();
 }
 
 function edit_item(idx) {
@@ -1688,15 +1894,25 @@ function edit_item(idx) {
     document.getElementById("i_endcust_po").value = it.CTM2_ENDCUSTOMERPO || '';
 
     if (it.CTM2_PODATE) document.getElementById("i_podate").value = it.CTM2_PODATE.substring(0, 10);
-    document.getElementById("i_price_period").value = it.PRICE_PERIOD || '';
+    document.getElementById("i_price_period").value = (it.PRICE_PERIOD && it.PRICE_PERIOD !== 'NONE') ? it.PRICE_PERIOD : '';
     if (it.REQUEST_DATE) document.getElementById("i_req_date").value = it.REQUEST_DATE.substring(0, 10);
     if (it.CONFIRM_DATE) document.getElementById("i_conf_date").value = it.CONFIRM_DATE.substring(0, 10);
     document.getElementById("i_cust_part").value = it.CTM2_CUSTOMERPARTNO || '';
     document.getElementById("i_coil_from").value = it.COIL_FROM || 'MAT';
     document.getElementById("i_full_coil").value = it.FULL_COIL || 'F';
 
-    document.getElementById("i_product").value = it.PRODUCT_ID;
+    var targetVal = (it.PRODUCT_ID === 'NC' && it.PRODUCT_MODEL) ? (it.PRODUCT_ID + '|' + it.PRODUCT_MODEL) : it.PRODUCT_ID;
+    var prodSelect = document.getElementById("i_product");
+    for (var i = 0; i < prodSelect.options.length; i++) {
+        if (prodSelect.options[i].value === targetVal || prodSelect.options[i].getAttribute('data-pid') === it.PRODUCT_ID) {
+            prodSelect.selectedIndex = i;
+            break;
+        }
+    }
     document.getElementById("i_prod_model").value = it.PRODUCT_MODEL || '';
+    currentAreaSize = parseFloat(it.AREA_SIZE || 0);
+    document.getElementById("lbl_area_size").innerText = currentAreaSize;
+
     document.getElementById("i_alloy").value = it.ALLOY;
     document.getElementById("i_temper").value = it.TEMPER;
     document.getElementById("i_sg").value = it.SURFACE_GRADE || 'SG3';
@@ -1753,7 +1969,7 @@ function edit_item(idx) {
     document.getElementById("i_mjpprice").disabled = is_mil;
 
     $('#itemEditModal').modal('show');
-    on_change_product();
+    on_change_product(false);
     update_s1_calculated_totals();
 }
 
@@ -1767,7 +1983,6 @@ function delete_item(idx) {
     }
 }
 
-// สูตรคำนวณแถบสีน้ำเงิน Max/Total/Min Order Qty (ตาม S1 VerifyValue)
 function update_s1_calculated_totals() {
     var order_wt = parseFloat(document.getElementById("i_weight").value) || 0;
     var order_pc = parseInt(document.getElementById("i_pieces").value) || 0;
@@ -1796,10 +2011,19 @@ function update_s1_calculated_totals() {
 }
 
 function confirm_item_modal() {
-    var idx = parseInt(document.getElementById("edit_index").value);
-    var wt  = parseFloat(document.getElementById("i_weight").value) || 0;
-    var prc = parseFloat(document.getElementById("i_price").value) || 0;
-    var amt = wt * prc;
+    //var idx = parseInt(document.getElementById("edit_index").value);
+    //var wt  = parseFloat(document.getElementById("i_weight").value) || 0;
+    //var prc = parseFloat(document.getElementById("i_price").value) || 0;
+    //var amt = wt * prc;
+    var idx     = parseInt(document.getElementById("edit_index").value);
+    var wt      = parseFloat(document.getElementById("i_weight").value) || 0;
+    var ct2u_wt = parseFloat(document.getElementById("i_ct2u_order_wt").value) || wt;
+    var prc     = parseFloat(document.getElementById("i_price").value) || 0;
+    var amt     = Math.round((ct2u_wt * prc) * 100) / 100; // ปัดเศษ 2 ตำแหน่งตาม S1
+
+    var prodSelect = document.getElementById("i_product");
+    var selectedOpt = prodSelect.options[prodSelect.selectedIndex];
+    var pid = selectedOpt ? selectedOpt.getAttribute('data-pid') : prodSelect.value;
 
     var itemData = {
         SALEORDER_ITEM: document.getElementById("i_item_no").value,
@@ -1819,8 +2043,9 @@ function confirm_item_modal() {
         COIL_FROM: document.getElementById("i_coil_from").value,
         FULL_COIL: document.getElementById("i_full_coil").value,
 
-        PRODUCT_ID: document.getElementById("i_product").value,
+        PRODUCT_ID: pid,
         PRODUCT_MODEL: document.getElementById("i_prod_model").value,
+        AREA_SIZE: currentAreaSize,
         ALLOY: document.getElementById("i_alloy").value,
         TEMPER: document.getElementById("i_temper").value,
         SURFACE_GRADE: document.getElementById("i_sg").value,
@@ -1881,16 +2106,25 @@ function confirm_item_modal() {
 }
 
 function calculate_item_weight() {
-    var prod = document.getElementById("i_product").value;
+    var prodSelect = document.getElementById("i_product");
+    var selectedOpt = prodSelect.options[prodSelect.selectedIndex];
+    var pid = selectedOpt ? selectedOpt.getAttribute('data-pid') : prodSelect.value;
+
     var t = parseFloat(document.getElementById("i_thickness").value) || 0;
     var w = parseFloat(document.getElementById("i_width").value) || 0;
     var l = parseFloat(document.getElementById("i_length").value) || 0;
     var wp = 0;
 
-    if (prod === 'CC' && t > 0 && w > 0) {
+    if (pid === 'CC' && t > 0 && w > 0) {
         wp = (Math.PI / 4) * Math.pow(w, 2) * t * 0.00000271;
-    } else if ((prod === 'SH' || prod === 'NC') && t > 0 && w > 0 && l > 0) {
+    } else if (pid === 'SH' && t > 0 && w > 0 && l > 0) {
         wp = w * l * t * 0.00000271;
+    } else if (pid === 'NC' && t > 0) {
+        if (currentAreaSize > 0) {
+            wp = currentAreaSize * t * 0.00000271;
+        } else if (w > 0 && l > 0) {
+            wp = w * l * t * 0.00000271;
+        }
     }
 
     document.getElementById("i_wt_piece").value = wp.toFixed(4);
@@ -1929,14 +2163,18 @@ function calculate_item_qty_from_pcs() {
     update_s1_calculated_totals();
 }
 
+// 1. แก้ไขฟังก์ชัน calculate_item_amount()
 function calculate_item_amount() {
-    var wt  = parseFloat(document.getElementById("i_weight").value) || 0;
-    var prc = parseFloat(document.getElementById("i_price").value) || 0;
-    document.getElementById("i_amount").value = (wt * prc).toFixed(2);
+    var ct2u_wt = parseFloat(document.getElementById("i_ct2u_order_wt").value) || 0;
+    var prc     = parseFloat(document.getElementById("i_price").value) || 0;
+    document.getElementById("i_amount").value = (ct2u_wt * prc).toFixed(2);
 }
 
 function auto_gen_desc() {
-    var prod = document.getElementById("i_product").value;
+    var prodSelect = document.getElementById("i_product");
+    var selectedOpt = prodSelect.options[prodSelect.selectedIndex];
+    var pid = selectedOpt ? selectedOpt.getAttribute('data-pid') : prodSelect.value;
+
     var alloy = document.getElementById("i_alloy").value;
     var temper = document.getElementById("i_temper").value;
     var mat_in = document.getElementById("i_mat_in").value;
@@ -1948,21 +2186,35 @@ function auto_gen_desc() {
 
     var dc_tag = (mat_in === 'BOI-IMP1') ? ' DC ALLOY' : '';
     var name = 'ALUMINIUM ';
-    if (prod === 'CC') name += 'CIRCLES' + dc_tag;
-    else if (prod === 'SH' || prod === 'NC') name += 'SHEETS' + dc_tag;
+    if (pid === 'CC') name += 'CIRCLES' + dc_tag;
+    else if (pid === 'SH' || pid === 'NC') name += 'SHEETS' + dc_tag;
     else name += 'COILS' + dc_tag;
 
     var dim = t.toFixed(3) + ' x ' + w.toFixed(3) + (l > 0 ? ' x ' + l.toFixed(3) : '') + ' ' + uom_dim;
     document.getElementById("i_desc").value = name + ' ' + alloy + '-' + temper + ' ' + dim;
 }
 
-function calc_price_from_backend() {
+// =========================================================================
+// คำนวณราคาจาก PRICMSTR1 - 12 และอัปเดตค่า Exchange Rate, LME, MJP ตาม S1
+// =========================================================================
+function calc_price_from_backend(show_alert) {
     var period = document.getElementById("i_price_period").value;
     var cid    = document.getElementById("h_customer").value;
+    var pono   = document.getElementById("i_pono").value || document.getElementById("h_po_no").value;
+
     if (!period || !cid) {
-        alert("Please specify Customer and Price Period first.");
+        if (show_alert) alert("Please specify Customer and Price Period first.");
         return;
     }
+
+    if (!pono) {
+        if (show_alert) alert("Please enter Purchase Order No. (PO No) before calculating price.");
+        return;
+    }
+
+    var prodSelect = document.getElementById("i_product");
+    var selectedOpt = prodSelect.options[prodSelect.selectedIndex];
+    var pid = selectedOpt ? selectedOpt.getAttribute('data-pid') : prodSelect.value;
 
     var params = {
         action: 'calculate_price',
@@ -1970,8 +2222,8 @@ function calc_price_from_backend() {
         coil_from: document.getElementById("i_coil_from").value,
         cust_id: cid,
         sono: document.getElementById("h_so_no").value,
-        pono: document.getElementById("h_po_no").value,
-        product_id: document.getElementById("i_product").value,
+        pono: pono,
+        product_id: pid,
         alloy: document.getElementById("i_alloy").value,
         temper: document.getElementById("i_temper").value,
         sg: document.getElementById("i_sg").value,
@@ -1992,13 +2244,26 @@ function calc_price_from_backend() {
         success: function(res) {
             if (res.success) {
                 document.getElementById("i_price").value = parseFloat(res.actual_price).toFixed(4);
+                
+                // อัปเดต Exchange Rate, Order LME (พร้อมล็อกช่อง) และ MJP Price ตามเงื่อนไข S1
+                if (res.exchange_rate !== undefined) {
+                    document.getElementById("h_exrate").value = parseFloat(res.exchange_rate).toFixed(5);
+                }
+                if (res.order_lme !== undefined) {
+                    document.getElementById("i_orderlme").value = parseFloat(res.order_lme).toFixed(2);
+                    document.getElementById("i_orderlme").disabled = true;
+                }
+                if (res.ingot_premium !== undefined) {
+                    document.getElementById("i_mjpprice").value = parseFloat(res.ingot_premium).toFixed(2);
+                }
+
                 calculate_item_amount();
             } else {
-                alert("Pricing notice: " + res.message);
+                if (show_alert) alert("Pricing notice: " + res.message);
             }
         },
         error: function() {
-            alert("Pricing calculation service error.");
+            if (show_alert) alert("Pricing calculation service error.");
         }
     });
 }
@@ -2014,7 +2279,8 @@ function delete_current_so() {
     $.ajax({
         url: 'model/so_service_mats.php?action=delete_sales_order',
         type: 'POST',
-        data: { sono: sono, force_delete: 1 },
+        //data: { sono: sono, force_delete: 1 },
+        data: { sono: sono }, // เอา force_delete: 1 ออกเพื่อให้ Backend ตรวจสอบความปลอดภัย
         dataType: 'json',
         success: function(res) {
             if (res.success) {
@@ -2030,7 +2296,15 @@ function delete_current_so() {
     });
 }
 
+// 2. เพิ่มตัวแปรป้องกันการกดซ้ำไว้ด้านบนสุดของ <script>
+var isSaving = false;
+
 function save_entire_order() {
+    // ถ้ากำลังบันทึกอยู่ ให้หยุดทำงานทันที (ป้องกันการกดรัว/ดับเบิลคลิก)
+    if (isSaving) {
+        return;
+    }
+
     var cust = document.getElementById("h_customer").value;
     var pono = document.getElementById("h_po_no").value;
     var cat  = document.getElementById("h_order_cat").value;
@@ -2067,6 +2341,16 @@ function save_entire_order() {
             prefixElem.focus();
             return;
         }
+    }
+
+    // ล็อกปุ่มและเปลี่ยนสถานะก่อนส่ง AJAX
+    isSaving = true;
+    var btnSave = document.getElementById("btn_save_so");
+    var originalBtnText = btnSave ? btnSave.innerHTML : '';
+    if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.style.opacity = "0.6";
+        btnSave.innerHTML = "⏳ Saving...";
     }
 
     var raw_total_amount = parseFloat(document.getElementById("h_total_amount").value.replace(/,/g, '')) || 0;
@@ -2136,16 +2420,28 @@ function save_entire_order() {
         dataType: 'json',
         success: function(res) {
             if (res.success) {
+                // สำเร็จแล้วไม่ต้องปลดล็อกปุ่ม รอ Redirect ไปหน้า View ทันที
                 alert("Sales Order saved successfully! Number: " + res.so_no);
                 window.location.href = 'saleorder_view_mats.php?func=<?php echo $folder_func; ?>&sono=' + encodeURIComponent(res.so_no);
             } else {
                 alert("Save failed: " + res.message);
+                resetSaveButton(btnSave, originalBtnText);
             }
         },
         error: function() {
             alert("Server connection error during save.");
+            resetSaveButton(btnSave, originalBtnText);
         }
     });
+}
+
+function resetSaveButton(btn, text) {
+    isSaving = false;
+    if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.innerHTML = text;
+    }
 }
 </script>
 </html>

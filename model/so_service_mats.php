@@ -25,6 +25,14 @@ try {
             getLMERates($conn);
             break;
 
+        case 'get_product_by_partno':
+            getProductByPartNo($conn);
+            break;
+
+        case 'get_price_period_by_podate':
+            getPricePeriodByPODate($conn);
+            break;
+
         case 'calculate_price':
             calculatePriceAPI($conn);
             break;
@@ -56,7 +64,84 @@ function ensureDimensionMaster($conn, $table, $column, $value) {
     }
 }
 
-// 1. Get SO Details (ดึงฟิลด์ Item ทั้งหมดเพื่อแสดงใน Modal ได้ครบถ้วน)
+// =========================================================================
+// ดึงข้อมูลสินค้าจาก Customer Part No. (ตาราง PRODMSTR1 ตามเงื่อนไข S1)
+// =========================================================================
+function getProductByPartNo($conn) {
+    $part_no = isset($_GET['part_no']) ? trim($_GET['part_no']) : '';
+    if (empty($part_no)) {
+        echo json_encode(['success' => false, 'message' => 'Part No is empty.']);
+        return;
+    }
+
+    $sql = "SELECT TOP 1 PRODUCT_ID, PRODUCT_MODEL, AREA_SIZE, CUSTOMER_PARTNO 
+            FROM PRODMSTR1 
+            WHERE CUSTOMER_PARTNO = :part_no";
+    $stmt = $conn->prepare($sql);
+    $stmt->execute([':part_no' => $part_no]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($row) {
+        echo json_encode([
+            'success'         => true,
+            'product_id'      => trim($row['PRODUCT_ID'] ?? ''),
+            'product_model'   => trim($row['PRODUCT_MODEL'] ?? ''),
+            'area_size'       => (float)($row['AREA_SIZE'] ?? 0),
+            'customer_partno' => trim($row['CUSTOMER_PARTNO'] ?? '')
+        ]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Customer Part No not found in PRODMSTR1.']);
+    }
+}
+
+// =========================================================================
+// ค้นหา PRICE_PERIOD อัตโนมัติจากวันที่ PO (ตาราง PRICMSTR1 ตามเงื่อนไข S1)
+// =========================================================================
+function getPricePeriodByPODate($conn) {
+    $cust_id = isset($_GET['cust_id']) ? trim($_GET['cust_id']) : '';
+    $mat_in  = isset($_GET['mat_in']) ? trim($_GET['mat_in']) : '';
+    $po_date = isset($_GET['po_date']) ? trim($_GET['po_date']) : '';
+
+    if (empty($cust_id) || empty($po_date)) {
+        echo json_encode(['success' => false, 'message' => 'Customer ID and PO Date are required.']);
+        return;
+    }
+
+    $coil_from = in_array($mat_in, ['BOI-MAT1', 'BOI-MAT2', 'BOI-GRS1']) ? 'MAT' : 'MAL';
+
+    $sql = "SELECT TOP 1 PRICE_PERIOD 
+            FROM PRICMSTR1 
+            WHERE COIL_FROM = :cf 
+              AND CSTMSPPL_ID = :cust 
+              AND LIFETIME_FROM <= :po_date1 
+              AND LIFETIME_TO >= :po_date2
+            ORDER BY PRICE_PERIOD DESC";
+    $stmt = $conn->prepare($sql);
+    $stmt->execute([
+        ':cf'       => $coil_from,
+        ':cust'     => $cust_id,
+        ':po_date1' => $po_date,
+        ':po_date2' => $po_date
+    ]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($row && !empty($row['PRICE_PERIOD'])) {
+        echo json_encode([
+            'success'      => true,
+            'price_period' => trim($row['PRICE_PERIOD']),
+            'coil_from'    => $coil_from
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => "No Price Period found for PO Date: {$po_date} ({$coil_from})"
+        ]);
+    }
+}
+
+// =========================================================================
+// 1. Get SO Details
+// =========================================================================
 function getSODetails($conn) {
     $sono = isset($_GET['sono']) ? trim($_GET['sono']) : '';
     if (empty($sono)) {
@@ -109,14 +194,15 @@ function getSODetails($conn) {
     if (!empty($header['CTM1_LMEDATE'])) $header['CTM1_LMEDATE_FMT'] = date('d/m/Y', strtotime($header['CTM1_LMEDATE']));
     if (!empty($header['CTM1_MJPDATE'])) $header['CTM1_MJPDATE_FMT'] = date('d/m/Y', strtotime($header['CTM1_MJPDATE']));
 
-    $sql_d = "SELECT d.SALEORDER_ITEM, d.PRODUCT_ID, d.PRODUCT_MODEL, d.ALLOY, d.TEMPER, 
+    $sql_d = "SELECT d.SALEORDER_ITEM, d.PRODUCT_ID, d.PRODUCT_MODEL, d.AREA_SIZE, d.ALLOY, d.TEMPER, 
                      d.SURFACE_GRADE, d.METALLURGICAL_GRADE, d.THICKNESS, d.WIDTH, d.LENGTH, 
                      d.CTM2_UOMDIMENSION, d.CT2U_THICKNESS, d.CT2U_WIDTH, d.CT2U_LENGTH, d.CT2U_UOMDIMENSION,
                      d.WEIGHT_PIECE, d.CTM2_ORDERWEIGHT, d.CTM2_ORDERPIECE, d.CTM2_UOMWEIGHT,
                      d.CT2U_ORDERWEIGHT, d.CT2U_ORDERPIECE, d.CT2U_UOMWEIGHT,
                      d.CTM2_MAXTOLERANCE, d.CTM2_MINTOLERANCE,
                      d.CTM2_REJECTWEIGHT, d.CTM2_REJECTPIECE, d.CTM2_REPLACEWEIGHT, d.CTM2_REPLACEPIECE,
-                     d.CTM2_ACTUALPRICE, ROUND(d.CTM2_ORDERWEIGHT * d.CTM2_ACTUALPRICE, 2) AS AMOUNT,
+                     d.CTM2_ACTUALPRICE, 
+                     ROUND(ISNULL(d.CT2U_ORDERWEIGHT, d.CTM2_ORDERWEIGHT) * d.CTM2_ACTUALPRICE, 2) AS AMOUNT,
                      d.CTM2_DESCRIPTION, d.CTM2_REMARK, d.CTM2_STATUS, 
                      d.MATERIAL_IN, d.COIL_FROM, d.FULL_COIL, d.PRICE_PERIOD, d.CTM2_CUSTOMERPARTNO,
                      d.T5_TEMPERATURE, d.CTM2_PODATE, d.REQUEST_DATE, d.CONFIRM_DATE,
@@ -148,7 +234,9 @@ function getSODetails($conn) {
     ]);
 }
 
+// =========================================================================
 // 2. Customer Info
+// =========================================================================
 function getCustomerInfo($conn) {
     $cust_id = isset($_GET['cust_id']) ? trim($_GET['cust_id']) : '';
     if (empty($cust_id)) {
@@ -175,7 +263,9 @@ function getCustomerInfo($conn) {
     }
 }
 
+// =========================================================================
 // 3. LME and MJP Rates
+// =========================================================================
 function getLMERates($conn) {
     $lme_date = isset($_GET['date']) ? trim($_GET['date']) : '';
     $lme_type = isset($_GET['type']) ? trim($_GET['type']) : 'D-DAILY';
@@ -216,12 +306,15 @@ function getLMERates($conn) {
     }
 }
 
-// 4. Pricing Calculation
+// =========================================================================
+// 4. Pricing Calculation (PRICMSTR1 - PRICMSTR12 ตาม Logic S1)
+// =========================================================================
 function calculatePriceAPI($conn) {
     $period     = trim($_GET['price_period'] ?? '');
     $coil_from  = trim($_GET['coil_from'] ?? 'MAT');
     $cust_id    = trim($_GET['cust_id'] ?? '');
     $sono       = trim($_GET['sono'] ?? '');
+    $pono       = trim($_GET['pono'] ?? '');
     $product_id = trim($_GET['product_id'] ?? '');
     $alloy      = trim($_GET['alloy'] ?? '');
     $temper     = trim($_GET['temper'] ?? '');
@@ -290,7 +383,12 @@ function calculatePriceAPI($conn) {
 
     $actual_price = 0.0000;
     if (strpos($sono, 'SL-') === 0) {
-        $actual_price = round((($price1 + $total_prem) * $exchange_rate) / 1000, 4);
+        if (substr($pono, -1) === '9') {
+            $actual_price = round((($price1 + $total_prem) * $exchange_rate) / 1000, 4);
+        } else {
+            echo json_encode(['success' => false, 'message' => "Sale Order No. {$sono} is local order, but PO No. ({$pono}) last digit is not 9."]);
+            return;
+        }
     } else {
         $actual_price = round((($price2 + $total_prem) * $exchange_rate) / 1000, 4);
     }
@@ -311,7 +409,9 @@ function getVal($conn, $sql, $params) {
     return ($val !== false) ? (float)$val : 0.0;
 }
 
-// 5. Save Sales Order (บันทึกข้อมูลครบทุกคอลัมน์ของ CSTMORDR1 และ CSTMORDR2)
+// =========================================================================
+// 5. Save Sales Order
+// =========================================================================
 function saveSalesOrder($conn) {
     $raw_input = file_get_contents('php://input');
     $payload   = json_decode($raw_input, true);
@@ -342,7 +442,6 @@ function saveSalesOrder($conn) {
     $conn->beginTransaction();
 
     try {
-        // บันทึก Dimension Master
         foreach ($items as $it) {
             ensureDimensionMaster($conn, 'THCKMSTR1', 'THICKNESS', $it['THICKNESS'] ?? 0);
             ensureDimensionMaster($conn, 'DMWDMSTR1', 'WIDTH', $it['WIDTH'] ?? 0);
@@ -355,6 +454,44 @@ function saveSalesOrder($conn) {
         $is_new = empty($sono) || ($sono === '(Auto Generated on Save)');
 
         if ($is_new) {
+
+            // 1. ป้องกัน Request ซ้ำด้วย Token จากหน้าจอ (Idempotency)
+            $req_token = trim($h['REQUEST_TOKEN'] ?? '');
+            if (!empty($req_token) && isset($_SESSION['last_so_token']) && $_SESSION['last_so_token'] === $req_token) {
+                $conn->rollBack();
+                echo json_encode([
+                    'success' => true,
+                    'message' => "Sales Order already saved.",
+                    'so_no'   => $_SESSION['last_so_no']
+                ]);
+                return;
+            }
+
+            // 2. ป้องกันการกดเบิ้ลภายใน 15 วินาที (เช็ก User + Customer + PO No เดียวกัน)
+            $sql_dup = "SELECT TOP 1 SALEORDER_NO 
+                        FROM CSTMORDR1 WITH (UPDLOCK, HOLDLOCK)
+                        WHERE CSTMSPPL_ID = :cust 
+                          AND CTM1_PONO = :po 
+                          AND CTM1_OPERATOR1 = :usr
+                          AND DATEDIFF(SECOND, CTM1_OPERATEDATE, GETDATE()) <= 15
+                        ORDER BY CTM1_OPERATEDATE DESC";
+            $stmt_dup = $conn->prepare($sql_dup);
+            $stmt_dup->execute([
+                ':cust' => $h['CSTMSPPL_ID'],
+                ':po'   => $h['CTM1_PONO'],
+                ':usr'  => $user
+            ]);
+            $dup_so = $stmt_dup->fetchColumn();
+            if ($dup_so) {
+                $conn->rollBack();
+                echo json_encode([
+                    'success' => true,
+                    'message' => "Sales Order already created ({$dup_so}).",
+                    'so_no'   => trim($dup_so)
+                ]);
+                return;
+            }        
+
             $prefix = strtoupper(trim($h['SO_PREFIX'] ?? ''));
             if (strlen($prefix) !== 2) {
                 if ($order_cat === 'ORSP') $prefix = 'TT';
@@ -566,24 +703,46 @@ function saveSalesOrder($conn) {
             ]);
         }
 
-        // ลบ Items ที่ไม่อยู่ในฟอร์มออก
+        // ตรวจสอบความปลอดภัยก่อนลบ Items ที่ไม่อยู่ในฟอร์มออก
         $current_item_nos = array_column($items, 'SALEORDER_ITEM');
         if (!empty($current_item_nos)) {
             $placeholders = implode(',', array_fill(0, count($current_item_nos), '?'));
-            $conn->prepare("DELETE FROM INVCPRCS2 WHERE SALEORDER_NO = ? AND SALEORDER_ITEM NOT IN ($placeholders)")->execute(array_merge([$sono], $current_item_nos));
-            $conn->prepare("DELETE FROM INVCPRCS3 WHERE SALEORDER_NO = ? AND SALEORDER_ITEM NOT IN ($placeholders)")->execute(array_merge([$sono], $current_item_nos));
-            $conn->prepare("DELETE FROM PACKPROD1 WHERE SALEORDER_NO = ? AND SALEORDER_ITEM NOT IN ($placeholders)")->execute(array_merge([$sono], $current_item_nos));
-            $conn->prepare("DELETE FROM PRODSCHD1 WHERE SALEORDER_NO = ? AND SALEORDER_ITEM NOT IN ($placeholders)")->execute(array_merge([$sono], $current_item_nos));
-            $conn->prepare("DELETE FROM CSTMORDR2 WHERE SALEORDER_NO = ? AND SALEORDER_ITEM NOT IN ($placeholders)")->execute(array_merge([$sono], $current_item_nos));
+            $params_del = array_merge([$sono], $current_item_nos);
+
+            $chk_inv = $conn->prepare("SELECT COUNT(*) FROM INVCPRCS2 WHERE SALEORDER_NO = ? AND SALEORDER_ITEM NOT IN ($placeholders)");
+            $chk_inv->execute($params_del);
+            if ($chk_inv->fetchColumn() > 0) {
+                throw new Exception("ไม่สามารถลบรายการสินค้าบางรายการได้ เนื่องจากมีการออก Invoice (INVCPRCS2) ไปแล้ว");
+            }
+
+            $chk_job = $conn->prepare("SELECT COUNT(*) FROM JOBORDER1 WHERE SALEORDER_NO = ? AND SALEORDER_ITEM NOT IN ($placeholders)");
+            $chk_job->execute($params_del);
+            if ($chk_job->fetchColumn() > 0) {
+                throw new Exception("ไม่สามารถลบรายการสินค้าบางรายการได้ เนื่องจากมีการออกใบสั่งผลิต (JOBORDER1) ไปแล้ว");
+            }
+
+            $conn->prepare("DELETE FROM PACKPROD1 WHERE SALEORDER_NO = ? AND SALEORDER_ITEM NOT IN ($placeholders)")->execute($params_del);
+            $conn->prepare("DELETE FROM PRODSCHD1 WHERE SALEORDER_NO = ? AND SALEORDER_ITEM NOT IN ($placeholders)")->execute($params_del);
+            $conn->prepare("DELETE FROM CSTMORDR2 WHERE SALEORDER_NO = ? AND SALEORDER_ITEM NOT IN ($placeholders)")->execute($params_del);
         } else {
-            $conn->prepare("DELETE FROM INVCPRCS2 WHERE SALEORDER_NO = ?")->execute([$sono]);
-            $conn->prepare("DELETE FROM INVCPRCS3 WHERE SALEORDER_NO = ?")->execute([$sono]);
+            $chk_inv = $conn->prepare("SELECT COUNT(*) FROM INVCPRCS2 WHERE SALEORDER_NO = ?");
+            $chk_inv->execute([$sono]);
+            if ($chk_inv->fetchColumn() > 0) {
+                throw new Exception("ไม่สามารถลบรายการสินค้าทั้งหมดได้ เนื่องจาก SO นี้มีการออก Invoice ไปแล้ว");
+            }
+
+            $chk_job = $conn->prepare("SELECT COUNT(*) FROM JOBORDER1 WHERE SALEORDER_NO = ?");
+            $chk_job->execute([$sono]);
+            if ($chk_job->fetchColumn() > 0) {
+                throw new Exception("ไม่สามารถลบรายการสินค้าทั้งหมดได้ เนื่องจาก SO นี้มีการออกใบสั่งผลิตไปแล้ว");
+            }
+
             $conn->prepare("DELETE FROM PACKPROD1 WHERE SALEORDER_NO = ?")->execute([$sono]);
             $conn->prepare("DELETE FROM PRODSCHD1 WHERE SALEORDER_NO = ?")->execute([$sono]);
             $conn->prepare("DELETE FROM CSTMORDR2 WHERE SALEORDER_NO = ?")->execute([$sono]);
         }
 
-        // บันทึก/อัปเดตแต่ละ Item (บันทึกข้อมูลทุกฟิลด์ของ CSTMORDR2 ครบถ้วนตาม S1)
+        // บันทึก/อัปเดตแต่ละ Item
         foreach ($items as $it) {
             $so_item = trim($it['SALEORDER_ITEM']);
             $order_wt = (float)($it['CTM2_ORDERWEIGHT'] ?? 0);
@@ -591,10 +750,13 @@ function saveSalesOrder($conn) {
             $actual_price = (float)($it['CTM2_ACTUALPRICE'] ?? 0);
             $prod_id = trim($it['PRODUCT_ID'] ?? '');
             $prod_model = !empty($it['PRODUCT_MODEL']) ? trim($it['PRODUCT_MODEL']) : (($prod_id === 'CC') ? 'CIRCLE' : (($prod_id === 'SH') ? 'SHEET' : 'COIL'));
+            $area_size = ($prod_id === 'NC') ? (float)($it['AREA_SIZE'] ?? 0) : 0.0;
 
             $item_stdv        = (float)($it['CTM2_ORDERSTDV'] ?? 0);
             $item_factor      = (float)($it['CTM2_ORDERFACTOR'] ?? 0);
             $item_stdx_factor = (float)($it['CTM2_ORDERSTDXFACTOR'] ?? 0);
+            $item_status      = !empty($it['CTM2_STATUS']) ? strtoupper(trim($it['CTM2_STATUS'])) : 'OP';
+            $ct_uom_wt        = !empty($it['CT2U_UOMWEIGHT']) ? $it['CT2U_UOMWEIGHT'] : 'kg.';
 
             $chk = $conn->prepare("SELECT COUNT(*) FROM CSTMORDR2 WHERE SALEORDER_NO = ? AND SALEORDER_ITEM = ?");
             $chk->execute([$sono, $so_item]);
@@ -604,7 +766,7 @@ function saveSalesOrder($conn) {
                                 SALEORDER_NO, SALEORDER_ITEM, CSTMSPPL_ID, ORDER_CATEGORY, ORDER_TYPE,
                                 MATERIAL_IN, COIL_FROM, FULL_COIL, CTM2_PONO, CTM2_POITEM, CTM2_PODATE,
                                 CTM2_CUSTOMERORDER, CTM2_CUSTOMERSALEORDER, CTM2_ENDCUSTOMERNAME, CTM2_ENDCUSTOMERPO,
-                                PRICE_PERIOD, PRODUCT_ID, PRODUCT_MODEL, SUBCONTACT, ALLOY, TEMPER, 
+                                PRICE_PERIOD, PRODUCT_ID, PRODUCT_MODEL, AREA_SIZE, SUBCONTACT, ALLOY, TEMPER, 
                                 SURFACE_GRADE, METALLURGICAL_GRADE, T5_TEMPERATURE,
                                 THICKNESS, WIDTH, LENGTH, CTM2_UOMDIMENSION,
                                 CT2U_THICKNESS, CT2U_WIDTH, CT2U_LENGTH, CT2U_UOMDIMENSION,
@@ -623,7 +785,7 @@ function saveSalesOrder($conn) {
                                 :sono, :item, :cust, :cat, 'D',
                                 :mat_in, :coil_from, :full_coil, :pono, :poitem, :podate,
                                 :cust_order, :cust_so, :endcust_name, :endcust_po,
-                                :period, :prod, :model, :subcontact, :alloy, :temper,
+                                :period, :prod, :model, :area_size, :subcontact, :alloy, :temper,
                                 :sg, :mg, :t5,
                                 :thk, :wd, :len, 'mm.',
                                 :ct_thk, :ct_wd, :ct_len, :ct_dim,
@@ -658,6 +820,7 @@ function saveSalesOrder($conn) {
                     ':period'      => !empty($it['PRICE_PERIOD']) ? $it['PRICE_PERIOD'] : 'NONE',
                     ':prod'        => $prod_id,
                     ':model'       => $prod_model,
+                    ':area_size'   => $area_size,
                     ':subcontact'  => 'N',
                     ':alloy'       => $it['ALLOY'],
                     ':temper'      => $it['TEMPER'],
@@ -677,7 +840,7 @@ function saveSalesOrder($conn) {
                     ':part_no'     => $it['CTM2_CUSTOMERPARTNO'] ?? '',
                     ':ord_wt'      => $order_wt,
                     ':ord_pc'      => $order_pc,
-                    ':ct_uom_wt'   => $it['CT2U_UOMWEIGHT'] ?? 'lbs.',
+                    ':ct_uom_wt'   => $ct_uom_wt,
                     ':ct_wt'       => $it['CT2U_ORDERWEIGHT'] ?? $order_wt,
                     ':ct_pc'       => $it['CT2U_ORDERPIECE'] ?? $order_pc,
                     ':price'       => $actual_price,
@@ -705,7 +868,7 @@ function saveSalesOrder($conn) {
                     ':lbl2'        => $it['CTM2_SPECIALLABEL2'] ?? '',
                     ':lbl3'        => $it['CTM2_SPECIALLABEL3'] ?? '',
                     ':lbl4'        => $it['CTM2_SPECIALLABEL4'] ?? '',
-                    ':status'      => !empty($it['CTM2_STATUS']) ? $it['CTM2_STATUS'] : 'OP',
+                    ':status'      => $item_status,
                     ':user'        => $user,
                     ':opdate'      => date('Y-m-d H:i:s')
                 ]);
@@ -730,6 +893,7 @@ function saveSalesOrder($conn) {
                                 PRICE_PERIOD      = :period,
                                 PRODUCT_ID        = :prod,
                                 PRODUCT_MODEL     = :model,
+                                AREA_SIZE         = :area_size,
                                 ALLOY             = :alloy,
                                 TEMPER            = :temper,
                                 SURFACE_GRADE     = :sg,
@@ -780,7 +944,7 @@ function saveSalesOrder($conn) {
                 $stmt_d->execute([
                     ':cust'        => $h['CSTMSPPL_ID'],
                     ':cat'         => $h['ORDER_CATEGORY'],
-                    ':status'      => !empty($it['CTM2_STATUS']) ? $it['CTM2_STATUS'] : 'OP',
+                    ':status'      => $item_status,
                     ':pono'        => !empty($it['CTM2_PONO']) ? $it['CTM2_PONO'] : $h['CTM1_PONO'],
                     ':poitem'      => !empty($it['CTM2_POITEM']) ? $it['CTM2_POITEM'] : $so_item,
                     ':podate'      => !empty($it['CTM2_PODATE']) ? $it['CTM2_PODATE'] : $h['SALEORDER_DATE'],
@@ -797,6 +961,7 @@ function saveSalesOrder($conn) {
                     ':period'      => !empty($it['PRICE_PERIOD']) ? $it['PRICE_PERIOD'] : 'NONE',
                     ':prod'        => $prod_id,
                     ':model'       => $prod_model,
+                    ':area_size'   => $area_size,
                     ':alloy'       => $it['ALLOY'],
                     ':temper'      => $it['TEMPER'],
                     ':sg'          => $it['SURFACE_GRADE'] ?? 'SG3',
@@ -812,7 +977,7 @@ function saveSalesOrder($conn) {
                     ':wt_pc'       => $it['WEIGHT_PIECE'] ?? 0,
                     ':ord_wt'      => $order_wt,
                     ':ord_pc'      => $order_pc,
-                    ':ct_uom_wt'   => $it['CT2U_UOMWEIGHT'] ?? 'lbs.',
+                    ':ct_uom_wt'   => $ct_uom_wt,
                     ':ct_wt'       => $it['CT2U_ORDERWEIGHT'] ?? $order_wt,
                     ':ct_pc'       => $it['CT2U_ORDERPIECE'] ?? $order_pc,
                     ':price'       => $actual_price,
@@ -852,32 +1017,39 @@ function saveSalesOrder($conn) {
                             CUSTOMS_CODE = :cust_code, INV2_EXCHANGERATE = :ex, INV2_DEBITPRICE = :prc, 
                             INV2_PONO = :po, INV2_POITEM = :item, INV2_CUSTOMERORDER = :cust_ord,
                             INV2_CUSTOMERSALEORDER = :cust_so, INV2_ENDCUSTOMERNAME = :end_name,
+                            INV2_CUSTOMERPARTNO = :part_no, INV2_PLACEDESTINATION = :place_dest,
                             INV2_UOMDIMENSION = 'mm.', IN2U_UOMDIMENSION = :ct_dim, INV2_UOMWEIGHT = 'kg.', IN2U_UOMWEIGHT = :ct_uom_wt 
                             WHERE SALEORDER_NO = :so AND SALEORDER_ITEM = :it")
                  ->execute([
-                     ':cust_code' => $h['CUSTOMS_CODE'] ?? '',
-                     ':ex'        => $exrate,
-                     ':prc'       => $actual_price,
-                     ':po'        => !empty($it['CTM2_PONO']) ? $it['CTM2_PONO'] : $h['CTM1_PONO'],
-                     ':item'      => !empty($it['CTM2_POITEM']) ? $it['CTM2_POITEM'] : $so_item,
-                     ':cust_ord'  => !empty($it['CTM2_CUSTOMERORDER']) ? $it['CTM2_CUSTOMERORDER'] : ($h['CTM1_CUSTOMERORDER'] ?? ''),
-                     ':cust_so'   => !empty($it['CTM2_CUSTOMERSALEORDER']) ? $it['CTM2_CUSTOMERSALEORDER'] : ($h['CTM1_CUSTOMERSALEORDER'] ?? ''),
-                     ':end_name'  => !empty($it['CTM2_ENDCUSTOMERNAME']) ? $it['CTM2_ENDCUSTOMERNAME'] : ($h['CTM1_ENDCUSTOMERNAME'] ?? ''),
-                     ':ct_dim'    => $it['CT2U_UOMDIMENSION'] ?? 'inch',
-                     ':ct_uom_wt' => $it['CT2U_UOMWEIGHT'] ?? 'lbs.',
-                     ':so'        => $sono,
-                     ':it'        => $so_item
+                     ':cust_code'  => $h['CUSTOMS_CODE'] ?? '',
+                     ':ex'         => $exrate,
+                     ':prc'        => $actual_price,
+                     ':po'         => !empty($it['CTM2_PONO']) ? $it['CTM2_PONO'] : $h['CTM1_PONO'],
+                     ':item'       => !empty($it['CTM2_POITEM']) ? $it['CTM2_POITEM'] : $so_item,
+                     ':cust_ord'   => !empty($it['CTM2_CUSTOMERORDER']) ? $it['CTM2_CUSTOMERORDER'] : ($h['CTM1_CUSTOMERORDER'] ?? ''),
+                     ':cust_so'    => !empty($it['CTM2_CUSTOMERSALEORDER']) ? $it['CTM2_CUSTOMERSALEORDER'] : ($h['CTM1_CUSTOMERSALEORDER'] ?? ''),
+                     ':end_name'   => !empty($it['CTM2_ENDCUSTOMERNAME']) ? $it['CTM2_ENDCUSTOMERNAME'] : ($h['CTM1_ENDCUSTOMERNAME'] ?? ''),
+                     ':part_no'    => $it['CTM2_CUSTOMERPARTNO'] ?? '',
+                     ':place_dest' => $h['CTM1_PLACEDESTINATION'] ?? '',
+                     ':ct_dim'     => $it['CT2U_UOMDIMENSION'] ?? 'inch',
+                     ':ct_uom_wt'  => $ct_uom_wt,
+                     ':so'         => $sono,
+                     ':it'         => $so_item
                  ]);
 
             $conn->prepare("UPDATE INVCPRCS3 SET 
-                            INV3_DEBITPRICE = :prc, INV3_PONO = :po, INV3_POITEM = :item 
+                            INV3_CUSTOMERPARTNO = :part_no, INV3_DEBITPRICE = :prc, INV3_PONO = :po, INV3_POITEM = :item,
+                            INV3_UOMDIMENSION = 'mm.', IN3U_UOMDIMENSION = :ct_dim, INV3_UOMWEIGHT = 'kg.', IN3U_UOMWEIGHT = :ct_uom_wt
                             WHERE SALEORDER_NO = :so AND SALEORDER_ITEM = :it")
                  ->execute([
-                     ':prc'  => $actual_price, 
-                     ':po'   => !empty($it['CTM2_PONO']) ? $it['CTM2_PONO'] : $h['CTM1_PONO'], 
-                     ':item' => !empty($it['CTM2_POITEM']) ? $it['CTM2_POITEM'] : $so_item, 
-                     ':so'   => $sono, 
-                     ':it'   => $so_item
+                     ':part_no'   => $it['CTM2_CUSTOMERPARTNO'] ?? '',
+                     ':prc'       => $actual_price, 
+                     ':po'        => !empty($it['CTM2_PONO']) ? $it['CTM2_PONO'] : $h['CTM1_PONO'], 
+                     ':item'      => !empty($it['CTM2_POITEM']) ? $it['CTM2_POITEM'] : $so_item, 
+                     ':ct_dim'    => $it['CT2U_UOMDIMENSION'] ?? 'inch',
+                     ':ct_uom_wt' => $ct_uom_wt,
+                     ':so'        => $sono, 
+                     ':it'        => $so_item
                  ]);
 
             $conn->prepare("UPDATE PACKPROD1 SET PACK_PONO = :po, PACK_POITEM = :item WHERE SALEORDER_NO = :so AND SALEORDER_ITEM = :it")
@@ -891,24 +1063,43 @@ function saveSalesOrder($conn) {
             $conn->prepare("UPDATE PRODSCHD1 SET ETD_DATE = :etd WHERE SALEORDER_NO = :so AND SALEORDER_ITEM = :it")
                  ->execute([':etd' => !empty($it['CONFIRM_DATE']) ? $it['CONFIRM_DATE'] : $h['INTENDSHIP_DATE'], ':so' => $sono, ':it' => $so_item]);
 
-            $conn->prepare("UPDATE JOBORDER1 SET 
-                            MATERIAL_IN = :mat, PRODUCT_ID = :prod, PRODUCT_MODEL = :model, 
+            // อัปเดต JOBORDER1 พร้อม JOB_STATUS เมื่อสถานะเป็น CP หรือ HL ตาม S1
+            $job_params = [
+                ':mat'       => $it['MATERIAL_IN'] ?? 'BOI-MAT1',
+                ':prod'      => $prod_id,
+                ':model'     => $prod_model,
+                ':area_size' => $area_size,
+                ':sg'        => $it['SURFACE_GRADE'] ?? 'SG3',
+                ':mg'        => $it['METALLURGICAL_GRADE'] ?? 'MG3',
+                ':t5'        => $it['T5_TEMPERATURE'] ?? '',
+                ':etd'       => !empty($it['CONFIRM_DATE']) ? $it['CONFIRM_DATE'] : $h['INTENDSHIP_DATE'],
+                ':so'        => $sono,
+                ':it'        => $so_item
+            ];
+
+            if ($item_status === 'CP' || $item_status === 'HL') {
+                $sql_job = "UPDATE JOBORDER1 SET 
+                            JOB_STATUS = :job_status,
+                            MATERIAL_IN = :mat, PRODUCT_ID = :prod, PRODUCT_MODEL = :model, AREA_SIZE = :area_size,
                             SURFACE_GRADE = :sg, METALLURGICAL_GRADE = :mg, T5_TEMPERATURE = :t5, SCHEDULE_DATE = :etd 
-                            WHERE SALEORDER_NO = :so AND SALEORDER_ITEM = :it")
-                 ->execute([
-                     ':mat'   => $it['MATERIAL_IN'] ?? 'BOI-MAT1',
-                     ':prod'  => $prod_id,
-                     ':model' => $prod_model,
-                     ':sg'    => $it['SURFACE_GRADE'] ?? 'SG3',
-                     ':mg'    => $it['METALLURGICAL_GRADE'] ?? 'MG3',
-                     ':t5'    => $it['T5_TEMPERATURE'] ?? '',
-                     ':etd'   => !empty($it['CONFIRM_DATE']) ? $it['CONFIRM_DATE'] : $h['INTENDSHIP_DATE'],
-                     ':so'    => $sono,
-                     ':it'    => $so_item
-                 ]);
+                            WHERE SALEORDER_NO = :so AND SALEORDER_ITEM = :it";
+                $job_params[':job_status'] = $item_status;
+            } else {
+                $sql_job = "UPDATE JOBORDER1 SET 
+                            MATERIAL_IN = :mat, PRODUCT_ID = :prod, PRODUCT_MODEL = :model, AREA_SIZE = :area_size,
+                            SURFACE_GRADE = :sg, METALLURGICAL_GRADE = :mg, T5_TEMPERATURE = :t5, SCHEDULE_DATE = :etd 
+                            WHERE SALEORDER_NO = :so AND SALEORDER_ITEM = :it";
+            }
+            $conn->prepare($sql_job)->execute($job_params);
         }
 
         $conn->commit();
+
+        if (!empty($h['REQUEST_TOKEN'])) {
+            $_SESSION['last_so_token'] = trim($h['REQUEST_TOKEN']);
+            $_SESSION['last_so_no']    = $sono;
+        }
+
         echo json_encode([
             'success' => true, 
             'message' => "Sales Order saved successfully.", 
@@ -920,35 +1111,50 @@ function saveSalesOrder($conn) {
     }
 }
 
-// 6. Delete Sales Order
+// =========================================================================
+// 6. Delete Sales Order (ตรวจสอบ Transaction ที่เกี่ยวข้องก่อนลบ)
+// =========================================================================
 function deleteSalesOrder($conn) {
     $sono = isset($_POST['sono']) ? trim($_POST['sono']) : '';
-    $force_delete = isset($_POST['force_delete']) ? (int)$_POST['force_delete'] : 0;
 
     if (empty($sono)) {
         echo json_encode(['success' => false, 'message' => 'SO number required.']);
         return;
     }
 
-    if ($force_delete !== 1) {
-        $chk = $conn->prepare("SELECT COUNT(*) FROM CSTMORDR2 WHERE SALEORDER_NO = :s");
-        $chk->execute([':s' => $sono]);
-        $item_count = (int)$chk->fetchColumn();
+    // 1. ตรวจสอบว่ามีการออก Invoice ไปแล้วหรือยัง
+    $chk_inv = $conn->prepare("SELECT COUNT(*) FROM INVCPRCS2 WHERE SALEORDER_NO = :s");
+    $chk_inv->execute([':s' => $sono]);
+    if ((int)$chk_inv->fetchColumn() > 0) {
+        echo json_encode(['success' => false, 'message' => "Cannot delete Sales Order {$sono}: Invoice records already exist."]);
+        return;
+    }
 
-        if ($item_count > 0) {
-            echo json_encode([
-                'success' => false, 
-                'message' => "Cannot delete Sales Order {$sono} because it still contains {$item_count} item(s)."
-            ]);
-            return;
-        }
+    // 2. ตรวจสอบว่ามีการออก Job Order (ใบสั่งผลิต) ไปแล้วหรือยัง
+    $chk_job = $conn->prepare("SELECT COUNT(*) FROM JOBORDER1 WHERE SALEORDER_NO = :s");
+    $chk_job->execute([':s' => $sono]);
+    if ((int)$chk_job->fetchColumn() > 0) {
+        echo json_encode(['success' => false, 'message' => "Cannot delete Sales Order {$sono}: Job Order records already exist."]);
+        return;
+    }
+
+    // 3. ตรวจสอบว่ามีการแพ็กสินค้า (PACKPROD1) หรือรับสินค้าเข้าคลัง (RECVPROD2) แล้วหรือยัง
+    $chk_pack = $conn->prepare("SELECT COUNT(*) FROM PACKPROD1 WHERE SALEORDER_NO = :s");
+    $chk_pack->execute([':s' => $sono]);
+    if ((int)$chk_pack->fetchColumn() > 0) {
+        echo json_encode(['success' => false, 'message' => "Cannot delete Sales Order {$sono}: Packing records already exist."]);
+        return;
+    }
+
+    $chk_recv = $conn->prepare("SELECT COUNT(*) FROM RECVPROD2 WHERE SALEORDER_NO = :s");
+    $chk_recv->execute([':s' => $sono]);
+    if ((int)$chk_recv->fetchColumn() > 0) {
+        echo json_encode(['success' => false, 'message' => "Cannot delete Sales Order {$sono}: Goods receipt records already exist."]);
+        return;
     }
 
     $conn->beginTransaction();
     try {
-        $conn->prepare("DELETE FROM INVCPRCS2 WHERE SALEORDER_NO = :s")->execute([':s' => $sono]);
-        $conn->prepare("DELETE FROM INVCPRCS3 WHERE SALEORDER_NO = :s")->execute([':s' => $sono]);
-        $conn->prepare("DELETE FROM PACKPROD1 WHERE SALEORDER_NO = :s")->execute([':s' => $sono]);
         $conn->prepare("DELETE FROM PRODSCHD1 WHERE SALEORDER_NO = :s")->execute([':s' => $sono]);
         $conn->prepare("DELETE FROM CSTMORDR2 WHERE SALEORDER_NO = :s")->execute([':s' => $sono]);
         $conn->prepare("DELETE FROM CSTMORDR1 WHERE SALEORDER_NO = :s")->execute([':s' => $sono]);

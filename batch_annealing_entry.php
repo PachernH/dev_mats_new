@@ -377,7 +377,7 @@ $as_soak_min   = $as_soak_total % 60;
                     </a>
                 </div>
                 <div style="float: right; margin-top: 10px; display:flex; gap:8px;">
-                    <button class="btn btn-default" style="font-weight:600; border-radius:7px;" onclick="window.location.href='batch_annealing_mats.php?func=<?php echo $folder_func; ?>'">Back to List</button>
+                    <button class="btn btn-default" style="font-weight:600; border-radius:7px;" onclick="window.location.href='batch_annealing_mats.php?func=<?php echo $folder_func; ?>'"> ⬅️ Back to List</button>
                     <button class="btn btn-save-main" onclick="save_batch_master()">💾 Save Changes</button>
                 </div>
             </div>

@@ -354,7 +354,7 @@ $all_working = RT_CoilWorking();
                                     <div class="flex justify-center text-slate-300 py-1">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
                                     </div>
-                                    <a href="template_mats.php?func=<?php echo $folder_func; ?>" class="flow-card block p-4 bg-indigo-600 text-white rounded-xl shadow-sm no-underline hover:no-underline">
+                                    <a href="packing_crsh_process_mats.php?func=<?php echo $folder_func; ?>" class="flow-card block p-4 bg-indigo-600 text-white rounded-xl shadow-sm no-underline hover:no-underline">
                                         <div class="text-bg font-bold leading-tight">Packing</div>
                                     </a>    
                                     <div class="flex justify-center text-slate-300 py-1">
@@ -620,20 +620,33 @@ $all_working = RT_CoilWorking();
 
                                         <div class="grid grid-cols-2 gap-2">
                                             <a href="scrap_product_label_mats.php?func=<?php echo $folder_func; ?>" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
-                                                <div class="text-orange-600 text-bg font-bold mb-2 uppercase">&nbsp;&nbsp;&nbsp; Scrap Product &nbsp;&nbsp;&nbsp;</div>
+                                                <div class="text-orange-600 text-bg font-bold mb-2 uppercase">Scrap Product</div>
                                                 <div class="flex justify-center">
                                                 <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Label</span>
                                             </div>
                                             </a>
 
                                             <a href="ticket_label_mats.php?func=<?php echo $folder_func; ?>" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
-                                                <div class="text-orange-600 text-bg font-bold mb-2 uppercase">Packing Coil (Product Ticket)</div>
+                                                <div class="text-orange-600 text-bg font-bold mb-2 uppercase">Coil (Product Ticket)</div>
                                                 <div class="flex justify-center">
-                                                <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Label</span>
+                                                <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Packing Label</span>
                                             </div>
                                             </a>
+                                      
                 
                                         </div>
+
+
+                                        <div class="grid grid-cols-2 gap-2">
+
+                                            <a href="ticket_crsh_label_mats.php?func=<?php echo $folder_func; ?>" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
+                                                <div class="text-orange-600 text-bg font-bold mb-2 uppercase">Circle or Sheet &nbsp;&nbsp;(Product Ticket)</div>
+                                                <div class="flex justify-center">
+                                                <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full"> Packing Label</span>
+                                            </div>
+                                            </a>                                            
+                
+                                        </div>                                        
 
                                     </div>
                                 </div>    

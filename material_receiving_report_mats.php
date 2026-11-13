@@ -14,9 +14,17 @@ $search_container = isset($_GET['container']) ? trim($_GET['container']) : '';
 $search_supplier  = isset($_GET['supplier']) ? trim($_GET['supplier']) : '';
 $is_export        = isset($_GET['export']) && $_GET['export'] === 'excel';
 
+// กำหนดค่าสำหรับการแบ่งหน้า (20 รายการต่อหน้า)
+$limit = 10;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
+
+$allReportData = [];
 $reportData = [];
 $sum_pcs = 0;
 $sum_net = 0;
+$total_records = 0;
+$total_pages = 1;
 
 try {
     $sql = "SELECT h.receive_date, h.container_no, h.invoice_no, h.pack_list_no, h.po_no, h.description_fg, h.supplier_name, h.country_of_origin, h.receive_status,
@@ -42,14 +50,24 @@ try {
     $sql .= " ORDER BY h.receive_date DESC, h.container_no ASC, d.packing_no ASC";
     $stmt = $conn->prepare($sql);
     $stmt->execute($params);
-    $reportData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $allReportData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    foreach ($reportData as $row) {
+    // คำนวณผลรวมและจำนวนทั้งหมด
+    foreach ($allReportData as $row) {
         $sum_pcs += $row['piece_count'];
         $sum_net += $row['net_weight_kg'];
     }
+    
+    $total_records = count($allReportData);
+    $total_pages = ceil($total_records / $limit);
+    if ($total_pages < 1) $total_pages = 1;
+    if ($page > $total_pages) $page = $total_pages;
 
-    // Export Excel Handler
+    // ตัดข้อมูลเฉพาะหน้าปัจจุบันมาแสดง (หน้าละ 20 รายการ)
+    $offset = ($page - 1) * $limit;
+    $reportData = array_slice($allReportData, $offset, $limit);
+
+    // Export Excel Handler (ส่งออกข้อมูลทั้งหมด)
     if ($is_export) {
         header("Content-Type: application/vnd.ms-excel; charset=utf-8");
         header("Content-Disposition: attachment; filename=Material_Receiving_Report_" . date('Ymd_His') . ".xls");
@@ -61,7 +79,7 @@ try {
         echo '<th>วันที่รับเข้า</th><th>CONTAINER NO.</th><th>INVOICE NO.</th><th>PO NO.</th><th>PACKING NO.</th><th>CAST NO.</th><th>DESCRIPTION FG</th><th>SUPPLIER</th><th>COUNTRY</th><th>จำนวนชิ้น (Pcs)</th><th>Net Weight (KG)</th><th>สถานะ</th>';
         echo '</tr>';
         
-        foreach ($reportData as $row) {
+        foreach ($allReportData as $row) {
             echo '<tr>';
             echo '<td>' . htmlspecialchars($row['receive_date']) . '</td>';
             echo '<td>' . htmlspecialchars($row['container_no']) . '</td>';
@@ -134,8 +152,14 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
         <div class="content">
             <div class="container-fluid">
                 
-                <!-- ฟอร์มค้นหา จัดสัดส่วน Grid ใหม่ให้เป็นระเบียบ -->
+                <!-- ฟอร์มค้นหา -->
                 <form method="GET" action="" class="filter-wrapper">
+                    <?php foreach ($_GET as $key => $val): ?>
+                        <?php if (!in_array($key, ['date_from', 'date_to', 'container', 'supplier', 'page'])): ?>
+                            <input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($val); ?>">
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+
                     <div class="row g-3 align-items-end">
                         <div class="col-md-2 col-sm-6">
                             <label class="small fw-bold text-muted mb-1">Start Date</label>
@@ -161,13 +185,13 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                     </div>
                 </form>
 
-                <!-- ตารางแสดงรายงาน พร้อมย้ายปุ่ม Export Excel มาไว้ที่หัวข้อขวาบน -->
+                <!-- ตารางแสดงรายงาน -->
                 <div class="dashboard-card">
                     <div class="card-header-flex">
                         <h4 class="card-title-sub text-primary m-0">
                             <i class="fa-solid fa-file-lines me-2"></i> List of received materials (Detail Packing No.) from <?php echo htmlspecialchars($date_from); ?> to <?php echo htmlspecialchars($date_to); ?>
                         </h4>
-                        <a href="?date_from=<?php echo urlencode($date_from); ?>&date_to=<?php echo urlencode($date_to); ?>&container=<?php echo urlencode($search_container); ?>&supplier=<?php echo urlencode($search_supplier); ?>&export=excel" class="btn btn-excel">
+                        <a href="?<?php echo http_build_query(array_merge($_GET, ['export' => 'excel'])); ?>" class="btn btn-excel">
                             <i class="fa-solid fa-file-excel"></i> Export Excel
                         </a>
                     </div>
@@ -210,7 +234,7 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                                     <?php endforeach; ?>
                                     <!-- แถวสรุปผลรวม -->
                                     <tr class="table-footer-summary">
-                                        <td colspan="9" class="text-end">Total:</td>
+                                        <td colspan="9" class="text-end">Total (All pages):</td>
                                         <td><?php echo number_format($sum_pcs); ?></td>
                                         <td class="text-success"><?php echo number_format($sum_net, 2); ?></td>
                                         <td></td>
@@ -221,6 +245,54 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- ส่วนแสดงปุ่มเปลี่ยนหน้า (Pagination) -->
+                    <?php if ($total_pages > 1): ?>
+                        <div class="d-flex justify-content-between align-items-center mt-3 px-2 flex-wrap gap-2">
+                            <div class="text-muted small">
+                                แสดงหน้า <?php echo $page; ?> จาก <?php echo $total_pages; ?> หน้า (ข้อมูลทั้งหมด <?php echo number_format($total_records); ?> รายการ)
+                            </div>
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination pagination-sm m-0">
+                                    <?php 
+                                    $current_get = $_GET;
+                                    unset($current_get['page']);
+                                    $base_query_link = http_build_query($current_get);
+                                    $base_query_link = $base_query_link ? '&' . $base_query_link : '';
+                                    ?>
+                                    <!-- First Page -->
+                                    <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                                        <a class="page-link" href="?page=1<?php echo $base_query_link; ?>">First</a>
+                                    </li>
+                                    <!-- Previous Page -->
+                                    <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                                        <a class="page-link" href="?page=<?php echo $page - 1; ?><?php echo $base_query_link; ?>">Prev</a>
+                                    </li>
+                                    
+                                    <!-- Numbered Pages -->
+                                    <?php 
+                                    $start_p = max(1, $page - 2);
+                                    $end_p = min($total_pages, $page + 2);
+                                    for ($i = $start_p; $i <= $end_p; $i++): 
+                                    ?>
+                                        <li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
+                                            <a class="page-link" href="?page=<?php echo $i; ?><?php echo $base_query_link; ?>"><?php echo $i; ?></a>
+                                        </li>
+                                    <?php endfor; ?>
+
+                                    <!-- Next Page -->
+                                    <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
+                                        <a class="page-link" href="?page=<?php echo $page + 1; ?><?php echo $base_query_link; ?>">Next</a>
+                                    </li>
+                                    <!-- Last Page -->
+                                    <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
+                                        <a class="page-link" href="?page=<?php echo $total_pages; ?><?php echo $base_query_link; ?>">Last</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    <?php endif; ?>
+
                 </div>
             </div>
         </div>

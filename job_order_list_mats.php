@@ -116,7 +116,7 @@ $date_to    = isset($_GET['date_to']) ? htmlspecialchars(trim($_GET['date_to']),
 <body>
 
 <div class="wrapper">
-    <?php $menu = 'JOB'; ?>
+    <?php $menu = 'A2'; ?>
     <?php include 'include/'.$folder_func.'/navigation.php'; ?>
 
     <div class="main-panel">

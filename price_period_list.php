@@ -62,7 +62,7 @@ $search_cust   = htmlspecialchars(trim($_GET['search_cust'] ?? ''), ENT_QUOTES, 
 </head>
 <body>
 <div class="wrapper">
-    <?php $menu = 'PRICING'; ?>
+    <?php $menu = 'A1'; ?>
     <?php include 'include/'.$folder_func.'/navigation.php'; ?>
 
     <div class="main-panel">

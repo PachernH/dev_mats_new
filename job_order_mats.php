@@ -164,7 +164,7 @@ $is_old_record = !empty($job_no_param);
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <a href="job_order_list_mats.php?func=<?php echo $folder_func; ?>" class="btn-act-back">
-                            BACK TO LIST
+                             ⬅️ BACK TO LIST
                         </a>
                     </div>
                     <div style="display:flex; gap: 8px;">

@@ -118,7 +118,7 @@ $sono = isset($_GET['sono']) ? htmlspecialchars(trim($_GET['sono']), ENT_QUOTES,
                 </div>
                 <div style="float: right; padding-top: 12px; display: flex; gap: 8px; align-items: center;">
                     <a href="saleorder_list_mats.php?func=<?php echo $folder_func; ?>" class="btn-top-back">
-                        Back to List
+                         ⬅️ Back to List
                     </a>
                     <?php if ($is_sale_authorized): ?>
                         <a href="saleorder_entry_mats.php?func=<?php echo $folder_func; ?>&sono=<?php echo $sono; ?>" class="btn-top-edit">

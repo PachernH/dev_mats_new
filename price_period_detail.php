@@ -241,7 +241,7 @@ if ($record_exists) {
                         <span style="font-size: 12px; color: #64748b;">Period: <strong><?php echo $period ?: '-'; ?></strong> | Customer: <strong><?php echo $cust ?: '-'; ?></strong></span>
                     </div>
                     <div>
-                        <a href="price_period_list.php?func=<?php echo $folder_func; ?>" class="btn-action-back">BACK TO LIST</a>
+                        <a href="price_period_list.php?func=<?php echo $folder_func; ?>" class="btn-action-back"> ⬅️ BACK TO LIST</a>
                     </div>
                 </div>
             </div>
