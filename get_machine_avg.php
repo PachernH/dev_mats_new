@@ -37,7 +37,7 @@ if (empty($start) || empty($end)) {
 }
 
 try {
-    // ใช้ NULLIF(column, 0) เพื่อตัดค่า 0 ออกจากการเฉลี่ย AVG() เลียนแบบเงื่อนไข <> 0 ใน VB6 (f8.txt)
+    // ใช้ NULLIF(column, 0) เพื่อตัดค่า 0 ออกจากการเฉลี่ย AVG() เลียนแบบเงื่อนไข <> 0 
     $sql = "SELECT 
                 AVG(NULLIF(STP_TRZ_1, 0)) AS STPTRZ1, 
                 AVG(NULLIF(ACT_TRZ_1, 0)) AS ACTTRZ1,

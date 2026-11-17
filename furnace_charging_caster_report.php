@@ -31,7 +31,7 @@ $grandTotalWeight = 0;
 if ($dbConnection) {
     try {
         if (strtotime($dtpProduceTo) >= strtotime($dtpProduceFrom)) {
-            // แปลงรูปแบบวันที่เป็น YYMMDD ตามลอจิก VB6 (r5)
+            // แปลงรูปแบบวันที่เป็น YYMMDD 
             $strProduceFrom = date('ymd', strtotime($dtpProduceFrom));
             $strProduceTo   = date('ymd', strtotime($dtpProduceTo));
 

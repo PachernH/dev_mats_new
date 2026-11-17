@@ -138,7 +138,7 @@ $product_id_filter = isset($_GET['product_id_filter']) ? htmlspecialchars(trim($
             <div class="container-fluid">
                 <div class="navbar-header">
                     <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="packing_crsh_process_mats.php?func=<?php echo $folder_func ?>">
-                        CRSH Packaging Process
+                        Circle of Sheet Packaging Process
                         <?php if (!$is_authorized): ?>
                             <span class="badge" style="background-color:#64748b; font-size:11px; margin-left:8px;">VIEW ONLY</span>
                         <?php else: ?>

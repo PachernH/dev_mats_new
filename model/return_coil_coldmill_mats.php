@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
-    // 1. ตรวจสอบว่ามี Coil อยู่บน Mill Processing (LOCATION = 'R') หรือไม่ (ตรงตาม Len(txtMillCoilNo) = 0 ใน VB6)
+    // 1. ตรวจสอบว่ามี Coil อยู่บน Mill Processing (LOCATION = 'R') หรือไม่ (ตรงตาม Len(txtMillCoilNo) = 0 )
     $sql_check_r = "SELECT TOP 1 COIL_NO FROM CDMLMCHN1 WITH (NOLOCK) 
                     WHERE LOCATION = 'R' 
                       AND COIL_NO IS NOT NULL 
@@ -87,7 +87,7 @@ try {
     $strCoilNo    = trim($outlet_row['COIL_NO']);
     $location_row = intval($outlet_row['LOCATION_ROW']);
 
-    // 4. อ่านข้อมูลอ้างอิงเดิมจาก CDMLMCHN0 ตามหมายเลข Coil ที่พบ (ตามคำสั่ง VB6)
+    // 4. อ่านข้อมูลอ้างอิงเดิมจาก CDMLMCHN0 ตามหมายเลข Coil 
     $sql_mchn0 = "SELECT TOP 1 * FROM CDMLMCHN0 WITH (NOLOCK) WHERE COIL_NO = ?";
     $stmt_mchn0 = $conn->prepare($sql_mchn0);
     $stmt_mchn0->execute([$strCoilNo]);
@@ -100,7 +100,7 @@ try {
 
     $conn->beginTransaction();
 
-    // 5. UPDATE CDMLMCHN1 คืนค่า LOCATION เป็น 'R' และคืนสเปกเดิมตาม CDMLMCHN0 (ตาม Logic VB6)
+    // 5. UPDATE CDMLMCHN1 คืนค่า LOCATION เป็น 'R' และคืนสเปกเดิมตาม CDMLMCHN0 
     $sql_upd1 = "UPDATE CDMLMCHN1 SET 
                     LOCATION = ?, 
                     RECIPE_ITEM = ?, 

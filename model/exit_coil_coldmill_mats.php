@@ -35,7 +35,7 @@ try {
     // 2. ดึงค่า TOTAL_PASS จาก CDMLMCHN1 โดยตรง
     $total_pass = intval($mchn1['TOTAL_PASS'] ?? 0);
 
-    // 3. ถอด Logic การคำนวณ Pass และ Recipe Item ตาม VB6 ตรงๆ
+    // 3. ถอด Logic การคำนวณ Pass และ Recipe Item 
     $curr_pass   = intval($mchn1['CURRENT_PASS'] ?? 0);
     $recipe_item = intval($mchn1['RECIPE_ITEM'] ?? 0);
     $recipe_no   = trim($mchn1['RECIPE_NO'] ?? '');
@@ -59,7 +59,7 @@ try {
     $intCountProcess = intval($mchn1['COUNT_PROCESS'] ?? 0) + 1;
     $now             = date('Y-m-d H:i:s');
 
-    // 4. ดึงข้อมูลจากตาราง CMRCMSTR1 (ตามคำสั่ง VB6)
+    // 4. ดึงข้อมูลจากตาราง CMRCMSTR1 
     $sql_rcm = "SELECT TOP 1 THICKNESS_ENTRY, THICKNESS_EXIT, THICKNESS_TELORANCE 
                 FROM CMRCMSTR1 WITH (NOLOCK) 
                 WHERE RECIPE_NO = ? AND RECIPE_ITEM = ?";
@@ -81,7 +81,7 @@ try {
 
     $conn->beginTransaction();
 
-    // 5. UPDATE ข้อมูลตาราง CDMLMCHN1 เปลี่ยน LOCATION เป็น 'O' (Outlet Area) เพียงตารางเดียวตาม VB6
+    // 5. UPDATE ข้อมูลตาราง CDMLMCHN1 เปลี่ยน LOCATION เป็น 'O' (Outlet Area) 
     $sql_upd1 = "UPDATE CDMLMCHN1 SET 
                     LOCATION = 'O', 
                     RECIPE_ITEM = ?, 

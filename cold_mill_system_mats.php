@@ -29,7 +29,7 @@ if (!in_array(strtoupper($line_func), $allowed_lines_ctl)) {
 }
 
 // ----------------------------------------------------------------------------------
-// ดึงข้อมูลจากฐานข้อมูล CDMLMCHN1 (อ้างอิง Logic จาก VB6)
+// ดึงข้อมูลจากฐานข้อมูล CDMLMCHN1 (อ้างอิง Logic)
 // ----------------------------------------------------------------------------------
 $inlet_coils  = array_fill(1, 7, ''); 
 $outlet_coils = array_fill(1, 7, ''); 
@@ -37,7 +37,7 @@ $mill_data    = null; // ข้อมูล Coil ที่อยู่บน Mil
 
 try {
     if (isset($conn)) {
-        // SQL Query ดึงข้อมูลจาก CDMLMCHN1 ตารางเดียวตาม VB6
+        // SQL Query ดึงข้อมูลจาก CDMLMCHN1 
         $sql_mchn = "SELECT * FROM CDMLMCHN1 WITH (NOLOCK)";
         $stmt_mchn = $conn->prepare($sql_mchn);
         $stmt_mchn->execute();
@@ -71,7 +71,7 @@ try {
                     if (is_string($v)) $mill_data[$k] = trim($v);
                 }
 
-                // ดึงค่า Tolerance เพิ่มเติมหากไม่มีการกำหนดค่ารายลูกค้า (อ้างอิง VB6 Logic)
+                // ดึงค่า Tolerance เพิ่มเติมหากไม่มีการกำหนดค่ารายลูกค้า 
                 $max_cust = floatval($row['MAX_THICKCUSTOMER'] ?? 0);
                 $min_cust = floatval($row['MIN_THICKCUSTOMER'] ?? 0);
                 $thick_exit = floatval($row['THICKNESS_EXIT'] ?? 0);
@@ -658,7 +658,7 @@ try {
         }
     });
 
-// แสดงผลข้อมูลลงในหน้าจอ (ตามฟิลด์จาก VB6)
+// แสดงผลข้อมูลลงในหน้าจอ 
     function renderCoilProcessingData(d) {
         document.getElementById('disp_coil_no').innerText = d.COIL_NO || '-';
         document.getElementById('disp_job_process').innerText = d.JOB_PROCESS || '-';

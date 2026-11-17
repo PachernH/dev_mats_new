@@ -46,7 +46,7 @@ try {
 
     $conn->beginTransaction();
 
-    // 3. UPDATE ข้อมูลกลับไปยัง CDMLMCHN1 (เปลี่ยน LOCATION เป็น 'I') อ้างอิงตาม Logic VB6
+    // 3. UPDATE ข้อมูลกลับไปยัง CDMLMCHN1 (เปลี่ยน LOCATION เป็น 'I') 
     $sql_upd1 = "UPDATE CDMLMCHN1 SET 
                     LOCATION = 'I', 
                     RECIPE_ITEM = ?, 

@@ -342,10 +342,10 @@ include 'include/'.$folder_func.'/navigation.php';
                         <!-- กลุ่มปุ่มขวาสุด -->
                         <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
                             <button type="button" class="btn btn-export-excel btn-sm" onclick="exportDetailsToExcel()">
-                                <i class="fa fa-file-excel-o"></i> Export Excel
+                                Export Excel
                             </button>
                             <button type="button" class="btn btn-export-csv btn-sm" onclick="exportDetailsToCSV()">
-                                <i class="fa fa-file-text-o"></i> Export CSV
+                                Export CSV
                             </button>
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#ffffff; opacity:0.8; margin: 0 0 0 10px; line-height: 1;"><span aria-hidden="true">&times;</span></button>
                         </div>
@@ -386,10 +386,10 @@ include 'include/'.$folder_func.'/navigation.php';
                     </div>
                     <div class="modal-footer" style="background-color: #f8fafc;">
                         <button type="button" class="btn btn-export-excel" onclick="exportDetailsToExcel()">
-                            <i class="fa fa-file-excel-o"></i> Export Excel (.xlsx)
+                            Export Excel (.xlsx)
                         </button>
                         <button type="button" class="btn btn-export-csv" onclick="exportDetailsToCSV()">
-                            <i class="fa fa-file-text-o"></i> Export CSV
+                            Export CSV
                         </button>
                         <button type="button" class="btn btn-default" data-dismiss="modal" style="border-radius:6px; font-weight: 600; padding: 8px 16px;">Close</button>
                     </div>

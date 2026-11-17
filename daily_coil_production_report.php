@@ -15,7 +15,7 @@ include 'function_mats.php';
 require_once 'dbcon_mats-new.php';
 $dbConnection = $conn ?? $pdoDB ?? $pdo ?? $db ?? null;
 
-// 2. รับค่า Filter จากฟอร์มแบบ POST (ตรงตาม VB6 r2)
+// 2. รับค่า Filter จากฟอร์มแบบ POST 
 $dtpProduceFrom = !isset($_POST['dtpProduceFrom']) ? date('Y-m-d', strtotime('-1 day')) : htmlspecialchars($_POST['dtpProduceFrom'], ENT_QUOTES, 'UTF-8');
 $dtpProduceTo   = date('Y-m-d', strtotime($dtpProduceFrom . ' +1 day'));
 

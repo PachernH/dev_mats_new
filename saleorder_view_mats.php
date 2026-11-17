@@ -275,7 +275,7 @@ $sono = isset($_GET['sono']) ? htmlspecialchars(trim($_GET['sono']), ENT_QUOTES,
                 </div>
             </div>
 
-            <!-- SECTION 3: FULL ITEM SPECIFICATIONS (ตรงตามหน้าจอ VB6 S1 Item Detail 100%) -->
+            <!-- SECTION 3: FULL ITEM SPECIFICATIONS  -->
             <div class="dashboard-card" style="border-left: 4px solid #2563eb;">
                 <div class="section-header" style="color: #2563eb; margin-bottom: 12px; justify-content:space-between;">
                     <span>🔍 Full Item Specifications (Selected Item: <span id="cur_item_no">-</span>)</span>

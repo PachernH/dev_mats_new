@@ -30,7 +30,7 @@ $errorMessage = '';
 if ($dbConnection) {
     try {
         if (strtotime($dtpProduceTo) >= strtotime($dtpProduceFrom)) {
-            // แปลงรูปแบบวันที่เป็น YYMMDD ตามลอจิก R4 (VB6)
+            // แปลงรูปแบบวันที่เป็น YYMMDD 
             $strProduceFrom = date('ymd', strtotime($dtpProduceFrom));
             $strProduceTo   = date('ymd', strtotime($dtpProduceTo));
 
@@ -62,7 +62,6 @@ if ($dbConnection) {
 
             $whereClause = implode(" OR ", $whereConditions);
 
-            // SQL Join ตาม R4 (VB6)
             $sql = "
                 SELECT 
                     ISNULL(F.BATCH_NO, '') AS batch_no,
