@@ -292,13 +292,13 @@ include 'include/'.$folder_func.'/navigation.php';
 
                                     if ($d == date('Y-m-d')) {
                                         if ($cno != '') {
-                                            $sql = "SELECT TOP(50) PRODUCT_NO, COIL_NO, SCRP_DATE, MATERIAL_IN, ALLOY, SCRP_WEIGHT, SCRP_OPERATOR, SCRP_STATUS 
+                                            $sql = "SELECT TOP(200) PRODUCT_NO, COIL_NO, SCRP_DATE, MATERIAL_IN, ALLOY, SCRP_WEIGHT, SCRP_OPERATOR, SCRP_STATUS 
                                                     FROM SCRPPROD1 
                                                     WHERE PRODUCT_NO LIKE :cno OR COIL_NO LIKE :cno 
                                                     ORDER BY SCRP_DATE DESC";
                                             $params[':cno'] = '%'.$cno.'%';
                                         } else {
-                                            $sql = "SELECT TOP(50) PRODUCT_NO, COIL_NO, SCRP_DATE, MATERIAL_IN, ALLOY, SCRP_WEIGHT, SCRP_OPERATOR, SCRP_STATUS 
+                                            $sql = "SELECT TOP(200) PRODUCT_NO, COIL_NO, SCRP_DATE, MATERIAL_IN, ALLOY, SCRP_WEIGHT, SCRP_OPERATOR, SCRP_STATUS 
                                                     FROM SCRPPROD1 
                                                     WHERE SCRP_DATE BETWEEN :date_st AND :date_end 
                                                     ORDER BY SCRP_DATE DESC";
@@ -307,13 +307,13 @@ include 'include/'.$folder_func.'/navigation.php';
                                         }
                                     } else {
                                         if ($cno != '') {
-                                            $sql = "SELECT TOP(50) PRODUCT_NO, COIL_NO, SCRP_DATE, MATERIAL_IN, ALLOY, SCRP_WEIGHT, SCRP_OPERATOR, SCRP_STATUS 
+                                            $sql = "SELECT TOP(200) PRODUCT_NO, COIL_NO, SCRP_DATE, MATERIAL_IN, ALLOY, SCRP_WEIGHT, SCRP_OPERATOR, SCRP_STATUS 
                                                     FROM SCRPPROD1 
                                                     WHERE PRODUCT_NO LIKE :cno OR COIL_NO LIKE :cno 
                                                     ORDER BY SCRP_DATE DESC";
                                             $params[':cno'] = '%'.$cno.'%';
                                         } else {
-                                            $sql = "SELECT TOP(50) PRODUCT_NO, COIL_NO, SCRP_DATE, MATERIAL_IN, ALLOY, SCRP_WEIGHT, SCRP_OPERATOR, SCRP_STATUS 
+                                            $sql = "SELECT TOP(200) PRODUCT_NO, COIL_NO, SCRP_DATE, MATERIAL_IN, ALLOY, SCRP_WEIGHT, SCRP_OPERATOR, SCRP_STATUS 
                                                     FROM SCRPPROD1 
                                                     WHERE SCRP_DATE BETWEEN :date_f AND :date_e 
                                                     ORDER BY SCRP_DATE DESC";

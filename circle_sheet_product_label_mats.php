@@ -289,8 +289,8 @@ include 'include/'.$folder_func.'/navigation.php';
 
                                     $params = [];
 
-                                    // SQL Base Query
-                                    $base_sql = "SELECT TOP(50) 
+                                    // SQL Base Query พร้อมกรอง Status
+                                    $base_sql = "SELECT TOP(200) 
                                                     A.PRODUCT_NO, 
                                                     A.COIL_NO, 
                                                     A.CRSH_ENDDATE,
@@ -301,23 +301,24 @@ include 'include/'.$folder_func.'/navigation.php';
                                                 FROM CRSHPROD1 AS A 
                                                 LEFT JOIN JOBORDER1 AS B ON A.JOB_ORDER = B.JOB_ORDER
                                                 LEFT JOIN CSTMORDR2 AS C ON B.SALEORDER_NO = C.SALEORDER_NO AND B.SALEORDER_ITEM = C.SALEORDER_ITEM
-                                                LEFT JOIN CSTMORDR1 AS D ON C.SALEORDER_NO = D.SALEORDER_NO";
+                                                LEFT JOIN CSTMORDR1 AS D ON C.SALEORDER_NO = D.SALEORDER_NO
+                                                WHERE A.CRSH_STATUS IN ('AC', 'OP', 'RM', 'RJ')";
 
                                     if($d == date('Y-m-d')){
                                         if($cno != ''){
-                                            $sql = $base_sql . " WHERE (A.PRODUCT_NO LIKE :cno OR A.COIL_NO LIKE :cno OR A.JOB_ORDER LIKE :cno OR A.SALEORDER_NO LIKE :cno) ORDER BY A.CRSH_ENDDATE DESC";
+                                            $sql = $base_sql . " AND (A.PRODUCT_NO LIKE :cno OR A.COIL_NO LIKE :cno OR A.JOB_ORDER LIKE :cno OR A.SALEORDER_NO LIKE :cno) ORDER BY A.CRSH_ENDDATE DESC";
                                             $params[':cno'] = '%'.$cno.'%';
                                         }else{
-                                            $sql = $base_sql . " WHERE A.CRSH_ENDDATE BETWEEN :date_st AND :date_end ORDER BY A.CRSH_ENDDATE DESC";
+                                            $sql = $base_sql . " AND A.CRSH_ENDDATE BETWEEN :date_st AND :date_end ORDER BY A.CRSH_ENDDATE DESC";
                                             $params[':date_st'] = $date_st;
                                             $params[':date_end'] = $date_end;
                                         }
                                     } else {
                                         if($cno != ''){
-                                            $sql = $base_sql . " WHERE (A.PRODUCT_NO LIKE :cno OR A.COIL_NO LIKE :cno OR A.JOB_ORDER LIKE :cno OR A.SALEORDER_NO LIKE :cno) ORDER BY A.CRSH_ENDDATE DESC";
+                                            $sql = $base_sql . " AND (A.PRODUCT_NO LIKE :cno OR A.COIL_NO LIKE :cno OR A.JOB_ORDER LIKE :cno OR A.SALEORDER_NO LIKE :cno) ORDER BY A.CRSH_ENDDATE DESC";
                                             $params[':cno'] = '%'.$cno.'%';
                                         }else{
-                                            $sql = $base_sql . " WHERE A.CRSH_ENDDATE BETWEEN :date_f AND :date_e ORDER BY A.CRSH_ENDDATE DESC";
+                                            $sql = $base_sql . " AND A.CRSH_ENDDATE BETWEEN :date_f AND :date_e ORDER BY A.CRSH_ENDDATE DESC";
                                             $params[':date_f'] = $d." 00:00:00";
                                             $params[':date_e'] = $d." 00:00:00";
                                         }

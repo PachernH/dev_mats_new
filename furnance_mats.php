@@ -513,6 +513,11 @@ include 'include/'.$folder_func.'/navigation.php';
                                     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                                         $safe_batch_no = htmlspecialchars($row['BATCH_NO'], ENT_QUOTES, 'UTF-8');
                                         $chk_coil = RT_COIL_PRO($row['BATCH_NO']); 
+                                        
+                                        // ดึงค่า LINE_PROCESS ของแถวข้อมูลปัจจุบันและแปลงเป็นตัวพิมพ์ใหญ่เพื่อตรวจสอบ
+                                        $row_line_process = isset($row['LINE_PROCESS']) ? strtoupper(trim($row['LINE_PROCESS'])) : '';
+                                        $is_valid_edit_line = in_array($row_line_process, ['1', '2', 'M']);
+                                        $is_operator_or_staff = (strtoupper($position) == 'OPERATOR' || strtoupper($position) == 'STAFF');
 
                                         echo "<tr>";
                                         echo "<td align='center'><button type='button' class='btn-badge-clickable' onclick=\"show_detail_batch('" . addslashes($row['BATCH_NO']) . "')\">".$safe_batch_no."</button></td>";
@@ -523,27 +528,33 @@ include 'include/'.$folder_func.'/navigation.php';
                                         echo "<td style='font-weight:500;'>".number_format($row['TOTAL_DROSS'], 2)."</td>";
                                         echo "<td style='font-weight:600; color:#0f172a;'>".number_format($row['BALANCE_BATCH'], 2)."</td>";
 
-                                        if($chk_coil){ 
-                                            if(strtoupper($position) == 'OPERATOR' || strtoupper($position) == 'STAFF'){
+                                        // 1. คอลัมน์ Status
+                                        if ($chk_coil) {
+                                            if ($is_operator_or_staff) {
                                                 echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title=\"Cannot be used because don't have permission.\">Used</button></td>";
-                                                echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title=\"Cannot be edit because don't have permission.\">Edit</button></td>"; 
-                                                echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title=\"Cannot be deleted because don't have permission.\">Delete</button></td>";   
                                             } else {
-                                                echo "<td align='center'><button type='button' class='btn btn-success btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"use_document('" . addslashes($row['BATCH_NO']) . "')\">Used</button></td>";                                                         
-                                                echo "<td align='center'><button type='button' class='btn btn-warning btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"edit_document('" . addslashes($row['BATCH_NO']) . "')\">Edit</button></td>"; 
-                                                echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title='Cannot be deleted because it is already in use.'>Delete</button></td>";        
-                                            }                                                          
-                                        } else {
-                                            if(strtoupper($position) == 'OPERATOR' || strtoupper($position) == 'STAFF'){
-                                                echo "<td align='center'><span class='badge-status status-processing'>In progress.</span></td>";
-                                                echo "<td align='center'><button type='button' class='btn btn-warning btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"edit_document('" . addslashes($row['BATCH_NO']) . "')\">Edit</button></td>"; 
-                                                echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title=\"Cannot be deleted because don't have permission.\">Delete</button></td>";   
-                                            } else {
-                                                echo "<td align='center'><span class='badge-status status-processing'>In progress.</span></td>";
-                                                echo "<td align='center'><button type='button' class='btn btn-warning btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"edit_document('" . addslashes($row['BATCH_NO']) . "')\">Edit</button></td>";  
-                                                echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title=\"Cannot be deleted because don't have permission.\">Delete</button></td>";     
+                                                echo "<td align='center'><button type='button' class='btn btn-success btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"use_document('" . addslashes($row['BATCH_NO']) . "')\">Used</button></td>";
                                             }
+                                        } else {
+                                            echo "<td align='center'><span class='badge-status status-processing'>In progress.</span></td>";
                                         }
+
+                                        // 2. คอลัมน์ Edit (แก้ไขได้เฉพาะ LINE_PROCESS เป็น 1, 2, M และต้องมีสิทธิ์ตามสถานะการใช้งาน)
+                                        if (!$is_valid_edit_line) {
+                                            echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title=\"Cannot be edited because Line Process is not 1, 2, or M.\">Edit</button></td>";
+                                        } elseif ($chk_coil && $is_operator_or_staff) {
+                                            echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title=\"Cannot be edited because it is already in use and you don't have permission.\">Edit</button></td>";
+                                        } else {
+                                            echo "<td align='center'><button type='button' class='btn btn-warning btn-sm' style='width:100%; font-weight:600; border-radius:6px;' onclick=\"edit_document('" . addslashes($row['BATCH_NO']) . "')\">Edit</button></td>";
+                                        }
+
+                                        // 3. คอลัมน์ Delete (ลบได้เมื่อยังไม่มีการนำ Batch No ไปใช้งาน: !$chk_coil)
+                                        if (!$chk_coil) {
+                                            echo "<td align='center'><button type='button' class='btn btn-action-del' onclick=\"delete_document('" . addslashes($row['BATCH_NO']) . "')\">Delete</button></td>";
+                                        } else {
+                                            echo "<td align='center'><button type='button' class='btn btn-action-del' disabled title='Cannot be deleted because it is already in use.'>Delete</button></td>";
+                                        }
+
                                         echo "</tr>";                                                         
                                     }
                                 ?>                                              

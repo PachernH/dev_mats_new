@@ -40,7 +40,7 @@ if (!empty($container_param)) {
         $stmt_head->execute([':container' => $container_param]);
         $headerInfo = $stmt_head->fetch(PDO::FETCH_ASSOC);
 
-        // 2. ดึงรายการสินค้าจาก RECEIVING_DETAILS (ใช้คอลัมน์ตรงตามจริง)
+        // 2. ดึงรายการสินค้าจาก RECEIVING_DETAILS (กรองเฉพาะ In Stock / ยังไม่ถูกตัดจ่าย)
         $sql_detail = "SELECT 
                             d.receive_id,
                             d.gr_no,
@@ -55,6 +55,7 @@ if (!empty($container_param)) {
                        FROM RECEIVING_DETAILS d
                        INNER JOIN RECEIVING_HEADER h ON LTRIM(RTRIM(d.gr_no)) = LTRIM(RTRIM(h.gr_no))
                        WHERE LTRIM(RTRIM(h.container_no)) = :container
+                       AND (d.status IS NULL OR LTRIM(RTRIM(d.status)) = '' OR d.status NOT IN ('Issued', 'use'))
                        ORDER BY d.receive_id ASC";
         $stmt_detail = $conn->prepare($sql_detail);
         $stmt_detail->execute([':container' => $container_param]);
@@ -133,16 +134,6 @@ if (!empty($container_param)) {
             font-weight: 700;
             display: inline-block;
         }
-        .status-checked {
-            background-color: #ecfdf5;
-            color: #059669;
-            border: 1px solid #a7f3d0;
-        }
-        .status-pending {
-            background-color: #fffbeb;
-            color: #d97706;
-            border: 1px solid #fde68a;
-        }
 
         .table-responsive {
             border: none !important;
@@ -201,7 +192,7 @@ if (!empty($container_param)) {
         <nav class="navbar navbar-default navbar-fixed">
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size:20px;" href="#">🔍 Material Stock Detail</a>
+                    <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size:20px;" href="#">🔍 Material Stock Detail (In Stock)</a>
                 </div>
                 <?php include 'include/navbar.php';?>
             </div>
@@ -268,13 +259,13 @@ if (!empty($container_param)) {
                         </div>
                     </div>
 
-                    <!-- ตารางแสดงรายการ Packing No. ของ Receiving Details -->
+                    <!-- ตารางแสดงรายการ Packing No. เฉพาะสถานะ In Stock -->
                     <div class="table-responsive table-full-width">
                         <table id="detail_table" class="table">
                             <thead>
                                 <tr>
                                     <th style="text-align: center;">#</th>
-                                    <th style="text-align: center;">Packing No.</th>
+                                    <th style="text-align: center;">Bundle No.</th>
                                     <th style="text-align: center;">Cast No.</th>
                                     <th style="text-align: center;">Piece Count</th>
                                     <th style="text-align: center;">Net Weight (KG)</th>
@@ -286,7 +277,6 @@ if (!empty($container_param)) {
                             <tbody>
                                 <?php if (!empty($detailList)): ?>
                                     <?php foreach ($detailList as $idx => $d): 
-                                        $is_checked = (!empty($d['is_checked_in']) && $d['is_checked_in'] == 1);
                                         $checked_date_fmt = !empty($d['checked_in_date']) ? date('Y-m-d H:i', strtotime($d['checked_in_date'])) : '-';
                                     ?>
                                         <tr>
@@ -306,8 +296,8 @@ if (!empty($container_param)) {
                                             </td>
 
                                             <td align="center">
-                                                <span class="badge-status" style="background-color:#f1f5f9; color:#475569; border:1px solid #cbd5e1;">
-                                                    <?php echo htmlspecialchars($d['status'] ?? '-', ENT_QUOTES, 'UTF-8'); ?>
+                                                <span class="badge-status" style="background-color:#ecfdf5; color:#059669; border:1px solid #a7f3d0;">
+                                                    <?php echo !empty($d['status']) ? htmlspecialchars($d['status'], ENT_QUOTES, 'UTF-8') : 'In Stock'; ?>
                                                 </span>
                                             </td>
                                             
@@ -316,7 +306,7 @@ if (!empty($container_param)) {
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="8" align="center" style="color: #94a3b8; padding: 20px;">ไม่พบรายการใน Container นี้</td>
+                                        <td colspan="8" align="center" style="color: #94a3b8; padding: 20px;">ไม่พบรายการสินค้าคงเหลือ (In Stock) ใน Container นี้</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>

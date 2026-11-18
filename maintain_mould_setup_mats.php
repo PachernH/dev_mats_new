@@ -82,7 +82,7 @@ if (!empty($mould_setup_no)) {
             <div class="container-fluid">
                 <div class="navbar-header">
                     <a class="navbar-brand" style="font-weight:700; color:#1e293b; font-size: 20px;" href="#">
-                        Maintain Mould Setup Status [ ACNTLMLDS1 ]
+                        Maintain Mould Setup Status
                         <?php if ($is_view_only): ?>
                             <span class="badge" style="background-color:#dc2626; margin-left:10px;">LOCKED / VIEW ONLY</span>
                         <?php endif; ?>

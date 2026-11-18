@@ -290,21 +290,26 @@ include 'include/'.$folder_func.'/navigation.php';
 
                                     $params = [];
 
+                                    // สร้าง Base SQL พร้อมกำหนดเงื่อนไข COIL_STATUS ที่ต้องการแสดงไว้ล่วงหน้า
+                                    $base_sql = "SELECT TOP(200) A.COIL_NO, A.COIL_STARTTIME, A.COIL_ENDTIME, A.MATERIAL_IN, A.ALLOY, A.BATCH_NO, A.COIL_ACTUALWEIGHT, A.COIL_STATUS 
+                                                 FROM COILPROD1 AS A 
+                                                 WHERE A.COIL_STATUS IN ('ac', 'op', 'rj')";
+
                                     if($d == date('Y-m-d')){
                                         if($cno != ''){
-                                            $sql = "SELECT TOP(50) A.COIL_NO, A.COIL_STARTTIME, A.COIL_ENDTIME, A.MATERIAL_IN, A.ALLOY, A.BATCH_NO, A.COIL_ACTUALWEIGHT, A.COIL_STATUS FROM COILPROD1 AS A WHERE A.COIL_NO LIKE :cno ORDER BY A.COIL_STARTTIME DESC";
+                                            $sql = $base_sql . " AND A.COIL_NO LIKE :cno ORDER BY A.COIL_STARTTIME DESC";
                                             $params[':cno'] = '%'.$cno.'%';
                                         }else{
-                                            $sql = "SELECT TOP(50) A.COIL_NO, A.COIL_STARTTIME, A.COIL_ENDTIME, A.MATERIAL_IN, A.ALLOY, A.BATCH_NO, A.COIL_ACTUALWEIGHT, A.COIL_STATUS FROM COILPROD1 AS A WHERE A.COIL_STARTTIME BETWEEN :date_st AND :date_end ORDER BY A.COIL_STARTTIME DESC";
+                                            $sql = $base_sql . " AND A.COIL_STARTTIME BETWEEN :date_st AND :date_end ORDER BY A.COIL_STARTTIME DESC";
                                             $params[':date_st'] = $date_st;
                                             $params[':date_end'] = $date_end;
                                         }
                                     } else {
                                         if($cno != ''){
-                                            $sql = "SELECT TOP(50) A.COIL_NO, A.COIL_STARTTIME, A.COIL_ENDTIME, A.MATERIAL_IN, A.ALLOY, A.BATCH_NO, A.COIL_ACTUALWEIGHT, A.COIL_STATUS FROM COILPROD1 AS A WHERE A.COIL_NO LIKE :cno ORDER BY A.COIL_STARTTIME DESC";
+                                            $sql = $base_sql . " AND A.COIL_NO LIKE :cno ORDER BY A.COIL_STARTTIME DESC";
                                             $params[':cno'] = '%'.$cno.'%';
                                         }else{
-                                            $sql = "SELECT TOP(50) A.COIL_NO, A.COIL_STARTTIME, A.COIL_ENDTIME, A.MATERIAL_IN, A.ALLOY, A.BATCH_NO, A.COIL_ACTUALWEIGHT, A.COIL_STATUS FROM COILPROD1 AS A WHERE A.COIL_STARTTIME BETWEEN :date_f AND :date_e ORDER BY A.COIL_STARTTIME DESC";
+                                            $sql = $base_sql . " AND A.COIL_STARTTIME BETWEEN :date_f AND :date_e ORDER BY A.COIL_STARTTIME DESC";
                                             $params[':date_f'] = $d." 00:00:00";
                                             $params[':date_e'] = $d." 23:59:59" ;
                                         }

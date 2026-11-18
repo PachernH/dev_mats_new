@@ -325,7 +325,7 @@ include 'include/'.$folder_func.'/navigation.php';
                                     $params = [];
 
                                     // SQL Base Query จากตาราง PACKPROD1
-                                    $base_sql = "SELECT TOP(50) 
+                                    $base_sql = "SELECT TOP(200) 
                                                     PACK_DATE, 
                                                     PRODUCT_NO, 
                                                     JOB_ORDER, 
