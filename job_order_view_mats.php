@@ -11,8 +11,10 @@ if (empty($iduser_func)) {
     exit();
 }
 
+$current_func = strtoupper(trim(!empty($folder_func) ? $folder_func : ($_GET['func'] ?? '')));
 $current_dept = strtoupper(trim($department_func));
-$is_authorized = ($current_dept === 'PP' || $current_dept === 'MK' || $current_dept === 'IT');
+//$is_authorized = ($current_dept === 'PP' || $current_dept === 'MK' || $current_dept === 'IT');
+$is_authorized = ($current_func === 'SALE' || $current_dept === 'MK');
 
 $job_no_param = isset($_GET['jobno']) ? htmlspecialchars(trim($_GET['jobno']), ENT_QUOTES, 'UTF-8') : '';
 ?>

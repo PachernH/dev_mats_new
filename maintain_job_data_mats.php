@@ -8,7 +8,7 @@ if (!isset($_SESSION['ID'])) {
 }
 
 // ดึงค่าวันที่ และตรวจสอบข้อมูลนำเข้าเพื่อความปลอดภัย (Sanitize Input)
-if(!isset($_GET['d'])){
+if (!isset($_GET['d']) || trim($_GET['d']) === '') {
     $d = date('Y-m-d');
 } else {
     $d = htmlspecialchars(trim($_GET['d']), ENT_QUOTES, 'UTF-8');
@@ -127,6 +127,7 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
             border-radius: 8px;
             border: none;
             transition: all 0.2s;
+            cursor: pointer;
         }
         .btn-search:hover {
             background-color: #0f172a;
@@ -253,18 +254,58 @@ include 'include/'.$folder_func.'/navigation.php';
             <div class="filter-wrapper">
                 <div class="filter-item" style="flex: 1; min-width: 240px;">
                     <label for="job_no">Job Order No</label>
-                    <input class="form-control-minimal" name="job_no" id="job_no" type="text" placeholder="Job Order No...." value="<?php echo htmlspecialchars($jno, ENT_QUOTES, 'UTF-8'); ?>" oninput="filter_table()"/>
+                    <input class="form-control-minimal" name="job_no" id="job_no" type="text"
+                           placeholder="Job Order No...."
+                           value="<?php echo htmlspecialchars($jno, ENT_QUOTES, 'UTF-8'); ?>"
+                           onkeydown="if(event.key === 'Enter'){ event.preventDefault(); search_job_order(); }"/>
                 </div>
                 <div class="filter-item" style="width: 190px;">
                     <label for="pick_date">Select Data Date</label>
                     <input type="date" class="form-control" onchange="change_date(this.value)" id="pick_date"/>
                 </div>
                 <div class="filter-item">
-                    <button class="btn btn-search" id="btn_search_coil" onclick="filter_table()">
+                    <button class="btn btn-search" id="btn_search_coil" onclick="search_job_order()">
                         SEARCH
                     </button>
                 </div>
             </div>
+
+            <?php
+                include 'function_mats.php';
+                include("dbcon_mats-new.php");
+                ini_set('max_execution_time', 300);
+
+                $params = [];
+                $where_clauses = [];
+
+                if ($jno !== '') {
+                    // ค้นหา Job Order จากข้อมูลทั้งหมด (ไม่จำกัดแค่ TOP 200)
+                    $where_clauses[] = "JOB_ORDER LIKE :jno";
+                    $params[':jno'] = '%' . $jno . '%';
+                    $top_sql = "";
+                } else {
+                    // กรณีไม่ได้ระบุ Job Order ให้ดึง Top 200 ตามปกติ (และกรองวันที่ถ้าเลือกวันที่อื่นที่ไม่ใช่วันนี้)
+                    if ($d != date('Y-m-d')) {
+                        $where_clauses[] = "JOBORDER_DATE BETWEEN :date_st AND :date_end";
+                        $params[':date_st'] = $d . " 00:00:00";
+                        $params[':date_end'] = $d . " 23:59:59";
+                    }
+                    $top_sql = "TOP 200";
+                }
+
+                $where_sql = !empty($where_clauses) ? "WHERE " . implode(" AND ", $where_clauses) : "";
+
+                $sql = "SELECT {$top_sql} JOB_ORDER, JOBORDER_DATE, SALEORDER_NO, PRODUCT_ID, 
+                               ALLOY, TEMPER, THICKNESS, WIDTH, LENGTH, JOB_ACTUALWEIGHT, JOB_ACTUALPIECE, JOB_STATUS 
+                        FROM JOBORDER1 
+                        {$where_sql}
+                        ORDER BY JOBORDER_DATE DESC, JOB_ORDER DESC";
+
+                $stmt = $conn->prepare($sql);
+                $stmt->execute($params);
+                
+                $jobs_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            ?>
 
             <div class="row">
                 <div class="col-md-12">
@@ -272,7 +313,16 @@ include 'include/'.$folder_func.'/navigation.php';
                         
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:18px;">
-                                📋 Job Order Data Records <?php echo ($d != date('Y-m-d')) ? "(Date: ".htmlspecialchars($d).")" : "(Top 200 Recent)"; ?>
+                                📋 Job Order Data Records 
+                                <?php 
+                                    if ($jno !== '') {
+                                        echo "(Search Job Order: " . htmlspecialchars($jno, ENT_QUOTES, 'UTF-8') . " — Found " . count($jobs_list) . " items)";
+                                    } elseif ($d != date('Y-m-d')) {
+                                        echo "(Date: " . htmlspecialchars($d, ENT_QUOTES, 'UTF-8') . ")";
+                                    } else {
+                                        echo "(Top 200 Recent)";
+                                    }
+                                ?>
                             </h4>
                         </div>
                         
@@ -298,34 +348,6 @@ include 'include/'.$folder_func.'/navigation.php';
                                 </thead>
                                 
                                 <tbody>
-                                <?php
-                                    include 'function_mats.php';
-                                    include("dbcon_mats-new.php");
-                                    ini_set('max_execution_time', 300);
-
-                                    $params = [];
-                                    $where_sql = "";
-
-                                    // ถ้ามีการเลือกวันที่แบบเฉพาะเจาะจง (ไม่ใช่วันนี้) ให้กรองตาม JOBORDER_DATE
-                                    if ($d != date('Y-m-d')) {
-                                        $where_sql = "WHERE JOBORDER_DATE BETWEEN :date_st AND :date_end";
-                                        $params[':date_st'] = $d . " 00:00:00";
-                                        $params[':date_end'] = $d . " 23:59:59";
-                                    }
-
-                                    // Query 500 รายการจาก JOBORDER1
-                                    $sql = "SELECT TOP 200 JOB_ORDER, JOBORDER_DATE, SALEORDER_NO, PRODUCT_ID, 
-                                                   ALLOY, TEMPER, THICKNESS, WIDTH, LENGTH, JOB_ACTUALWEIGHT, JOB_ACTUALPIECE, JOB_STATUS 
-                                            FROM JOBORDER1 
-                                            {$where_sql}
-                                            ORDER BY JOBORDER_DATE DESC, JOB_ORDER DESC";
-
-                                    $stmt = $conn->prepare($sql);
-                                    $stmt->execute($params);
-                                    
-                                    $jobs_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                                ?>
-
                                 <?php foreach ($jobs_list as $index => $job): 
                                     $raw_job = trim($job['JOB_ORDER'] ?? '');
                                     $safe_job = htmlspecialchars($raw_job !== '' ? $raw_job : '-', ENT_QUOTES, 'UTF-8');
@@ -402,23 +424,35 @@ var table = $("#user_table").DataTable({
     buttons: []
 });
 
-// ตรวจสอบว่าถ้าส่ง jno มาหลังจาก Save ให้ฟิลเตอร์ตารางอัตโนมัติ
 $(document).ready(function() {
-    var searchJobNo = '<?php echo $jno; ?>';
+    var searchJobNo = '<?php echo htmlspecialchars($jno, ENT_QUOTES, 'UTF-8'); ?>';
     if (searchJobNo !== '') {
         document.getElementById("job_no").value = searchJobNo;
-        table.search(searchJobNo).draw();
     }
 });
 
+function search_job_order() {
+    var data_fun = document.getElementById("func").value;
+    var data_jno = document.getElementById("job_no").value.trim();
+    var data_date = document.getElementById("pick_date").value;
+
+    var url = 'maintain_job_data_mats.php?func=' + encodeURIComponent(data_fun)
+            + '&jno=' + encodeURIComponent(data_jno);
+
+    if (data_jno === '' && data_date !== '') {
+        url += '&d=' + encodeURIComponent(data_date);
+    }
+
+    window.location.assign(url);
+}
+
 function filter_table() {
-    var val = document.getElementById("job_no").value;
-    table.search(val).draw();
+    search_job_order();
 }
 
 function change_date(val) {
     var data_fun = document.getElementById("func").value;
-    var data_jno = document.getElementById("job_no").value;
+    var data_jno = document.getElementById("job_no").value.trim();
     window.location.assign('maintain_job_data_mats.php?func=' + encodeURIComponent(data_fun) + '&d=' + encodeURIComponent(val) + '&jno=' + encodeURIComponent(data_jno));
 }
 

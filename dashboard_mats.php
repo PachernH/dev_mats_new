@@ -336,15 +336,15 @@ $all_working = RT_CoilWorking();
                                     <div class="flex justify-center text-slate-300 py-1">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
                                     </div>
-                                    <a href="cold_mill_system_mats.php?func=<?php echo $folder_func; ?>" class="flow-card block p-4 bg-indigo-600 text-white rounded-xl shadow-sm no-underline hover:no-underline">
-                                        <div class="text-bg font-bold leading-tight">Cold Rolling Mill</div>
-                                    </a> 
+                                    <a href="coil_packing_mats.php?func=<?php echo $folder_func; ?>" class="flow-card block p-4 bg-indigo-600 text-white rounded-xl shadow-sm no-underline hover:no-underline">
+                                        <div class="text-bg font-bold leading-tight">Coil Packing</div>
+                                    </a>                                        
                                     <div class="flex justify-center text-slate-300 py-1">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
                                     </div>
-                                    <a href="template_mats.php?func=<?php echo $folder_func; ?>" class="flow-card block p-4 bg-indigo-600 text-white rounded-xl shadow-sm no-underline hover:no-underline">
-                                        <div class="text-bg font-bold leading-tight">Inventory Coil</div>
-                                    </a>                                    
+                                    <a href="cold_mill_system_mats.php?func=<?php echo $folder_func; ?>" class="flow-card block p-4 bg-indigo-600 text-white rounded-xl shadow-sm no-underline hover:no-underline">
+                                        <div class="text-bg font-bold leading-tight">Cold Rolling Mill</div>
+                                    </a>                                  
                                     <div class="flex justify-center text-slate-300 py-1">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
                                     </div>
@@ -355,13 +355,7 @@ $all_working = RT_CoilWorking();
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
                                     </div>
                                     <a href="packing_crsh_process_mats.php?func=<?php echo $folder_func; ?>" class="flow-card block p-4 bg-indigo-600 text-white rounded-xl shadow-sm no-underline hover:no-underline">
-                                        <div class="text-bg font-bold leading-tight">Packing</div>
-                                    </a>    
-                                    <div class="flex justify-center text-slate-300 py-1">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
-                                    </div>
-                                    <a href="template_mats.php?func=<?php echo $folder_func; ?>" class="flow-card block p-4 bg-indigo-600 text-white rounded-xl shadow-sm no-underline hover:no-underline">
-                                        <div class="text-bg font-bold leading-tight">Maintain System</div>
+                                        <div class="text-bg font-bold leading-tight">Circle or Sheet Packing</div>
                                     </a>                                                                        
                                 </div>
 

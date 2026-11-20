@@ -13,7 +13,7 @@ if(isset($_POST['username']) && isset($_POST['pw'])){
 
     // ตรวจสอบ Username, Password และคัดกรองพนักงานที่ลาออก (MENU_GROUP <> 'resign')
     $sql = "SELECT USER_ID, USER_PASSWORD, FIRST_NAME, LAST_NAME, USER_POSITION, USER_DEPARTMENT, USER_SECTION, MENU_GROUP 
-            FROM [MATS-NEWII].dbo.USERMSTR1 
+            FROM USERMSTR1 
             WHERE USER_ID = :user 
               AND USER_PASSWORD = :pass 
               AND MENU_GROUP <> 'resign'";        

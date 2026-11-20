@@ -230,7 +230,7 @@ $product_id_filter = isset($_GET['product_id_filter']) ? htmlspecialchars(trim($
                                             "p.JOB_ORDER <> ''",
                                             "p.SALEORDER_NO <> ''",
                                             // 2. กรองไม่ให้รายการที่ยังค้างอยู่ใน PACKPROD1 ขึ้นมาแสดง
-                                            "NOT EXISTS (SELECT 1 FROM [MATS-NEWII].dbo.PACKPROD1 pk WHERE pk.PRODUCT_NO = p.PRODUCT_NO)"
+                                            "NOT EXISTS (SELECT 1 FROM PACKPROD1 pk WHERE pk.PRODUCT_NO = p.PRODUCT_NO)"
                                         ];
 
                                         if (!empty($pack_search)) {
@@ -346,7 +346,7 @@ $product_id_filter = isset($_GET['product_id_filter']) ? htmlspecialchars(trim($
                                                        pk.PACK_OPERATOR1,
                                                        pk.PACK_DATE,
                                                        pk.PACK_STATUS
-                                                FROM [MATS-NEWII].dbo.PACKPROD1 pk
+                                                FROM PACKPROD1 pk
                                                 WHERE {$where_sql}
                                                 ORDER BY pk.PACK_DATE DESC";
 

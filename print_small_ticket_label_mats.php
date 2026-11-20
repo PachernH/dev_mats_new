@@ -29,10 +29,10 @@ if (!empty($prod_no)) {
                           SO2.CONFIRM_DATE, SO2.REQUEST_DATE, SO2.CTM2_UOMWEIGHT, SO2.CTM2_UOMDIMENSION,
                           SO2.CT2U_THICKNESS, SO2.CT2U_WIDTH, SO2.CT2U_LENGTH,
                           SO2.CT2U_UOMDIMENSION, SO2.CT2U_UOMWEIGHT
-                   FROM [MATS-NEWII].dbo.PACKPROD1 P
-                   LEFT JOIN [MATS-NEWII].dbo.CRSHPROD1 C ON P.PRODUCT_NO = C.PRODUCT_NO
-                   LEFT JOIN [MATS-NEWII].dbo.CSTMORDR2 SO2 ON P.SALEORDER_NO = SO2.SALEORDER_NO AND P.SALEORDER_ITEM = SO2.SALEORDER_ITEM
-                   LEFT JOIN [MATS-NEWII].dbo.CSTMORDR1 SO1 ON P.SALEORDER_NO = SO1.SALEORDER_NO
+                   FROM PACKPROD1 P
+                   LEFT JOIN CRSHPROD1 C ON P.PRODUCT_NO = C.PRODUCT_NO
+                   LEFT JOIN CSTMORDR2 SO2 ON P.SALEORDER_NO = SO2.SALEORDER_NO AND P.SALEORDER_ITEM = SO2.SALEORDER_ITEM
+                   LEFT JOIN CSTMORDR1 SO1 ON P.SALEORDER_NO = SO1.SALEORDER_NO
                    WHERE P.PRODUCT_NO = :prod_no {$where_job}";
 
     $stmt_ticket = $conn->prepare($sql_ticket);
@@ -48,7 +48,7 @@ if (!empty($prod_no)) {
     if (!empty($cust_id)) {
         $sql_cust = "SELECT CONSIGNEE_COMPANY, CONSIGNEE_ADDRESS1, CONSIGNEE_ADDRESS2, CONSIGNEE_ADDRESS3,
                             UOM_WEIGHT AS CUST_UOM_WEIGHT, UOM_DIMENSION AS CUST_UOM_DIM
-                     FROM [MATS-NEWII].dbo.CSSPMSTR1 
+                     FROM CSSPMSTR1 
                      WHERE CSTMSPPL_ID = :cust_id";
         $stmt_cust = $conn->prepare($sql_cust);
         $stmt_cust->bindParam(':cust_id', $cust_id, PDO::PARAM_STR);

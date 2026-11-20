@@ -61,7 +61,7 @@ $sql_pack = "SELECT p.PRODUCT_NO, p.SALEORDER_NO, p.SALEORDER_ITEM, p.JOB_ORDER,
                     p.TRANSFER_NO, p.TRANSFER_DATE, p.LINE_PROCESS, p.PRODUCT_ID, p.PACK_PONO, p.PACK_POITEM,
                     p.PACK_DATE, p.PACK_COMBINEWEIGHT, p.PACK_PACKAGEWEIGHT, p.PACK_NETWEIGHT, p.PACK_NETPIECE,
                     p.PACK_MATERIALCODE, p.PACK_STATUS 
-             FROM [MATS-NEWII].dbo.PACKPROD1 AS p
+             FROM PACKPROD1 AS p
              WHERE p.SALEORDER_NO = :saleorder_no
              ORDER BY p.PACK_DATE DESC";
 $stmt_pack_list = $conn->prepare($sql_pack);

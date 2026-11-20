@@ -1,6 +1,7 @@
 <?php
 $serverName = "DB1SERVER"; 
-$databaseName = "MP2";
+//$databaseName = "MP2";
+$databaseName = "MP2TEST";
 $username = "MP2";
 $password = "MP2554315";
 

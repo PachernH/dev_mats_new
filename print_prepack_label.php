@@ -18,8 +18,8 @@ if (empty($product_no)) {
 // ดึงข้อมูลสินค้าจาก CRSHPROD1 และคำสั่งซื้อ CSTMORDR1 ตาม Logic เดิม
 $sql = "SELECT a.PRODUCT_NO, a.PRODUCT_ID, a.PRODUCT_MODEL, a.ALLOY, a.TEMPER, 
                a.THICKNESS, a.WIDTH, a.LENGTH, b.CSTMSPPL_ID, b.ORDER_CATEGORY
-        FROM [MATS-NEWII].dbo.CRSHPROD1 AS a
-        LEFT JOIN [MATS-NEWII].dbo.CSTMORDR1 AS b ON a.SALEORDER_NO = b.SALEORDER_NO
+        FROM CRSHPROD1 AS a
+        LEFT JOIN CSTMORDR1 AS b ON a.SALEORDER_NO = b.SALEORDER_NO
         WHERE a.PRODUCT_NO = :pno";
 
 $stmt = $conn->prepare($sql);

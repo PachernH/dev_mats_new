@@ -3,8 +3,10 @@
 session_start();
 
 // Retrieve session variables
-$iduser_func     = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';$folder_func     = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
-$position_func   = isset($_SESSION['POSITION']) ? strtoupper(trim($_SESSION['POSITION'])) : '';$department_func = isset($_SESSION['DEPARTMENT']) ? strtoupper(trim($_SESSION['DEPARTMENT'])) : '';
+$iduser_func     = isset($_SESSION['ID']) ? htmlspecialchars($_SESSION['ID'], ENT_QUOTES, 'UTF-8') : '';
+$folder_func     = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
+$position_func   = isset($_SESSION['POSITION']) ? strtoupper(trim($_SESSION['POSITION'])) : '';
+$department_func = isset($_SESSION['DEPARTMENT']) ? strtoupper(trim($_SESSION['DEPARTMENT'])) : '';
 
 // Redirect if session expired
 if (empty($iduser_func)) {
@@ -16,7 +18,8 @@ $current_dept = strtoupper(trim($department_func));
 $is_authorized = ($current_dept === 'PK' || $current_dept === 'PP' || $current_dept === 'IT');
 
 // Search parameters (Fixed to packed history only)
-$pack_search       = isset($_GET['pack_search']) ? htmlspecialchars(trim($_GET['pack_search']), ENT_QUOTES, 'UTF-8') : '';$product_id_filter = isset($_GET['product_id_filter']) ? htmlspecialchars(trim($_GET['product_id_filter']), ENT_QUOTES, 'UTF-8') : '';
+$pack_search       = isset($_GET['pack_search']) ? htmlspecialchars(trim($_GET['pack_search']), ENT_QUOTES, 'UTF-8') : '';
+$product_id_filter = isset($_GET['product_id_filter']) ? htmlspecialchars(trim($_GET['product_id_filter']), ENT_QUOTES, 'UTF-8') : '';
 ?>
 <!doctype html>
 <html lang="en">
@@ -35,7 +38,7 @@ $pack_search       = isset($_GET['pack_search']) ? htmlspecialchars(trim($_GET['
         
         .dashboard-card {
             background: #ffffff; border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.08);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
             padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;
         }
 
@@ -62,54 +65,143 @@ $pack_search       = isset($_GET['pack_search']) ? htmlspecialchars(trim($_GET['
 
         .btn-search {
             background-color: #1e293b; color: #ffffff; font-weight: 600; font-size: 13px;
-            letter-spacing: 0.5px; height: 40px; padding: 0 20px; border-radius: 8px; border: none; transition: all 0.2s;
+            letter-spacing: 0.5px; height: 40px; padding: 0 22px; border-radius: 8px; border: none; transition: all 0.2s;
         }
-        .btn-search:hover { background-color: #0f172a; color: #ffffff; transform: translateY(-1px); }
+        .btn-search:hover { background-color: #0f172a; color: #ffffff; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15); }
 
         .btn-action-group {
             display: inline-flex;
-            gap: 4px;
+            gap: 5px;
             justify-content: center;
             align-items: center;
         }
 
         .btn-ticket-label {
-            background-color: #059669; color: #ffffff; font-weight: 700; font-size: 11px;
-            letter-spacing: 0.3px; padding: 5px 10px; border-radius: 6px; border: none; transition: all 0.2s;
+            background-color: #059669; color: #ffffff; font-weight: 600; font-size: 11px;
+            letter-spacing: 0.2px; padding: 5px 10px; border-radius: 6px; border: none; transition: all 0.15s ease;
             display: inline-flex; align-items: center; gap: 3px; text-decoration: none;
         }
-        .btn-ticket-label:hover { background-color: #047857; color: #ffffff; }
+        .btn-ticket-label:hover { background-color: #047857; color: #ffffff; transform: translateY(-1px); }
 
         .btn-pre-packing {
-            background-color: #2563eb; color: #ffffff; font-weight: 700; font-size: 11px;
-            letter-spacing: 0.3px; padding: 5px 10px; border-radius: 6px; border: none; transition: all 0.2s;
+            background-color: #2563eb; color: #ffffff; font-weight: 600; font-size: 11px;
+            letter-spacing: 0.2px; padding: 5px 10px; border-radius: 6px; border: none; transition: all 0.15s ease;
             display: inline-flex; align-items: center; gap: 3px; text-decoration: none;
         }
-        .btn-pre-packing:hover { background-color: #1d4ed8; color: #ffffff; }
+        .btn-pre-packing:hover { background-color: #1d4ed8; color: #ffffff; transform: translateY(-1px); }
 
         /* Badges */
         .badge-product {
             display: inline-block;
             background-color: #f1f5f9; color: #0f172a; font-weight: 700; font-size: 12px;
-            padding: 3px 8px; border-radius: 5px; border: 1px solid #cbd5e1;
+            padding: 4px 9px; border-radius: 6px; border: 1px solid #cbd5e1;
+            font-family: 'Consolas', 'Courier New', monospace;
         }
         .badge-status-st {
-            background-color: #f1f5f9; color: #475569; font-weight: 700;
-            font-size: 11px; padding: 3px 8px; border-radius: 4px; display: inline-block; border: 1px solid #cbd5e1;
+            background-color: #ecfdf5; color: #047857; font-weight: 700;
+            font-size: 11px; padding: 3px 8px; border-radius: 999px; display: inline-block; border: 1px solid #a7f3d0;
         }
 
-        /* Table */
-        .table-custom { width: 100% !important; margin: 0 !important; border-collapse: collapse; }
-        .table-custom th {
-            background-color: #f8fafc; color: #475569; font-weight: 700; font-size: 11.5px;
-            text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 8px !important;
-            border-bottom: 2px solid #e2e8f0; white-space: nowrap;
+        /* Polished Modern Table Styling */
+        .dataTables_wrapper { width: 100%; font-size: 12.5px; color: #334155; }
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            margin-bottom: 14px;
+            font-size: 12.5px;
+            color: #475569;
         }
-        .table-custom td {
-            padding: 9px 8px !important; vertical-align: middle; font-size: 12.5px;
-            border-bottom: 1px solid #f1f5f9; white-space: nowrap;
+        .dataTables_wrapper .dataTables_length select {
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 4px 8px;
+            background-color: #fff;
+            font-weight: 600;
+            color: #1e293b;
         }
-        .table-custom tbody tr:hover td { background-color: #f0f9ff !important; }
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 5px 10px;
+            margin-left: 6px;
+            background-color: #fff;
+            color: #1e293b;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .dataTables_wrapper .dataTables_filter input:focus {
+            border-color: #2563eb;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        table.table-custom { 
+            width: 100% !important; 
+            margin: 0 !important; 
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        table.table-custom th {
+            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important; 
+            color: #1e293b !important; 
+            font-weight: 700 !important; 
+            font-size: 11px !important;
+            text-transform: uppercase !important; 
+            letter-spacing: 0.6px !important; 
+            padding: 13px 12px !important;
+            border-bottom: 2px solid #cbd5e1 !important; 
+            white-space: nowrap !important;
+        }
+        
+        table.table-custom td {
+            padding: 10px 12px !important; 
+            vertical-align: middle !important; 
+            font-size: 12.5px !important;
+            border-bottom: 1px solid #edf2f7 !important; 
+            white-space: nowrap !important;
+            transition: background-color 0.15s ease;
+        }
+
+        table.table-custom tbody tr:last-child td {
+            border-bottom: none !important;
+        }
+        
+        table.table-custom tbody tr:hover td { 
+            background-color: #eff6ff !important; 
+        }
+
+        /* Pagination Styling */
+        .dataTables_wrapper .dataTables_info {
+            padding-top: 14px;
+            font-size: 12px;
+            color: #64748b;
+        }
+        .dataTables_wrapper .dataTables_paginate {
+            padding-top: 12px;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            border-radius: 6px !important;
+            border: 1px solid transparent !important;
+            padding: 5px 11px !important;
+            margin: 0 2px !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            color: #475569 !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #f1f5f9 !important;
+            border-color: #cbd5e1 !important;
+            color: #0f172a !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+            background: #1e293b !important;
+            border-color: #1e293b !important;
+            color: #ffffff !important;
+        }
     </style>
 </head>
 <body>
@@ -166,48 +258,46 @@ $pack_search       = isset($_GET['pack_search']) ? htmlspecialchars(trim($_GET['
                 <div class="col-md-12">
                     <div class="dashboard-card">
                         <!-- Packed Items (Fetched from PACKPROD1) -->
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                             <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:16px;">
                                 Packed Records History
                             </h4>
                         </div>
 
                         <div class="table-responsive">
-                            <table id="tbl_packed" class="table-custom">
+                            <table id="tbl_packed" class="table-custom" style="width:100%">
                                 <thead>
                                     <tr>
-                                        <th style="text-align: center; width: 140px;">Product No</th>
-                                        <th style="text-align: center; width: 110px;">Pack Date</th>
-                                        <th style="text-align: center; width: 120px;">Job Order</th>
-                                        <th style="text-align: center; width: 130px;">Sales Order</th>
-                                        <th style="text-align: center; width: 140px;">Pallet Code</th>
-                                        <th style="text-align: center; width: 60px;">Stack</th>
-                                        <th style="text-align: right; width: 100px;">Net Wt (kg)</th>
-                                        <th style="text-align: right; width: 80px;">Net Pcs</th>
-                                        <th style="text-align: center; width: 90px;">Operator</th>
-                                        <th style="text-align: center; width: 70px;">Status</th>
-                                        <th style="text-align: center; width: 170px;">Action</th>
+                                        <th style="text-align: center;">Product No</th>
+                                        <th style="text-align: center;">Pack Date</th>
+                                        <th style="text-align: center;">Job Order</th>
+                                        <th style="text-align: center;">Sales Order</th>
+                                        <th style="text-align: center;">Pallet Code</th>
+                                        <th style="text-align: center;">Stack</th>
+                                        <th style="text-align: right;">Net Wt (kg)</th>
+                                        <th style="text-align: right;">Net Pcs</th>
+                                        <th style="text-align: center;">Operator</th>
+                                        <th style="text-align: center;">Status</th>
+                                        <th style="text-align: center;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                 <?php
                                     include("dbcon_mats-new.php");
 
+                                    $params = [];
+                                    $where_clauses = ["pk.PACK_STATUS = 'ST'"];
 
-                                        $params = [];
+                                    if (!empty($pack_search)) {
+                                        $where_clauses[] = "(pk.PRODUCT_NO LIKE :kw OR pk.JOB_ORDER LIKE :kw OR pk.SALEORDER_NO LIKE :kw OR pk.PACK_MATERIALCODE LIKE :kw)";
+                                        $params[':kw'] = '%' . $pack_search . '%';
+                                    }
+                                    if (!empty($product_id_filter)) {
+                                        $where_clauses[] = "pk.PRODUCT_ID = :product_id";
+                                        $params[':product_id'] = $product_id_filter;
+                                    }
 
-                                        $where_clauses = ["pk.PACK_STATUS = 'ST'"];
-
-                                        if (!empty($pack_search)) {
-                                            $where_clauses[] = "(pk.PRODUCT_NO LIKE :kw OR pk.JOB_ORDER LIKE :kw OR pk.SALEORDER_NO LIKE :kw OR pk.PACK_MATERIALCODE LIKE :kw)";
-                                            $params[':kw'] = '%' . $pack_search . '%';
-                                        }
-                                        if (!empty($product_id_filter)) {
-                                            $where_clauses[] = "pk.PRODUCT_ID = :product_id";
-                                            $params[':product_id'] = $product_id_filter;
-                                        }
-
-                                        $where_sql = implode(' AND ', $where_clauses);
+                                    $where_sql = implode(' AND ', $where_clauses);
 
                                     // Fetch packed items from PACKPROD1
                                     $sql = "SELECT TOP 200 
@@ -222,29 +312,35 @@ $pack_search       = isset($_GET['pack_search']) ? htmlspecialchars(trim($_GET['
                                                    pk.PACK_OPERATOR1,
                                                    pk.PACK_DATE,
                                                    pk.PACK_STATUS
-                                            FROM [MATS-NEWII].dbo.PACKPROD1 pk
+                                            FROM PACKPROD1 pk
                                             WHERE {$where_sql}
                                             ORDER BY pk.PACK_DATE DESC";
 
                                     $stmt = $conn->prepare($sql);
                                     $stmt->execute($params);
 
-                                    while ($row =$stmt->fetch(PDO::FETCH_ASSOC)) {
+                                    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                                         $prod_no    = htmlspecialchars(trim($row['PRODUCT_NO'] ?? ''), ENT_QUOTES, 'UTF-8');
                                         $job_no     = htmlspecialchars(trim($row['JOB_ORDER'] ?? '-'), ENT_QUOTES, 'UTF-8');
-                                        $so_display = htmlspecialchars(trim($row['SALEORDER_NO'] ?? '-'), ENT_QUOTES, 'UTF-8') . ' / ' . htmlspecialchars(trim($row['SALEORDER_ITEM'] ?? ''), ENT_QUOTES, 'UTF-8');$pack_code  = htmlspecialchars(trim($row['PACK_MATERIALCODE'] ?? '-'), ENT_QUOTES, 'UTF-8');$stack_num  = (int)($row['PACK_STACKNUMBER'] ?? 1);$net_wt     = number_format((float)($row['PACK_NETWEIGHT'] ?? 0), 0);$net_pc     = number_format((float)($row['PACK_NETPIECE'] ?? 0), 0);$operator   = htmlspecialchars(trim($row['PACK_OPERATOR1'] ?? '-'), ENT_QUOTES, 'UTF-8');$pack_date  = !empty($row['PACK_DATE']) ? date('d/m/Y H:i', strtotime($row['PACK_DATE'])) : '-';
+                                        $so_display = htmlspecialchars(trim($row['SALEORDER_NO'] ?? '-'), ENT_QUOTES, 'UTF-8') . ' / ' . htmlspecialchars(trim($row['SALEORDER_ITEM'] ?? ''), ENT_QUOTES, 'UTF-8');
+                                        $pack_code  = htmlspecialchars(trim($row['PACK_MATERIALCODE'] ?? '-'), ENT_QUOTES, 'UTF-8');
+                                        $stack_num  = (int)($row['PACK_STACKNUMBER'] ?? 1);
+                                        $net_wt     = number_format((float)($row['PACK_NETWEIGHT'] ?? 0), 0);
+                                        $net_pc     = number_format((float)($row['PACK_NETPIECE'] ?? 0), 0);
+                                        $operator   = htmlspecialchars(trim($row['PACK_OPERATOR1'] ?? '-'), ENT_QUOTES, 'UTF-8');
+                                        $pack_date  = !empty($row['PACK_DATE']) ? date('d/m/Y H:i', strtotime($row['PACK_DATE'])) : '-';
                                         $status     = htmlspecialchars(trim($row['PACK_STATUS'] ?? 'ST'), ENT_QUOTES, 'UTF-8');
 
                                         echo "<tr>";
                                         echo "<td align='center'><span class='badge-product'>{$prod_no}</span></td>";
-                                        echo "<td align='center' style='font-size:11.5px; color:#64748b;'>{$pack_date}</td>";
-                                        echo "<td align='center' style='font-weight:600;'>{$job_no}</td>";
-                                        echo "<td align='center'>{$so_display}</td>";
+                                        echo "<td align='center' style='font-size:12px; color:#64748b;'>{$pack_date}</td>";
+                                        echo "<td align='center' style='font-weight:600; color:#1e293b;'>{$job_no}</td>";
+                                        echo "<td align='center' style='color:#334155;'>{$so_display}</td>";
                                         echo "<td align='center' style='font-weight:700; color:#1e40af;'>{$pack_code}</td>";
-                                        echo "<td align='center'>{$stack_num}</td>";
+                                        echo "<td align='center' style='font-weight:600;'>{$stack_num}</td>";
                                         echo "<td align='right' style='font-weight:700; color:#059669;'>{$net_wt}</td>";
-                                        echo "<td align='right'>{$net_pc}</td>";
-                                        echo "<td align='center'>{$operator}</td>";
+                                        echo "<td align='right' style='font-weight:600; color:#334155;'>{$net_pc}</td>";
+                                        echo "<td align='center' style='color:#475569;'>{$operator}</td>";
                                         echo "<td align='center'><span class='badge-status-st'>{$status}</span></td>";
                                         echo "<td align='center'>";
                                         echo "<div class='btn-action-group'>";
@@ -274,22 +370,13 @@ $pack_search       = isset($_GET['pack_search']) ? htmlspecialchars(trim($_GET['
 
 <script type="text/javascript">
 $(document).ready(function() {
-    var table = $('#tbl_packed').DataTable({
+    $('#tbl_packed').DataTable({
         autoWidth: false,
-        scrollX: true,
-        scrollCollapse: true,
         paging: true,
         pageLength: 10,
         lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
         order: [[1, 'desc']] // Sort by Pack Date descending
     });
-
-    $(window).on('resize', function () {
-        table.columns.adjust();
-    });
-    setTimeout(function() {
-        table.columns.adjust();
-    }, 200);
 });
 
 function search_packing() {

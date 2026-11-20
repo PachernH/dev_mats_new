@@ -9,7 +9,8 @@ if (empty($iduser_func)) {
     exit();
 }
 
-$is_authorized = ($department_func === 'MK' || $department_func === 'IT');
+$current_func = strtoupper(trim(!empty($folder_func) ? $folder_func : ($_GET['func'] ?? '')));
+$is_authorized = ($current_func === 'SALE' || $department_func === 'MK');
 
 $search_period = htmlspecialchars(trim($_GET['search_period'] ?? ''), ENT_QUOTES, 'UTF-8');
 $search_cust   = htmlspecialchars(trim($_GET['search_cust'] ?? ''), ENT_QUOTES, 'UTF-8');
@@ -142,12 +143,18 @@ $search_cust   = htmlspecialchars(trim($_GET['search_cust'] ?? ''), ENT_QUOTES, 
                                 echo "<td align='center'>{$r['CURRENCY_ID']}</td>";
                                 echo "<td align='right'>".number_format((float)$r['EXCHANGE_RATE'], 5)."</td>";
                                 echo "<td align='right'>".number_format((float)$r['LME_AVERAGE'], 2)."</td>";
+                                if ($is_authorized){
                                 echo "<td align='center'>
                                         <a href='price_period_detail.php?func={$folder_func}&mode=view&period={$p_val}&coil={$c_val}&cust={$cu_val}' 
                                            class='btn-action-view'>
                                             View / Edit
                                         </a>
                                       </td>";
+                                }else{
+                                echo "<td align='center'>
+                                            <a href='#' class='btn-action-view'>View / Edit</a>
+                                      </td>";
+                                }      
                                 echo "</tr>";
                             }
                         ?>
