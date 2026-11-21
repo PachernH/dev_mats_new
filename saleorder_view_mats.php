@@ -105,7 +105,7 @@ $sono = isset($_GET['sono']) ? htmlspecialchars(trim($_GET['sono']), ENT_QUOTES,
 <body>
 
 <div class="wrapper">
-    <?php $menu = 'SO'; ?>
+    <?php $menu = 'A1'; ?>
     <?php include 'include/'.$folder_func.'/navigation.php'; ?>
 
     <div class="main-panel">

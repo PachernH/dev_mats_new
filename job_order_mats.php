@@ -134,7 +134,7 @@ $is_old_record = !empty($job_no_param);
 </div>
 
 <div class="wrapper">
-    <?php $menu = 'JOB'; ?>
+    <?php $menu = 'A2'; ?>
     <?php include 'include/'.$folder_func.'/navigation.php'; ?>
 
     <div class="main-panel">

@@ -143,7 +143,7 @@ $periods      = $conn->query("SELECT DISTINCT PRICE_PERIOD FROM PRICMSTR1 WHERE 
 <body>
 
 <div class="wrapper">
-    <?php $menu = 'SO'; ?>
+    <?php $menu = 'A1'; ?>
     <?php include 'include/'.$folder_func.'/navigation.php'; ?>
 
     <div class="main-panel">

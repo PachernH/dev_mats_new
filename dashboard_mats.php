@@ -241,25 +241,22 @@ $all_working = RT_CoilWorking();
                             <div class="grid grid-cols-3 gap-4 mt-2">
                                 <div class="space-y-3 text-center">
                                     <h4 class="text-[14px] font-bold text-slate-400 uppercase">Input</h4>
-                                    <a href="packing_list_process_mats.php?func=<?php echo $folder_func; ?>" class="flow-card block p-4 bg-indigo-600 text-white rounded-xl shadow-sm no-underline hover:no-underline">
-                                        <div class="text-bg font-bold leading-tight">Material Receive (Ingots)</div>
-                                    </a>
-                                    <a href="template_mats.php?func=<?php echo $folder_func; ?>" class="flow-card block p-4 bg-white border border-slate-200 rounded-lg text-bg text-slate-700 font-medium no-underline hover:no-underline">
-                                        Quality Inspection
+                                    <a href="warehouse_module_mats.php?func=<?php echo $folder_func; ?>" class="flow-card block p-4 bg-indigo-600 text-white rounded-xl shadow-sm no-underline hover:no-underline">
+                                        <div class="text-bg font-bold leading-tight">Material Receive</div>
                                     </a>
                                 </div>
 
                                 <div class="space-y-3 text-center">
                                     <h4 class="text-[14px] font-bold text-slate-400 uppercase">Processing</h4>
                                     <div class="grid grid-cols-2 gap-2">
-                                        <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=coil" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
+                                        <a href="history_coil_log_mats.php?func=<?php echo $folder_func; ?>&type=coil" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
                                             <div class="text-orange-600 text-bg font-bold mb-2 uppercase">Inventory Stock</div>
                                             <div class="flex justify-center">
                                                 <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Coil</span>
                                             </div>
                                         </a>
                                         
-                                        <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sheet" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
+                                        <a href="history_crsh_log_mats.php?func=<?php echo $folder_func; ?>&type=sheet" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
                                             <div class="text-orange-600 text-bg font-bold mb-2 uppercase">Inventory Stock</div>
                                             <div class="flex justify-center">
                                                 <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Sheet</span>
@@ -289,7 +286,7 @@ $all_working = RT_CoilWorking();
                                 </div>
 
                                 <div class="space-y-3 text-center">
-                                    <a href="template_mats.php?func=<?php echo $folder_func; ?>" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable">
+                                    <a href="maintain_product_status_mats.php?func=<?php echo $folder_func; ?>" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable">
                                         <div class="flex justify-around gap-1">
                                             <span class="px-2 py-1 bg-white rounded text-[14px] shadow-sm font-semibold border border-orange-100 flex-1">Return Production</span>
                                         </div>

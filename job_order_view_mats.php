@@ -123,7 +123,7 @@ $job_no_param = isset($_GET['jobno']) ? htmlspecialchars(trim($_GET['jobno']), E
 </div>
 
 <div class="wrapper">
-    <?php $menu = 'JOB'; ?>
+    <?php $menu = 'A2'; ?>
     <?php include 'include/'.$folder_func.'/navigation.php'; ?>
 
     <div class="main-panel">

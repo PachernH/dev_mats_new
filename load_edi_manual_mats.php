@@ -166,10 +166,14 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
             <div class="modern-card">
                 <div class="card-header-flex">
                     <h3 class="card-title">
+                        <svg width="22" height="22" fill="none" stroke="#2563eb" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                        นำเข้าคำสั่งซื้อจากไฟล์ Excel
+                    </h3>  
+                    <!---                  
+                    <h3 class="card-title">
                         <svg width="22" height="22" fill="none" stroke="#0f766e" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         นำเข้าคำสั่งซื้อจากไฟล์ Excel 
                     </h3>
-                    <!---
                     <span style="font-size:12.5px; color:#64748b; background:#f1f5f9; padding:5px 12px; border-radius:8px;">
                         โหมด: <b>MANUAL_EXCEL</b> (ดึง Remark จาก STNDMSTR6 อัตโนมัติหากเว้นว่าง)
                     </span>
@@ -198,7 +202,10 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                     <div class="drop-zone" id="dropZone">
                         <input type="file" id="excelFile" accept=".xlsx" style="display:none;">
                         <div class="drop-icon">
+                            <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            <!---
                             <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                            --->
                         </div>
                         <div class="drop-title" id="dropTitle">ลากไฟล์ Excel (.xlsx) มาวางที่นี่ หรือ คลิกเพื่อเลือกไฟล์</div>
                         <div class="drop-subtitle" id="dropSubtitle">รองรับไฟล์ .xlsx (เช่น EDIManual.xlsx, EDI test.xlsx) สามารถแก้ไขค่าในตารางได้ก่อนบันทึก</div>
