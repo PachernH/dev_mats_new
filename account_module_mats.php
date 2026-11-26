@@ -79,46 +79,10 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
                             </div>
                             &nbsp;
                             <div class="flex flex-col gap-3 mt-2">
-                                <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                <a href="invoice_close_list_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
                                     <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                     <div>
                                         <div class="text-bg font-bold text-blue-900">Close Invoice</div>
-                                        <div class="text-[10px] text-blue-600 uppercase">Function</div>
-                                    </div>
-                                </a>
-
-                                <div class="flex justify-center text-slate-300 py-1">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
-                                </div>
-                                
-                                <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
-                                    <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
-                                    <div>
-                                        <div class="text-bg font-bold text-blue-900">Local Material Receive</div>
-                                        <div class="text-[10px] text-blue-600 uppercase">Function</div>
-                                    </div>
-                                </a>
-
-                                <div class="flex justify-center text-slate-300 py-1">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
-                                </div>
-                                
-                                <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
-                                    <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
-                                    <div>
-                                        <div class="text-bg font-bold text-blue-900">Select Invoice for Cut Off Local Material</div>
-                                        <div class="text-[10px] text-blue-600 uppercase">Function</div>
-                                    </div>
-                                </a>
-                                
-                                <div class="flex justify-center text-slate-300 py-1">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
-                                </div>
-                                
-                                <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
-                                    <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
-                                    <div>
-                                        <div class="text-bg font-bold text-blue-900">Journal Voucher(For Stock Movement)</div>
                                         <div class="text-[10px] text-blue-600 uppercase">Function</div>
                                     </div>
                                 </a>
@@ -146,18 +110,7 @@ $group_func  = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], 
                                         <div class="text-[10px] text-blue-600 uppercase">Function</div>
                                     </div>
                                 </a>  
-                                
-                                <div class="flex justify-center text-slate-300 py-1">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
-                                </div>
-                                
-                                <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
-                                    <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
-                                    <div>
-                                        <div class="text-bg font-bold text-blue-900">Asset</div>
-                                        <div class="text-[10px] text-blue-600 uppercase">Function</div>
-                                    </div>
-                                </a>                                   
+                                                             
                                 &nbsp;
                             </div>
                         </div>

@@ -34,10 +34,57 @@ if (!$is_invoice_authorized) {
         .section-title {
             font-size: 14px; font-weight: 700; color: #1e293b; text-transform: uppercase;
             letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 16px;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .form-group label { font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }
-        .form-control { height: 36px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid #cbd5e1; }
+        .form-group { margin-bottom: 10px; }
+        .form-group label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 3px; }
+        .form-control { height: 35px; font-size: 12.5px; font-weight: 600; border-radius: 6px; border: 1px solid #cbd5e1; padding: 4px 10px; }
         .form-control[readonly], .form-control:disabled { background-color: #f1f5f9; color: #475569; }
+        
+        /* Sub-group Styling */
+        .sub-group-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 14px 4px 14px;
+            margin-bottom: 12px;
+        }
+        .sub-group-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 10px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .req-star { color: #dc2626; font-weight: 800; }
+        .req-input { border-color: #93c5fd; background-color: #ffffff; }
+        
+        /* Additional Charges Box */
+        .charges-box {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 12px 14px 4px 14px;
+            margin-top: 4px;
+        }
+        .charges-box .sub-group-title {
+            color: #1e3a8a;
+            border-bottom-color: #bfdbfe;
+        }
+        .charges-box label {
+            color: #1e40af !important;
+        }
+        .charges-box .form-control {
+            background-color: #ffffff;
+            border-color: #93c5fd;
+        }
+
         .addr-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; height: 100%; }
         .addr-box h6 { font-size: 12px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 8px; }
     </style>
@@ -78,186 +125,216 @@ if (!$is_invoice_authorized) {
             <form id="entryForm">
                 <!-- 1. INVOICE HEADING & SHIPPING -->
                 <div class="dashboard-card">
-                    <div class="section-title">1. Invoice Heading &amp; Shipment Information</div>
-                    <div class="row">
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Invoice Prefix *</label>
-                                <select id="PREFIX" class="form-control">
-                                    <option value="MAT-Z-">MAT-Z- (Default)</option>
-                                    <option value="MAT-C-">MAT-C-</option>
-                                    <option value="MAT-E-">MAT-E-</option>
-                                    <option value="MAT-V-">MAT-V- (OVMI)</option>
-                                    <option value="MAT-H-">MAT-H-</option>
-                                    <option value="MAT-N-">MAT-N-</option>
-                                    <option value="MAT-T-">MAT-T-</option>
-                                </select>
+                    <div class="section-title">
+                        <span>1. Invoice Heading &amp; Shipment Information</span>
+                        <span style="font-size:11px; color:#64748b;">(<span class="req-star">*</span> ข้อมูลจำเป็นต้องระบุ)</span>
+                    </div>
+
+                    <!-- กลุ่มที่ 1: ข้อมูลเอกสารหลักและบัญชี -->
+                    <div class="sub-group-box">
+                        <div class="sub-group-title">
+                            <span style="color:#2563eb;">●</span> 1.1 General &amp; Account Info (ข้อมูลเอกสารหลักและลูกค้า)
+                        </div>
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Invoice Prefix <span class="req-star">*</span></label>
+                                    <select id="PREFIX" class="form-control req-input">
+                                        <option value="MAT-Z-">MAT-Z- (Default)</option>
+                                        <option value="MAT-C-">MAT-C-</option>
+                                        <option value="MAT-E-">MAT-E-</option>
+                                        <option value="MAT-V-">MAT-V- (OVMI)</option>
+                                        <option value="MAT-H-">MAT-H-</option>
+                                        <option value="MAT-N-">MAT-N-</option>
+                                        <option value="MAT-T-">MAT-T-</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Customer ID <span class="req-star">*</span></label>
+                                    <select id="CSTMSPPL_ID" class="form-control req-input" required>
+                                        <option value="">-- Select Customer --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Invoice Date <span class="req-star">*</span></label>
+                                    <input type="date" id="INVOICE_DATE" class="form-control req-input" value="<?php echo date('Y-m-d'); ?>" required>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Shipment Date <span class="req-star">*</span></label>
+                                    <input type="date" id="SHIPMENT_DATE" class="form-control req-input" value="<?php echo date('Y-m-d'); ?>" required>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Material In (BOI)</label>
+                                    <select id="INV1_MATERIALINPRN" class="form-control">
+                                        <option value="">-- Select --</option>
+                                        <option value="BOI-MAT1">BOI-MAT1</option>
+                                        <option value="BOI-MAT2">BOI-MAT2</option>
+                                        <option value="BOI-GRS1">BOI-GRS1</option>
+                                        <option value="BOI-IMP1">BOI-IMP1</option>
+                                        <option value="BOI-IMP2">BOI-IMP2</option>
+                                        <option value="NONE-BOI">NONE-BOI</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Customer ID *</label>
-                                <select id="CSTMSPPL_ID" class="form-control" required>
-                                    <option value="">-- Select Customer --</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Invoice Date *</label>
-                                <input type="date" id="INVOICE_DATE" class="form-control" value="<?php echo date('Y-m-d'); ?>" required>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Shipment Date *</label>
-                                <input type="date" id="SHIPMENT_DATE" class="form-control" value="<?php echo date('Y-m-d'); ?>" required>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Material In (BOI)</label>
-                                <select id="INV1_MATERIALINPRN" class="form-control">
-                                    <option value="">-- Select --</option>
-                                    <option value="BOI-MAT1">BOI-MAT1</option>
-                                    <option value="BOI-MAT2">BOI-MAT2</option>
-                                    <option value="BOI-GRS1">BOI-GRS1</option>
-                                    <option value="BOI-IMP1">BOI-IMP1</option>
-                                    <option value="BOI-IMP2">BOI-IMP2</option>
-                                    <option value="NONE-BOI">NONE-BOI</option>
-                                </select>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Account Code (Auto)</label>
+                                    <input type="text" id="ACCOUNT_CODE" class="form-control" readonly placeholder="Auto-filled from Customer">
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Account Code</label>
-                                <input type="text" id="ACCOUNT_CODE" class="form-control" readonly>
+                    <!-- กลุ่มที่ 2: เงื่อนไขการค้าและการเงิน -->
+                    <div class="sub-group-box">
+                        <div class="sub-group-title">
+                            <span style="color:#059669;">●</span> 1.2 Trade Terms &amp; Banking (เงื่อนไขการค้าและการชำระเงิน)
+                        </div>
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Currency</label>
+                                    <select id="CURRENCY_ID" class="form-control"></select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>VAT (%)</label>
+                                    <select id="INV1_TAXPERCENT" class="form-control">
+                                        <option value="0">0%</option>
+                                        <option value="7">7%</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Payment Term</label>
+                                    <select id="PAYMENT_ID" class="form-control"></select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Shipment Term</label>
+                                    <select id="SHIPMENT_ID" class="form-control"></select>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Currency</label>
-                                <select id="CURRENCY_ID" class="form-control"></select>
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="form-group">
+                                    <label>Bank</label>
+                                    <select id="BANK_ID" class="form-control"></select>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>VAT (%)</label>
-                                <select id="INV1_TAXPERCENT" class="form-control">
-                                    <option value="0">0%</option>
-                                    <option value="7">7%</option>
-                                </select>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Letter of Credit (L/C)</label>
+                                    <input type="text" id="LETTER_CREDIT" class="form-control" oninput="this.value=this.value.toUpperCase()">
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>Payment Term</label>
-                                <select id="PAYMENT_ID" class="form-control"></select>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>Shipment Term</label>
-                                <select id="SHIPMENT_ID" class="form-control"></select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>Booking No. (Export Only)</label>
-                                <select id="BOOK_NO" class="form-control" disabled>
-                                    <option value="">-- No Booking --</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>Bank</label>
-                                <select id="BANK_ID" class="form-control"></select>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>Letter of Credit (L/C)</label>
-                                <input type="text" id="LETTER_CREDIT" class="form-control" oninput="this.value=this.value.toUpperCase()">
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>Shipped By</label>
-                                <input type="text" id="INV1_SHIPPEDBY" class="form-control" oninput="this.value=this.value.toUpperCase()">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>FOB Value @</label>
+                                    <input type="text" id="FOB_VALUE" class="form-control text-right">
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>Port of Loading</label>
-                                <select id="INV1_PORTLOADING" class="form-control"></select>
+                    <!-- กลุ่มที่ 3: เส้นทางและการจัดส่ง -->
+                    <div class="sub-group-box">
+                        <div class="sub-group-title">
+                            <span style="color:#d97706;">●</span> 1.3 Logistics &amp; Destination (การขนส่งและปลายทาง)
+                        </div>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Booking No. (Export Only)</label>
+                                    <select id="BOOK_NO" class="form-control" disabled>
+                                        <option value="">-- No Booking --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Shipped By</label>
+                                    <input type="text" id="INV1_SHIPPEDBY" class="form-control" oninput="this.value=this.value.toUpperCase()">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Port of Loading</label>
+                                    <select id="INV1_PORTLOADING" class="form-control"></select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Port of Discharge</label>
+                                    <select id="INV1_PORTDISCHARGE" class="form-control"></select>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>Port of Discharge</label>
-                                <select id="INV1_PORTDISCHARGE" class="form-control"></select>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Place Destination</label>
+                                    <select id="INV1_PLACEDESTINATION" class="form-control"></select>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>Place Destination</label>
-                                <select id="INV1_PLACEDESTINATION" class="form-control"></select>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>Country Destination</label>
-                                <select id="INV1_COUNTRYDESTINATION" class="form-control"></select>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Country Destination</label>
+                                    <select id="INV1_COUNTRYDESTINATION" class="form-control"></select>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Additional Charges -->
-                    <div class="row" style="background:#f8fafc; padding-top:10px; border-radius:8px; margin: 5px 0;">
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Transportation</label>
-                                <input type="number" step="0.01" id="INV1_TRANSPORTATION" class="form-control text-right" value="0.00">
-                            </div>
+                    <!-- กลุ่มที่ 4: ค่าใช้จ่ายเพิ่มเติม -->
+                    <div class="charges-box">
+                        <div class="sub-group-title">
+                            <span>●</span> 1.4 Additional Charges &amp; Adjustments (ค่าใช้จ่ายเพิ่มเติมและส่วนลด)
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Discount</label>
-                                <input type="number" step="0.01" id="INV1_DISCOUNT" class="form-control text-right" value="0.00">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>(+) Transportation</label>
+                                    <input type="number" step="0.01" id="INV1_TRANSPORTATION" class="form-control text-right" value="0.00">
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Oversea Freight</label>
-                                <input type="number" step="0.01" id="INV1_OVERSEAFREIGHT" class="form-control text-right" value="0.00">
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>(-) Discount</label>
+                                    <input type="number" step="0.01" id="INV1_DISCOUNT" class="form-control text-right" value="0.00">
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Insurance</label>
-                                <input type="number" step="0.01" id="INV1_INSURANCE" class="form-control text-right" value="0.00">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>(+) Oversea Freight</label>
+                                    <input type="number" step="0.01" id="INV1_OVERSEAFREIGHT" class="form-control text-right" value="0.00">
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Soncap Certificate</label>
-                                <input type="number" step="0.01" id="INV1_CERTIFICATE" class="form-control text-right" value="0.00">
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>(+) Insurance</label>
+                                    <input type="number" step="0.01" id="INV1_INSURANCE" class="form-control text-right" value="0.00">
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>FOB Value @</label>
-                                <input type="text" id="FOB_VALUE" class="form-control">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>(+) Soncap Certificate</label>
+                                    <input type="number" step="0.01" id="INV1_CERTIFICATE" class="form-control text-right" value="0.00">
+                                </div>
                             </div>
                         </div>
                     </div>

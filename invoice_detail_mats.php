@@ -52,6 +52,42 @@ if (empty($invno)) {
         .table-custom td { font-size: 12.5px; vertical-align: middle !important; white-space: nowrap; }
         .row-selected { background-color: #dbeafe !important; }
 
+        /* Sub-group Styling for Section 1 */
+        .sub-group-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 14px 4px 14px;
+            margin-bottom: 12px;
+        }
+        .sub-group-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 10px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .weight-summary-box {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 12px 14px 4px 14px;
+            margin-top: 4px;
+        }
+        .weight-summary-box label {
+            color: #1e40af !important;
+        }
+        .weight-summary-box .calc-box {
+            background-color: #ffffff !important;
+            font-size: 13.5px !important;
+        }
+
         /* Modal Styling & Fix Overflow */
         .custom-modal .modal-content {
             background-color: #ffffff !important;
@@ -165,178 +201,201 @@ if (empty($invno)) {
                 <div class="row">
                     <!-- Left: General & Shipping Info (8 Cols) -->
                     <div class="col-md-8">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Invoice No.</label>
-                                    <input type="text" id="INVOICE_NO" class="form-control" value="<?php echo $invno; ?>" readonly>
+                        
+                        <!-- กลุ่มที่ 1: ข้อมูลหลักเอกสาร & บัญชี -->
+                        <div class="sub-group-box">
+                            <div class="sub-group-title">
+                                <span style="color:#2563eb;">●</span> 1.1 General &amp; Account Info (ข้อมูลเอกสารและบัญชี)
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Invoice No.</label>
+                                        <input type="text" id="INVOICE_NO" class="form-control" value="<?php echo $invno; ?>" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Customer ID</label>
+                                        <input type="text" id="CSTMSPPL_ID" class="form-control" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Invoice Date</label>
+                                        <input type="date" id="INVOICE_DATE" class="form-control head-editable" disabled>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Shipment Date</label>
+                                        <input type="date" id="SHIPMENT_DATE" class="form-control head-editable" disabled>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Customer ID</label>
-                                    <input type="text" id="CSTMSPPL_ID" class="form-control" readonly>
+
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Material In (Print)</label>
+                                        <select id="INV1_MATERIALINPRN" class="form-control head-editable" disabled>
+                                            <option value="">-- Select --</option>
+                                            <option value="BOI-MAT1">BOI-MAT1</option>
+                                            <option value="BOI-MAT2">BOI-MAT2</option>
+                                            <option value="BOI-GRS1">BOI-GRS1</option>
+                                            <option value="BOI-IMP1">BOI-IMP1</option>
+                                            <option value="BOI-IMP2">BOI-IMP2</option>
+                                            <option value="NONE-BOI">NONE-BOI</option>
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Invoice Date</label>
-                                    <input type="date" id="INVOICE_DATE" class="form-control head-editable" disabled>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Material In (Item)</label>
+                                        <input type="text" id="INV1_MATERIALIN" class="form-control" readonly>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Shipment Date</label>
-                                    <input type="date" id="SHIPMENT_DATE" class="form-control head-editable" disabled>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Account Code</label>
+                                        <input type="text" id="ACCOUNT_CODE" class="form-control head-editable" disabled>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Booking No.</label>
+                                        <select id="BOOK_NO" class="form-control head-editable" disabled>
+                                            <option value="">-- No Booking --</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Material In (Print)</label>
-                                    <select id="INV1_MATERIALINPRN" class="form-control head-editable" disabled>
-                                        <option value="">-- Select --</option>
-                                        <option value="BOI-MAT1">BOI-MAT1</option>
-                                        <option value="BOI-MAT2">BOI-MAT2</option>
-                                        <option value="BOI-GRS1">BOI-GRS1</option>
-                                        <option value="BOI-IMP1">BOI-IMP1</option>
-                                        <option value="BOI-IMP2">BOI-IMP2</option>
-                                        <option value="NONE-BOI">NONE-BOI</option>
-                                    </select>
+                        <!-- กลุ่มที่ 2: เงื่อนไขการชำระเงินและธนาคาร -->
+                        <div class="sub-group-box">
+                            <div class="sub-group-title">
+                                <span style="color:#059669;">●</span> 1.2 Trade Terms &amp; Banking (เงื่อนไขการค้าและการเงิน)
+                            </div>
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Currency</label>
+                                        <select id="CURRENCY_ID" class="form-control head-editable" disabled></select>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>VAT (%)</label>
+                                        <select id="INV1_TAXPERCENT" class="form-control head-editable" disabled>
+                                            <option value="0">0%</option>
+                                            <option value="7">7%</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Payment Term</label>
+                                        <select id="PAYMENT_ID" class="form-control head-editable" disabled></select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Shipment Term</label>
+                                        <select id="SHIPMENT_ID" class="form-control head-editable" disabled></select>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Material In (Item)</label>
-                                    <input type="text" id="INV1_MATERIALIN" class="form-control" readonly>
+
+                            <div class="row">
+                                <div class="col-md-5">
+                                    <div class="form-group">
+                                        <label>Bank</label>
+                                        <select id="BANK_ID" class="form-control head-editable" disabled></select>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Account Code</label>
-                                    <input type="text" id="ACCOUNT_CODE" class="form-control head-editable" disabled>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Letter of Credit (L/C)</label>
+                                        <input type="text" id="LETTER_CREDIT" class="form-control head-editable" disabled>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Booking No.</label>
-                                    <select id="BOOK_NO" class="form-control head-editable" disabled>
-                                        <option value="">-- No Booking --</option>
-                                    </select>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>FOB Value @</label>
+                                        <input type="text" id="FOB_VALUE" class="form-control text-right head-editable" disabled>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Currency</label>
-                                    <select id="CURRENCY_ID" class="form-control head-editable" disabled></select>
+                        <!-- กลุ่มที่ 3: เส้นทางและข้อมูลการขนส่ง -->
+                        <div class="sub-group-box">
+                            <div class="sub-group-title">
+                                <span style="color:#d97706;">●</span> 1.3 Logistics &amp; Destination (เส้นทางและการจัดส่ง)
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Shipped By</label>
+                                        <input type="text" id="INV1_SHIPPEDBY" class="form-control head-editable" disabled>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Port of Loading</label>
+                                        <select id="INV1_PORTLOADING" class="form-control head-editable" disabled></select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Port of Discharge</label>
+                                        <select id="INV1_PORTDISCHARGE" class="form-control head-editable" disabled></select>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>VAT (%)</label>
-                                    <select id="INV1_TAXPERCENT" class="form-control head-editable" disabled>
-                                        <option value="0">0%</option>
-                                        <option value="7">7%</option>
-                                    </select>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Place Destination</label>
+                                        <select id="INV1_PLACEDESTINATION" class="form-control head-editable" disabled></select>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Payment Term</label>
-                                    <select id="PAYMENT_ID" class="form-control head-editable" disabled></select>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Shipment Term</label>
-                                    <select id="SHIPMENT_ID" class="form-control head-editable" disabled></select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Bank</label>
-                                    <select id="BANK_ID" class="form-control head-editable" disabled></select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Letter of Credit</label>
-                                    <input type="text" id="LETTER_CREDIT" class="form-control head-editable" disabled>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Shipped By</label>
-                                    <input type="text" id="INV1_SHIPPEDBY" class="form-control head-editable" disabled>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>FOB Value @</label>
-                                    <input type="text" id="FOB_VALUE" class="form-control head-editable" disabled>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Country Destination</label>
+                                        <select id="INV1_COUNTRYDESTINATION" class="form-control head-editable" disabled></select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Port of Loading</label>
-                                    <select id="INV1_PORTLOADING" class="form-control head-editable" disabled></select>
+                        <!-- กลุ่มที่ 4: แถบสรุปจำนวนและน้ำหนักรวม -->
+                        <div class="weight-summary-box">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Package Qty.</label>
+                                        <input type="text" id="INV1_PACKAGE" class="form-control text-right calc-box" readonly>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Port of Discharge</label>
-                                    <select id="INV1_PORTDISCHARGE" class="form-control head-editable" disabled></select>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Net Piece</label>
+                                        <input type="text" id="INV1_NETPIECE" class="form-control text-right calc-box" readonly>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Place Destination</label>
-                                    <select id="INV1_PLACEDESTINATION" class="form-control head-editable" disabled></select>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Net Weight (kg)</label>
+                                        <input type="text" id="INV1_NETWEIGHT" class="form-control text-right calc-box" readonly>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Country Destination</label>
-                                    <select id="INV1_COUNTRYDESTINATION" class="form-control head-editable" disabled></select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Weight & Package Totals -->
-                        <div class="row" style="margin-top:8px; padding-top:8px; border-top:1px dashed #cbd5e1;">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Package Qty.</label>
-                                    <input type="text" id="INV1_PACKAGE" class="form-control text-right calc-box" readonly>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Net Piece</label>
-                                    <input type="text" id="INV1_NETPIECE" class="form-control text-right calc-box" readonly>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Net Weight (kg)</label>
-                                    <input type="text" id="INV1_NETWEIGHT" class="form-control text-right calc-box" readonly>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Gross Weight (kg)</label>
-                                    <input type="text" id="INV1_GROSSWEIGHT" class="form-control text-right calc-box" readonly>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Gross Weight (kg)</label>
+                                        <input type="text" id="INV1_GROSSWEIGHT" class="form-control text-right calc-box" readonly>
+                                    </div>
                                 </div>
                             </div>
                         </div>

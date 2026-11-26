@@ -78,11 +78,11 @@ include 'include/'.$folder_func.'/navigation.php';
                                         </div>
                                         
                                         <div class="flex flex-col gap-3 mt-2">
-                                            <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                            <a href="rp_target_packing_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
                                                 <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                                 <div>
-                                                    <div class="text-bg font-bold text-blue-900">Report</div>
-                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                    <div class="text-bg font-bold text-blue-900">Target Pakcing Output Report</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Report</div>
                                                 </div>
                                             </a>
 
@@ -93,11 +93,34 @@ include 'include/'.$folder_func.'/navigation.php';
                                             <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=job" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
                                                 <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                                 <div>
-                                                    <div class="text-bg font-bold text-blue-900">Report</div>
-                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                    <div class="text-bg font-bold text-blue-900">-</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Report</div>
                                                 </div>
                                             </a>
+
+                                            <div class="flex justify-center text-slate-300 py-1">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                                            </div>
                                             
+                                            <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=job" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                                <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
+                                                <div>
+                                                    <div class="text-bg font-bold text-blue-900">-</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Report</div>
+                                                </div>
+                                            </a>
+
+                                            <div class="flex justify-center text-slate-300 py-1">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                                            </div>
+                                            
+                                            <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=job" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                                <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
+                                                <div>
+                                                    <div class="text-bg font-bold text-blue-900">-</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Report</div>
+                                                </div>
+                                            </a>                                            
                                         </div>
                                     </div>
                                 </div>
@@ -112,8 +135,8 @@ include 'include/'.$folder_func.'/navigation.php';
                                             <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
                                                 <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                                 <div>
-                                                    <div class="text-bg font-bold text-blue-900">Report</div>
-                                                    <div class="text-[10px] text-blue-600 uppercase">12 Pending Tasks</div>
+                                                    <div class="text-bg font-bold text-blue-900">-</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Report</div>
                                                 </div>
                                             </a>
 
@@ -124,8 +147,8 @@ include 'include/'.$folder_func.'/navigation.php';
                                             <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=job" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
                                                 <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                                 <div>
-                                                    <div class="text-bg font-bold text-blue-900">Report</div>
-                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                    <div class="text-bg font-bold text-blue-900">-</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Report</div>
                                                 </div>
                                             </a>
                                             
@@ -143,8 +166,8 @@ include 'include/'.$folder_func.'/navigation.php';
                                             <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
                                                 <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                                 <div>
-                                                    <div class="text-bg font-bold text-blue-900">Report</div>
-                                                    <div class="text-[10px] text-blue-600 uppercase">12 Pending Tasks</div>
+                                                    <div class="text-bg font-bold text-blue-900">-</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Report</div>
                                                 </div>
                                             </a>
 
@@ -155,8 +178,8 @@ include 'include/'.$folder_func.'/navigation.php';
                                             <a href="template_mats.php?func=<?php echo $folder_func; ?>&type=job" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
                                                 <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                                 <div>
-                                                    <div class="text-bg font-bold text-blue-900">Report</div>
-                                                    <div class="text-[10px] text-blue-600 uppercase">Function</div>
+                                                    <div class="text-bg font-bold text-blue-900">-</div>
+                                                    <div class="text-[10px] text-blue-600 uppercase">Report</div>
                                                 </div>
                                             </a>
                                             
