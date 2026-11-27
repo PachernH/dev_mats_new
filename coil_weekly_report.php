@@ -12,7 +12,7 @@ if (!isset($_SESSION['ID'])) {
 include 'function_mats.php';
 
 // 1. เชื่อมต่อฐานข้อมูล
-require_once 'dbcon_mats-new.php';
+require_once 'dbcon_mats.php';
 $dbConnection = $conn ?? $pdoDB ?? $pdo ?? $db ?? null;
 
 // ฟังก์ชันคำนวณจำนวนสัปดาห์ทั้งหมดในปี (ISO-8601)

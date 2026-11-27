@@ -1,10 +1,11 @@
 <?php
-// api/get_report_data.php
+// model/get_report_data.php
 ob_start(); 
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=utf-8");
 ini_set('display_errors', 0); 
 
+// ตรวจสอบ Path ให้ตรงกับไฟล์เชื่อมต่อของคุณ
 require_once '../dbcon_mats.php';
 
 try {
@@ -15,7 +16,7 @@ try {
     if (!$conn) throw new Exception("ไม่สามารถเชื่อมต่อฐานข้อมูลได้");
 
     // ==========================================
-    // 1. ดึง Master Target 
+    // 1. ดึง Master Target
     // ==========================================
     $tableYear = $excludeSunday ? 'TRGTMSTR4' : 'TRGTMSTR2';
     $tableMonth = $excludeSunday ? 'TRGTMSTR5' : 'TRGTMSTR3';
@@ -28,50 +29,65 @@ try {
     $baseAmount = (int)trim($masterYear['AMOUNT_YEAR']); 
     $intAmountYear = $baseAmount;
     
-    if (is_numeric($targetParam)) {
-        if ($targetParam == '10000') $intAmountYear = $baseAmount;
-        elseif ($targetParam == '12000') $intAmountYear = $baseAmount + 2000;
-        elseif ($targetParam == '14000') $intAmountYear = $baseAmount + 4000;
-        else $intAmountYear = (int)$targetParam;
-    } else if (strpos($targetParam, '+') !== false) {
-        list($base, $add) = explode('+', $targetParam);
-        if ($base == '14000') {
-            $intAmountYear = $baseAmount + 4000 + (int)$add;
-        } else {
-            $intAmountYear = $baseAmount + (int)$add;
-        }
+    // ==========================================
+    // แก้ไข Logic Target ให้เหมือน VB6 100%
+    // ==========================================
+    if ($targetParam == '10000') {
+        $intAmountYear = $baseAmount;
+    } elseif ($targetParam == '12000') {
+        $intAmountYear = $baseAmount + 2000;
+    } elseif ($targetParam == '14000') {
+        $intAmountYear = $baseAmount + 4000;
+    } elseif ($targetParam == '14300') {
+        $intAmountYear = $baseAmount + 4300;
+    } elseif ($targetParam == '14600') {
+        $intAmountYear = $baseAmount + 4600;
+    } elseif ($targetParam == '14900') {
+        $intAmountYear = $baseAmount + 4900;
+    } elseif ($targetParam == '15200') {
+        $intAmountYear = $baseAmount + 5200;
+    } elseif ($targetParam == '15500') {
+        $intAmountYear = $baseAmount + 5500;
+    } elseif ($targetParam == '15800') {
+        $intAmountYear = $baseAmount + 5800;
+    } elseif ($targetParam == '16100') {
+        $intAmountYear = $baseAmount + 6100;
+    } elseif (is_numeric($targetParam)) {
+        $intAmountYear = (int)$targetParam;
     }
 
-    $monthlyTargets = [];
-    $monthsCol = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    for ($m = 1; $m <= 12; $m++) {
-        $col = "AMOUNT_" . $monthsCol[$m-1];
-        $monthlyTargets[$m] = (float)trim($masterYear[$col] ?? 0);
-    }
-
+    // ดึง Master รายเดือน
     $stmt = $conn->prepare("SELECT * FROM $tableMonth WHERE TARGET_YEAR = ?");
     $stmt->execute([$year]);
     $masterMonths = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $staticTargets = []; 
     $monthlyWorkDays = array_fill(1, 12, 0); 
+    $totalWorkDaysYear = 0;
 
     foreach ($masterMonths as $m) {
         $month = (int)trim($m['TARGET_MONTH']);
         for ($d = 1; $d <= 31; $d++) {
             $col = sprintf("AMOUNT_%02d", $d);
-            if (isset($m[$col])) {
-                $val = (float)$m[$col];
-                $staticTargets[$month][$d] = $val;
-                if ($val > 0) {
-                    $monthlyWorkDays[$month]++;
-                }
+            if (isset($m[$col]) && (float)$m[$col] > 0) {
+                $staticTargets[$month][$d] = true;
+                $monthlyWorkDays[$month]++;
+                $totalWorkDaysYear++;
             }
         }
     }
 
+    // คำนวณ Target รายวันใหม่
+    $newDailyTargetValue = ($totalWorkDaysYear > 0) ? ($intAmountYear / $totalWorkDaysYear) : 0;
+    
+    // คำนวณ Target รายเดือนใหม่
+    $monthlyTargets = [];
+    for ($m = 1; $m <= 12; $m++) {
+        $monthlyTargets[$m] = round($monthlyWorkDays[$m] * $newDailyTargetValue, 2);
+    }
+
     // ==========================================
-    // 2. ดึงข้อมูลผลิต
+    // 2. ดึงข้อมูลผลิต (Production Data)
     // ==========================================
     $data = [];
     $startDate = "$year-01-01";
@@ -140,7 +156,7 @@ try {
         $data[$d]['srv_sheet'] += (float)$row['srv_sheet'];
     }
 
-    // 2.4 Reject (ดึงข้อมูลดิบเป็น Ton อยู่แล้ว)
+    // 2.4 Reject
     $sql = "SELECT CONVERT(VARCHAR(10), RETURN_DATE, 120) as p_date, SUM(RETURN_WEIGHT) as reject
             FROM CSTMRTRN1 WHERE RETURN_DATE BETWEEN ? AND ?
             GROUP BY CONVERT(VARCHAR(10), RETURN_DATE, 120)";
@@ -149,7 +165,7 @@ try {
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $d = trim($row['p_date']);
         if (!isset($data[$d])) $data[$d] = $getEmptyProduction();
-        $data[$d]['reject'] += (float)$row['reject']; // บวกค่าดิบ (Ton) เข้าไปเลย
+        $data[$d]['reject'] += (float)$row['reject'];
     }
 
     // 2.5 Forward Order
@@ -195,17 +211,15 @@ try {
         $sheet = round(((float)($raw['sheet'] ?? 0) / 1000) * $multipliers['sheet'], 2);
         $reanneal = round(((float)($raw['reanneal'] ?? 0) / 1000) * $multipliers['reanneal'], 2);
         $srvSheet = round(((float)($raw['srv_sheet'] ?? 0) / 1000) * $multipliers['srv_sheet'], 2);
-        
-        // แก้ไข: ไม่ต้องหาร 1000 เพราะ DB เก็บเป็น Ton แล้ว
         $reject = round((float)($raw['reject'] ?? 0), 2);
-        $forward = round((float)($raw['forward'] ?? 0) / 1000, 2);
+        $forward = round((float)($raw['forward'] ?? 0), 2);
 
-        // Balance = (ผลผลิตทั้งหมด) - Reject
         $balance = round(($coil + $reroll + $circle + $o1a + $o1b + $o2a + $o2b + $sheet + $reanneal + $srvSheet) - $reject, 2);
 
-        $targetDay = $staticTargets[$month][$day] ?? 0;
+        $isWorkDay = isset($staticTargets[$month][$day]);
+        $targetDay = $isWorkDay ? round($newDailyTargetValue, 2) : 0;
+        
         $totalTargetYTD = round($totalTargetYTD + $targetDay, 2);
-
         $accuBalance = round($accuBalance + $balance, 2);
 
         $dailyResults[] = [
@@ -273,7 +287,7 @@ try {
         "data" => [
             'summary' => [
                 'target_year' => $intAmountYear, 
-                'workday_year' => (int)trim($masterYear['WORKDAY_YEAR']),
+                'workday_year' => $totalWorkDaysYear,
                 'actual_ytd' => round($accuBalance, 2),
                 'variance_ytd' => round($accuBalance - $totalTargetYTD, 2) 
             ],

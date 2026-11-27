@@ -124,11 +124,13 @@ $group_func = isset($_SESSION['GROUP']) ? htmlspecialchars($_SESSION['GROUP'], E
                             <option value="10000">10,000</option>
                             <option value="12000">12,000</option>
                             <option value="14000">14,000</option>
-                            <option value="14000+300">14,000+300</option>
-                            <option value="14000+600">14,000+600</option>
-                            <option value="14000+900">14,000+900</option>
-                            <option value="14000+1200">14,000+1200</option>
-                            <option value="14000+1500">14,000+1500</option>
+                            <option value="14300">14,000+300</option>
+                            <option value="14600">14,000+600</option>
+                            <option value="14900">14,000+900</option>
+                            <option value="15200">14,000+1200</option>
+                            <option value="15500">14,000+1500</option>
+                            <option value="15800">14,000+1800</option>
+                            <option value="16100">14,000+2100</option>
                         </select>
                     </div>
                     <!-- Checkbox Exclude Sunday -->

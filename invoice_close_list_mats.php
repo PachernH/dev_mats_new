@@ -343,8 +343,7 @@ $is_invoice_authorized = ($current_func === 'WH' || $current_dept === 'IT' || $c
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px;">
                             <h4 style="margin:0; font-weight:700; color:#1e293b; font-size:16px;">
                                 Invoice List for Closing <span id="record_count_badge" class="badge" style="background:#e2e8f0; color:#334155; margin-left:6px;">0</span>
-                            </h4>
-                            <span style="font-size:12px; color:#64748b;">คลิกที่แถวรายการเพื่อดูรายละเอียดทั้งหมด หรือกดปุ่ม Close/Edit เพื่อปิดบิลทันที</span>
+                            </h4>                           
                         </div>
 
                         <div class="table-responsive">
@@ -670,8 +669,8 @@ function renderInvoiceTable(rows) {
         scrollX: true,
         scrollCollapse: true,
         paging: true,
-        pageLength: 15,
-        lengthMenu: [[15, 25, 50, 100], [15, 25, 50, 100]],
+        pageLength: 10,
+        lengthMenu: [[10, 15, 25, 50, 100], [10, 15, 25, 50, 100]],
         order: [[1, 'desc'], [0, 'desc']],
         columnDefs: colDefs
     });

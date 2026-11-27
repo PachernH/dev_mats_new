@@ -78,7 +78,7 @@ include 'include/'.$folder_func.'/navigation.php';
                                         </div>
                                         
                                         <div class="flex flex-col gap-3 mt-2">
-                                            <a href="rp_target_packing_mats.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
+                                            <a href="target_packing_report.php?func=<?php echo $folder_func; ?>&type=sale" class="flow-card p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3 no-underline hover:no-underline">
                                                 <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white shadow-sm"></div>
                                                 <div>
                                                     <div class="text-bg font-bold text-blue-900">Target Pakcing Output Report</div>

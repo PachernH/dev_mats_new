@@ -109,7 +109,21 @@ include 'include/'.$folder_func.'/navigation.php';
                                     <div class="flex justify-center">
                                         <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
                                     </div>
-                                    </a>                                                                         
+                                    </a>                                                  
+                                    
+                                    <a href="target_day_master_mats.php?func=<?php echo $folder_func; ?>" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
+                                    <div class="text-orange-600 text-bg font-bold mb-2 uppercase">Traget On Daily Data</div>
+                                    <div class="flex justify-center">
+                                        <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
+                                    </div>
+                                    </a>                                     
+
+                                    <a href="target_month_master_mats.php?func=<?php echo $folder_func; ?>" class="block p-4 bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl no-underline hover:no-underline clickable transition-all hover:bg-orange-100">
+                                    <div class="text-orange-600 text-bg font-bold mb-2 uppercase">Traget On Monthly Data</div>
+                                    <div class="flex justify-center">
+                                        <span class="px-3 py-1.5 bg-white rounded-lg text-[14px] shadow-sm font-semibold border border-orange-200 w-full">Input</span>
+                                    </div>
+                                    </a>     
 
                                 </div>
 

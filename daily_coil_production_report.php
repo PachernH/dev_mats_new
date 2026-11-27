@@ -12,7 +12,7 @@ if (!isset($_SESSION['ID'])) {
 include 'function_mats.php';
 
 // 1. เชื่อมต่อฐานข้อมูลโดยตรง
-require_once 'dbcon_mats-new.php';
+require_once 'dbcon_mats.php';
 $dbConnection = $conn ?? $pdoDB ?? $pdo ?? $db ?? null;
 
 // 2. รับค่า Filter จากฟอร์มแบบ POST 
