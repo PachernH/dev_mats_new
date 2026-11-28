@@ -1,6 +1,10 @@
 <?php
 // เริ่ม session ก่อน ANY output
 session_start();
+
+$department_func = isset($_SESSION['DEPARTMENT']) ? strtoupper(trim($_SESSION['DEPARTMENT'])) : '';
+$folder_func     = isset($_SESSION['FUNC']) ? htmlspecialchars($_SESSION['FUNC'], ENT_QUOTES, 'UTF-8') : '';
+
 if (!isset($_SESSION['ID'])) {
     header("Location: index.php");
     exit();
@@ -11,6 +15,17 @@ require_once 'dbcon_mats-new.php';
 
 $success_msg = '';
 $error_msg = '';
+
+$current_dept = strtoupper(trim($department_func));
+$is_authorized = ($folder_func === 'WH' || $current_dept === 'IT' || $current_dept === 'FN');
+
+ if (!$is_authorized) {
+    echo "<script>
+            alert('เตือน: สิทธิ์การทำงานของคุณ ไม่ตรงกับกระบวนการนี้ กรุณาติดต่อผู้ดูแลระบบ');
+            window.location.href = 'dashboard_mats.php';
+          </script>";
+ } 
+
 
 // 1. จัดการกระบวนการบันทึกการเบิกจ่าย
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {

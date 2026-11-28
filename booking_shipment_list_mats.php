@@ -19,6 +19,13 @@ $current_func = strtoupper(trim(!empty($folder_func) ? $folder_func : ($_GET['fu
 $current_dept = strtoupper(trim($department_func));
 $is_authorized = ($current_func === 'WH' || $current_dept === 'IT' || $current_dept === 'FN');
 
+ if (!$is_authorized) {
+    echo "<script>
+            alert('เตือน: สิทธิ์การทำงานของคุณ ไม่ตรงกับกระบวนการนี้ กรุณาติดต่อผู้ดูแลระบบ');
+            window.location.href = 'dashboard_mats.php';
+          </script>";
+ } 
+
 // Search and filter parameters
 $book_search = isset($_GET['book_search']) ? htmlspecialchars(trim($_GET['book_search']), ENT_QUOTES, 'UTF-8') : '';
 $date_from   = isset($_GET['date_from']) ? htmlspecialchars(trim($_GET['date_from']), ENT_QUOTES, 'UTF-8') : '';

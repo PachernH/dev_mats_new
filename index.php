@@ -103,10 +103,12 @@
                                 <select class="form-control" name="func" onchange="checkFunction(this)" required>
                                     <option value="" selected disabled>Choose a work system.</option>
                                     <option value='pd'>Production (PD)</option>
-                                    <option value='qac'>Quality Assurance (QA&QC)</option>
-                                    <option value='wh'>Warehouse (WH&FG)</option>               
-                                    <option value='st'>Store (STORE)</option>
+                                    <option value='qac'>Quality Assurance (TC&QA&QC)</option>
+                                    <option value='wh'>Warehouse (WH&SH&ACC)</option>                                                   
+                                    <option value='st'>Store/Office (ST&OFF)</option>
+                                    <!---
                                     <option value='bi'>Business Intelligence (BI)</option>
+                                    --->
                                     <option value='sale'>Sales (Sale)</option>
                                     <option value='root'>Administrator (Admin)</option>
                                 </select>

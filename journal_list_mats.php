@@ -14,6 +14,14 @@ if (empty($iduser_func)) {
 
 $current_dept = strtoupper(trim($department_func));
 $is_journal_authorized = ($current_dept === 'FN' || $current_dept === 'IT');
+
+ if (!$is_journal_authorized) {
+    echo "<script>
+            alert('เตือน: สิทธิ์การทำงานของคุณ ไม่ตรงกับกระบวนการนี้ กรุณาติดต่อผู้ดูแลระบบ');
+            window.location.href = 'dashboard_mats.php';
+          </script>";
+ } 
+
 ?>
 <!doctype html>
 <html lang="en">

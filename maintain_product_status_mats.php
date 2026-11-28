@@ -14,9 +14,19 @@ if ($iduser_func === '') {
 }
 
 $is_wh_authorized    = ($department_func === 'WH');
+$is_fn_authorized    = ($department_func === 'FN');
 $is_dr_authorized    = in_array($department_func, ['MK', 'PP'], true);
 $is_it_authorized    = ($department_func === 'IT' || strtoupper($raw_func) === 'IT');
-$can_maintain_status = ($is_wh_authorized || $is_dr_authorized || $is_it_authorized);
+
+$can_maintain_status = ($is_wh_authorized || $is_fn_authorized || $is_dr_authorized || $is_it_authorized);
+
+ if (!$can_maintain_status) {
+    echo "<script>
+            alert('เตือน: สิทธิ์การทำงานของคุณ ไม่ตรงกับกระบวนการนี้ กรุณาติดต่อผู้ดูแลระบบ');
+            window.location.href = 'dashboard_mats.php';
+          </script>";
+ } 
+
 
 $q_search      = isset($_GET['q']) ? strtoupper(trim((string)$_GET['q'])) : '';
 $status_filter = isset($_GET['status']) ? strtoupper(trim((string)$_GET['status'])) : '';

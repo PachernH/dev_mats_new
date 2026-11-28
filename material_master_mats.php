@@ -252,6 +252,7 @@ include 'include/'.$folder_func.'/navigation.php';
                 <div class="tab-menu-wrapper">
                     <button onclick="truck_pd_no()" class="btn-tab-item">Product (Truck Scale) Master Data</button>  
                     <button onclick="material_pd_no()" class="btn-tab-item active">Material Master Data</button>  
+                    <button onclick="location_no()" class="btn-tab-item">Location Master Data</button>  
                 </div>
 
                 <div class="row">
@@ -346,6 +347,11 @@ include 'include/'.$folder_func.'/navigation.php';
         $("#unit").val("KG"); // กำหนดค่าเริ่มต้น Unit เป็น KG
         $("#data_material_detail").modal('show');
     } 
+
+    function location_no(){   
+        var data_fun = document.getElementById("func").value;
+        window.location.assign('location_wh_master_mats.php?func='+encodeURIComponent(data_fun)); 
+    }       
    
     function truck_pd_no(){   
         var data_fun = document.getElementById("func").value;

@@ -2,6 +2,14 @@
 session_start();
 require_once 'dbcon_mats-new.php';
 
+// บันทึกค่า Zone ล่าสุดลง Session แบบทันที (กรณีเปลี่ยนค่าใน dropdown)
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'remember_zone') {
+    $_SESSION['last_zone'] = isset($_POST['zone']) ? trim($_POST['zone']) : '';
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['status' => 'ok', 'last_zone' => $_SESSION['last_zone']]);
+    exit();
+}
+
 $message = "";
 $msgType = "";
 
@@ -53,6 +61,8 @@ if (isset($_GET['delete_id'])) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'save_receive') {
     try {
         $packing_no = trim($_POST['packing_no']);
+        $zone_val   = trim($_POST['zone']);
+        $row_no_val = trim($_POST['row_no']);
 
         // 1. ตรวจสอบว่ามี Packing No นี้บันทึกอยู่ในระบบแล้วหรือยัง
         $checkDup = $conn->prepare("SELECT COUNT(*) FROM receiving_details WHERE packing_no = ?");
@@ -93,14 +103,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
         $stmt2 = $conn->prepare($sql2);
         $stmt2->execute([
             ':packing_no' => $packing_no,
-            ':zone'       => $_POST['zone'],
-            ':row_no'     => $_POST['row_no']
+            ':zone'       => $zone_val,
+            ':row_no'     => $row_no_val
         ]);
 
         $conn->commit();
 
-        $_SESSION['last_zone'] = $_POST['zone'];
-        $_SESSION['last_row_no'] = $_POST['row_no'];
+        $_SESSION['last_zone'] = $zone_val;
+        $_SESSION['last_row_no'] = $row_no_val;
 
         header("Location: receiving.php?gr_no=" . urlencode($_POST['gr_no']) . "&success=1");
         exit();
@@ -124,6 +134,19 @@ if (isset($_GET['success']) && $_GET['success'] == 1) {
     $msgType = "success";
 }
 
+// ดึงรายการ Zone จาก LOCAMSTR1 เฉพาะ DEPARTMENT = 'WH'
+$zones = [];
+try {
+    $zoneSql = "SELECT l.LOCA_ID, l.DESCRIPTION 
+                FROM LOCAMSTR1 AS l 
+                WHERE l.DEPARTMENT = 'WH' 
+                ORDER BY l.LOCA_ID ASC";
+    $zoneStmt = $conn->query($zoneSql);
+    $zones = $zoneStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {}
+
+$selected_zone = isset($_SESSION['last_zone']) ? trim($_SESSION['last_zone']) : '';
+
 $materials = [];
 try {
     $matStmt = $conn->query("SELECT material_id, item_code, item_name FROM MATERIALS");
@@ -133,7 +156,6 @@ try {
 $logs = [];
 $total_scanned_count = 0;
 try {
-    // นับจำนวนรวมที่สแกนไปแล้วใน GR นี้
     $countStmt = $conn->prepare("SELECT COUNT(*) FROM receiving_details WHERE gr_no = ?");
     $countStmt->execute([$gr_no_param]);
     $total_scanned_count = $countStmt->fetchColumn();
@@ -193,7 +215,7 @@ try {
             display: flex; 
             align-items: center; 
             justify-content: space-between;
-            white-space: nowrap; /* บังคับไม่ให้ข้อความหัวข้อขึ้นบรรทัดใหม่ */
+            white-space: nowrap;
         }
         .form-label { 
             font-weight: 600; 
@@ -227,7 +249,6 @@ try {
             padding: 14px; 
             text-align: center; 
         }
-        /* ดีไซน์ป้ายแสดงจำนวนที่สแกนแล้วให้อยู่บรรทัดเดียวและเด่นชัด */
         .counter-badge {
             background-color: #16a34a;
             color: white;
@@ -385,11 +406,18 @@ try {
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <label class="form-label">Zone <span class="text-danger">*</span></label>
-                                <select class="form-select" name="zone" required>
+                                <select class="form-select" id="zoneSelect" name="zone" required onchange="rememberZoneSelection(this.value)">
                                     <option value="">-- เลือก Zone --</option>
-                                    <option value="Zone A" <?php echo (isset($_SESSION['last_zone']) && $_SESSION['last_zone'] == 'Zone A') ? 'selected' : ''; ?>>Zone A</option>
-                                    <option value="Zone B" <?php echo (isset($_SESSION['last_zone']) && $_SESSION['last_zone'] == 'Zone B') ? 'selected' : ''; ?>>Zone B</option>
-                                    <option value="Zone C" <?php echo (isset($_SESSION['last_zone']) && $_SESSION['last_zone'] == 'Zone C') ? 'selected' : ''; ?>>Zone C</option>
+                                    <?php foreach ($zones as $z): ?>
+                                        <?php
+                                            $locaId = trim($z['LOCA_ID'] ?? '');
+                                            $locaDesc = trim($z['DESCRIPTION'] ?? '');
+                                            $isSelected = ($selected_zone !== '' && $selected_zone === $locaId) ? 'selected' : '';
+                                        ?>
+                                        <option value="<?php echo htmlspecialchars($locaId, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $isSelected; ?>>
+                                            <?php echo htmlspecialchars($locaId . ($locaDesc !== '' ? ' - ' . $locaDesc : ''), ENT_QUOTES, 'UTF-8'); ?>
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="col-6">
@@ -459,6 +487,19 @@ try {
 
 <script>
 const scanInput = document.getElementById('hardwareScanInput');
+
+function rememberZoneSelection(zoneVal) {
+    if (!zoneVal) return;
+    const formData = new URLSearchParams();
+    formData.append('action', 'remember_zone');
+    formData.append('zone', zoneVal);
+
+    fetch('receiving.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString()
+    }).catch(err => console.error('Remember zone error:', err));
+}
 
 scanInput.addEventListener('input', function () {
     let rawData = this.value.trim();

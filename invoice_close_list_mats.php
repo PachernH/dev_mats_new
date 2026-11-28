@@ -14,7 +14,16 @@ if (empty($iduser_func)) {
 
 $current_func = strtoupper(trim(!empty($folder_func) ? $folder_func : ($_GET['func'] ?? '')));
 $current_dept = strtoupper(trim($department_func));
-$is_invoice_authorized = ($current_func === 'WH' || $current_dept === 'IT' || $current_dept === 'FN');
+//$is_invoice_authorized = ($current_func === 'WH' || $current_dept === 'IT' || $current_dept === 'FN');
+$is_invoice_authorized = ($current_dept === 'FN' || $current_dept === 'IT');
+
+ if (!$is_invoice_authorized) {
+    echo "<script>
+            alert('เตือน: สิทธิ์การทำงานของคุณ ไม่ตรงกับกระบวนการนี้ กรุณาติดต่อผู้ดูแลระบบ');
+            window.location.href = 'dashboard_mats.php';
+          </script>";
+ } 
+
 ?>
 <!doctype html>
 <html lang="en">

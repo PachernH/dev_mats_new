@@ -13,11 +13,20 @@ if (empty($iduser_func)) {
 
 $current_func = strtoupper(trim(!empty($folder_func) ? $folder_func : ($_GET['func'] ?? '')));
 $current_dept = strtoupper(trim($department_func));
-$is_invoice_authorized = ($current_func === 'WH' || $current_dept === 'IT' || $current_dept === 'FN');
-
 $inv_search = isset($_GET['inv_search']) ? htmlspecialchars(trim($_GET['inv_search']), ENT_QUOTES, 'UTF-8') : '';
 $date_from  = isset($_GET['date_from']) ? htmlspecialchars(trim($_GET['date_from']), ENT_QUOTES, 'UTF-8') : '';
 $date_to    = isset($_GET['date_to']) ? htmlspecialchars(trim($_GET['date_to']), ENT_QUOTES, 'UTF-8') : '';
+
+$is_invoice_authorized = ($current_func === 'WH' || $current_dept === 'IT' || $current_dept === 'FN');
+
+
+ if (!$is_invoice_authorized) {
+    echo "<script>
+            alert('เตือน: สิทธิ์การทำงานของคุณ ไม่ตรงกับกระบวนการนี้ กรุณาติดต่อผู้ดูแลระบบ');
+            window.location.href = 'dashboard_mats.php';
+          </script>";
+ } 
+
 ?>
 <!doctype html>
 <html lang="en">

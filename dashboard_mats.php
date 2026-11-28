@@ -25,9 +25,9 @@ $process_func = isset($_SESSION['PROCESS_GROUP']) ? htmlspecialchars($_SESSION['
 // 2. แปลงค่า Function/Department เป็นชื่อแสดงผล
 $func_names = [
     'pd'   => 'Production (PD)',
-    'qac'  => 'Quality Assurance (QA&QC)',
-    'wh'   => 'Warehouse (WH&FG)',
-    'st'   => 'Store (STORE)',
+    'qac'  => 'Quality Assurance (TC&QA&QC)',
+    'wh'   => 'Warehouse (WH&SH&ACC)',
+    'st'   => 'Store/Office (ST&OFF)',
     'bi'   => 'Business Intelligence (BI)',
     'sale' => 'Sales (Sale)',
     'root' => 'Administrator (Admin)'

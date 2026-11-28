@@ -285,6 +285,7 @@ include 'include/'.$folder_func.'/navigation.php';
                 <div class="tab-menu-wrapper">
                     <button onclick="truck_pd_no()" class="btn-tab-item active">Product (Truck Scale) Master Data</button>  
                     <button onclick="material_pd_no()" class="btn-tab-item">Material Master Data</button>  
+                    <button onclick="location_no()" class="btn-tab-item">Location Master Data</button>  
                 </div>
 
                 <div class="row">
@@ -372,6 +373,11 @@ include 'include/'.$folder_func.'/navigation.php';
     function open_bank_no(){
         $("#data_pd_detail").modal('show');
     } 
+
+    function location_no(){   
+        var data_fun = document.getElementById("func").value;
+        window.location.assign('location_wh_master_mats.php?func='+encodeURIComponent(data_fun)); 
+    }       
    
     function truck_pd_no(){   
         var data_fun = document.getElementById("func").value;

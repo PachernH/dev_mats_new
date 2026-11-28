@@ -14,12 +14,22 @@ if (empty($iduser_func)) {
     exit();
 }
 
-// Check authorization ตามเงื่อนไข rc1 (WH, MK, PP, IT)
-$current_func = strtoupper(trim(!empty($folder_func) ? $folder_func : ($_GET['func'] ?? '')));
 $current_dept = strtoupper(trim($department_func));
 
+$is_authorized = ($folder_func === 'WH' || $current_dept === 'IT' || $current_dept === 'FN');
+
+ if (!$is_authorized) {
+    echo "<script>
+            alert('เตือน: สิทธิ์การทำงานของคุณ ไม่ตรงกับกระบวนการนี้ กรุณาติดต่อผู้ดูแลระบบ');
+            window.location.href = 'dashboard_mats.php';
+          </script>";
+ } 
+
+// Check authorization ตามเงื่อนไข rc1 (WH, MK, PP, IT)
+$current_func = strtoupper(trim(!empty($folder_func) ? $folder_func : ($_GET['func'] ?? '')));
+
 $is_wh_authorized = ($current_dept === 'WH');
-$is_dr_authorized = in_array($current_dept, ['MK', 'PP']);
+$is_dr_authorized = in_array($current_dept, ['MK', 'PP', 'FN']);
 $is_it_authorized = ($current_dept === 'IT' || $current_func === 'IT');
 $can_create_or_edit = ($is_wh_authorized || $is_dr_authorized || $is_it_authorized);
 $can_upload_edi     = ($is_wh_authorized || $is_it_authorized);

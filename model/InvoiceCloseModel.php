@@ -150,13 +150,13 @@ class InvoiceCloseModel
                         bnk.DESCRIPTION AS BANK_DESC
                     FROM INVCPRCS1 h
                     LEFT JOIN CSSPMSTR1 c ON h.CSTMSPPL_ID = c.CSTMSPPL_ID
-                    LEFT JOIN [MATS-NEWII].dbo.PORTMSTR1 pl ON h.INV1_PORTLOADING = pl.PORT_ID
-                    LEFT JOIN [MATS-NEWII].dbo.PORTMSTR1 pd ON h.INV1_PORTDISCHARGE = pd.PORT_ID
-                    LEFT JOIN [MATS-NEWII].dbo.PLCEMSTR1 plc ON h.INV1_PLACEDESTINATION = plc.PLACE_ID
-                    LEFT JOIN [MATS-NEWII].dbo.PLCEMSTR1 cnt ON h.INV1_COUNTRYDESTINATION = cnt.PLACE_ID
-                    LEFT JOIN [MATS-NEWII].dbo.PMTMMSTR1 pmt ON h.PAYMENT_ID = pmt.PAYMENT_ID
-                    LEFT JOIN [MATS-NEWII].dbo.SPTMMSTR1 shp ON h.SHIPMENT_ID = shp.SHIPMENT_ID
-                    LEFT JOIN [MATS-NEWII].dbo.BANKMSTR1 bnk ON h.BANK_ID = bnk.BANK_ID
+                    LEFT JOIN PORTMSTR1 pl ON h.INV1_PORTLOADING = pl.PORT_ID
+                    LEFT JOIN PORTMSTR1 pd ON h.INV1_PORTDISCHARGE = pd.PORT_ID
+                    LEFT JOIN PLCEMSTR1 plc ON h.INV1_PLACEDESTINATION = plc.PLACE_ID
+                    LEFT JOIN PLCEMSTR1 cnt ON h.INV1_COUNTRYDESTINATION = cnt.PLACE_ID
+                    LEFT JOIN PMTMMSTR1 pmt ON h.PAYMENT_ID = pmt.PAYMENT_ID
+                    LEFT JOIN SPTMMSTR1 shp ON h.SHIPMENT_ID = shp.SHIPMENT_ID
+                    LEFT JOIN BANKMSTR1 bnk ON h.BANK_ID = bnk.BANK_ID
                     WHERE h.INVOICE_NO = :invoice_no";
 
         $stmtHead = $this->conn->prepare($sqlHead);

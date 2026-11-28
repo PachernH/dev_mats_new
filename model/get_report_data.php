@@ -157,16 +157,27 @@ try {
     }
 
     // 2.4 Reject
-    $sql = "SELECT CONVERT(VARCHAR(10), RETURN_DATE, 120) as p_date, SUM(RETURN_WEIGHT) as reject
-            FROM CSTMRTRN1 WHERE RETURN_DATE BETWEEN ? AND ?
-            GROUP BY CONVERT(VARCHAR(10), RETURN_DATE, 120)";
+    //$sql = "SELECT CONVERT(VARCHAR(10), RETURN_DATE, 120) as p_date, SUM(RETURN_WEIGHT) as reject
+    //        FROM CSTMRTRN1 WHERE RETURN_DATE BETWEEN ? AND ?
+    //        GROUP BY CONVERT(VARCHAR(10), RETURN_DATE, 120)";
+    //$stmt = $conn->prepare($sql);
+    //$stmt->execute([$startDate, $endDate]);
+    //while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    //    $d = trim($row['p_date']);
+    //    if (!isset($data[$d])) $data[$d] = $getEmptyProduction();
+    //    $data[$d]['reject'] += (float)$row['reject'];
+    //}
+
+    $sql = "SELECT CONVERT(VARCHAR(10), RECEIVE_DATE, 120) as p_date, SUM(REC2_NETWEIGHT) as reject
+            FROM RECVPROD2 WHERE RECEIVE_TYPE='RT'and RECEIVE_DATE BETWEEN ? AND ?
+            GROUP BY CONVERT(VARCHAR(10), RECEIVE_DATE, 120)";
     $stmt = $conn->prepare($sql);
     $stmt->execute([$startDate, $endDate]);
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $d = trim($row['p_date']);
         if (!isset($data[$d])) $data[$d] = $getEmptyProduction();
-        $data[$d]['reject'] += (float)$row['reject'];
-    }
+        $data[$d]['reject'] += round((float)($row['reject'] ?? 0) / 1000, 2);
+    }    
 
     // 2.5 Forward Order
     $sql = "SELECT " . sprintf($dateFormat, 'REQUEST_DATE') . " as p_date, SUM(CTM2_ORDERWEIGHT) as forward

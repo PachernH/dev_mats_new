@@ -18,6 +18,16 @@ if (empty($iduser_func)) {
 $current_dept = strtoupper(trim($department_func));
 $current_pos  = strtoupper(trim($position_func));
 
+
+$is_authorized = ($folder_func === 'WH' || $current_dept === 'IT' || $current_dept === 'FN');
+
+ if (!$is_authorized) {
+    echo "<script>
+            alert('เตือน: สิทธิ์การทำงานของคุณ ไม่ตรงกับกระบวนการนี้ กรุณาติดต่อผู้ดูแลระบบ');
+            window.location.href = 'dashboard_mats.php';
+          </script>";
+ } 
+
 $is_authorized = (
     in_array($current_dept, ['WH', 'FG', 'WAREHOUSE', 'IT']) || 
     strpos($current_pos, 'MANAGER') !== false || 

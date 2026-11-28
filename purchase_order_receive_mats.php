@@ -10,6 +10,16 @@ if (empty($iduser_func)) {
     exit();
 }
 
+$current_dept = strtoupper(trim($department_func));
+$is_authorized = ($folder_func === 'WH' || $current_dept === 'IT' || $current_dept === 'FN');
+
+ if (!$is_authorized) {
+    echo "<script>
+            alert('เตือน: สิทธิ์การทำงานของคุณ ไม่ตรงกับกระบวนการนี้ กรุณาติดต่อผู้ดูแลระบบ');
+            window.location.href = 'dashboard_mats.php';
+          </script>";
+ } 
+
 $current_func  = strtoupper(trim(!empty($folder_func) ? $folder_func : ($_GET['func'] ?? '')));
 $is_authorized = ($current_func === 'WH' || $department_func === 'EM' || $department_func === 'IT');
 
